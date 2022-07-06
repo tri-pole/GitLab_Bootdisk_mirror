@@ -23,8 +23,8 @@ set up some other way.)
 Outline of the disk
 -------------------
 
-The file tree structure of the small boot partition on the install disk is
-as follows
+The file tree structure of the small boot partition (e.g. 200M) on the install
+disk is as follows
 
 /boot/linux
 /boot/initrd
@@ -68,7 +68,7 @@ end about network setup):
 Be patient! (It can take a couple of mins for the installer to fully load.)
 
 - You will be presented with a screen where it says:
-"To use the selected repository a matching boot image is neede. Download it
+"To use the selected repository a matching boot image is needed. Download it
 and restart?"
 
 Choose "yes" here: The image will be downloaded into memory, a new kernel and
@@ -81,10 +81,10 @@ performed (I think). (Be patient also here.).
 - Choose language and keyboard layout.
 
 - You can choose to activate and use online repositories (other than those in
-the downladed, and rebooted into, image). I chose "yes", but note this: There
+the downloaded, and rebooted into, image). I chose "yes", but note this: There
 may be only a marginal benefit with this (since the just downloaded and
 rebooted installer image is recent) and a potential (time) risk: If the
-opensuse servers are busy, chosing online repos might delay the installation
+openSuse servers are busy, choosing online repos might delay the installation
 since it may temporarily stall several times (but auto resume until finished).
 
 - You will then be asked to choose "System role" (desktop type, server etc.)
@@ -123,7 +123,7 @@ After these choices are made, it is time to hit the "Install" button.
 
 - Installation will take a while but the progress indicators are good.
 
-- Near the end of the installtion (about 93%) you will likely encounter an
+- Near the end of the installation (about 93%) you will likely encounter an
 error message bout the installer being unable to install the EFI directory.
 This is harmless for us since we don't use EFI (but uroot+grub) to boot the
 finished install. Just hit "Ok" to continue.

@@ -23,7 +23,7 @@ which the user can enter e.g. the command "boot".
 This action initiates a scan for bootable grub (or syslinux) configurations on
 the attached media and the discovered bootable configurations are then
 (typically after a couple of seconds) presented in a boot menu.
-Once a meny entry has been selected by the user and its execution is started,
+Once a menu entry has been selected by the user and its execution is started,
 the `localboot()` function of `u-root` loads the new kernel and initramfs from
 the target ARM64 Linux image, and then executes a `kexec()` call into the new
 kernel-initramfs.
@@ -33,7 +33,7 @@ Linux image.
 In summary, when booting a SBC/TV box with a u-root-bootdisk attached, the
 boot process will pause at the `u-root` prompt where the user can issue the
 "boot" command.
-At the boot meny then appearing the user can select one of the bootable
+At the boot menu then appearing the user can select one of the bootable
 configurations presented and this configuration is booted by `u-root`.
 
 (The boot process is also described in the README files on the bootdisks.)
@@ -55,13 +55,13 @@ The actual bootdisk images are hosted outside of Gitlab, at the links below
 (here at Gitlab I have only posted various mini guides and explanatory
 material):
 
-[u-root-bootdisk-0v25.img.gz](https://1drv.ms/u/s!Aqo_UY80B5WObwUcPnn0DnWRjmw?e=CufuCp)
+[u-root-bootdisk](https://1drv.ms/u/s!Aqo_UY80B5WObWK9pvbIA_gvdY4?e=1IXMqD)
 
-[u-root-bootdisk-nc-0v25.img.gz](https://1drv.ms/u/s!Aqo_UY80B5WOcL0DgkTMJDAhUaA?e=b1xSdr)
+[u-root-bootdisk-nc](https://1drv.ms/u/s!Aqo_UY80B5WObi-Z-XGwIq3hwsM?e=5qb4Zz)
 
-md5sums:
-u-root-bootdisk-0v25.img.gz  33fe43cb484bf71df239a80ee8785947
-u-root-bootdisk-nc_0v25.img.gz  eaa86cde9d8bf24f3c39ec93e0758382
+md5sums of latest release:
+`u-root-bootdisk-0v25.img.gz  33fe43cb484bf71df239a80ee8785947`
+`u-root-bootdisk-nc_0v25.img.gz  eaa86cde9d8bf24f3c39ec93e0758382`
 
 Caveats
 -------
@@ -129,7 +129,9 @@ improve and expand it.
 Discourse
 ---------
 
-There is a thread over at the Beelink forums (GT King Pro subforum) about the
+There is a 
+[thread](https://forum.bee-link.com/forum.php?mod=viewthread&tid=72255)
+over at the Beelink forums (GT King Pro subforum) about the
 u-root-bootdisks.
 
 Acknowledgements
