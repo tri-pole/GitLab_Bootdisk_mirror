@@ -123,6 +123,12 @@ available scripts, and made disk images of the result.
 More detailed descriptions of the origin of files can be found in the README
 files on the bootdisks.
 
+Note: Currently, some attributions in these README files are incorrect:
+The boot script files (aml_autoscript, s905_autoscript) on the bootdisks were
+really originally produced by the Armbian project (probably by Balbes150).
+This may also apply to at least one of the u-boot.ext files on one of the
+bootdisks.
+
 Fork it!
 --------
 
