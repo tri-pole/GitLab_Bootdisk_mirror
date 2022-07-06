@@ -60,7 +60,9 @@ material):
 [u-root-bootdisk-nc](https://1drv.ms/u/s!Aqo_UY80B5WObi-Z-XGwIq3hwsM?e=5qb4Zz)
 
 md5sums of latest release:
+
 `u-root-bootdisk-0v25.img.gz  33fe43cb484bf71df239a80ee8785947`
+
 `u-root-bootdisk-nc_0v25.img.gz  eaa86cde9d8bf24f3c39ec93e0758382`
 
 Caveats
@@ -93,8 +95,9 @@ The u-root-bootdisks have been tested on two Amlogic s922x TV boxes; the
 Beelink GT King Pro and the Ugoos Am6 plus.
 The initramfs that implements `u-root` is generic and should work with any
 other SoC but the kernel on the bootdisk that runs `u-root` might only work
-with Amlogic boxes (although most of the `u-boot` kernels on the bootdisks are
+with Amlogic boxes (although most of the `u-root` kernels on the bootdisks are
 compiled with support also for Allwinner and Rockchip SoCs).
+(More details can be found in the README files on the bootdisks.)
 
 Linux distros tested
 --------------------
@@ -104,7 +107,7 @@ Leap 15.4 (KDE) and with Armbian generic ARM64 images (XFCE).
 
 Some live images of these distros and others do not work because of the caveats
 listed above but the installer images typically work as intended.
-(One must then remember to create a rootfs partition of type `EXT4` to be able
+(One must then remember to create a rootfs partition of type EXT4 to be able
 to boot into the newly installed system.)
 In other cases, live images work (e.g. Ubuntu server and Ubuntu desktop for
 recent releases) but for some reason the install-to-disk process malfunctions
