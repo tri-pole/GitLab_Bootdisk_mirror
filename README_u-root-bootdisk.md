@@ -124,10 +124,14 @@ More detailed descriptions of the origin of files can be found in the README
 files on the bootdisks.
 
 Note: Currently, some attributions in these README files are incorrect:
-The boot script files (aml_autoscript, s905_autoscript) on the bootdisks were
-really originally produced by the Armbian project (probably by Balbes150).
-This may also apply to at least one of the u-boot.ext files on one of the
-bootdisks.
+The boot script files aml_autoscript and s905_autoscript on the bootdisks as
+well as the three u-boot binaries u-boot-s905.bin, u-boot-s905x2-s922.bin and
+u-boot-s905x-s912.bin were really originally produced by the Armbian project
+(probably by Balbes150). These five files have been repackaged and
+redistributed by other projects without proper attribution, causing confusion.
+(For instance, files names have been changed or AML headers have been changed.
+However, the contents of the five files match that of files found e.g. om the
+image Armbian_20.10_Arm-64_bullseye_current_5.9.0.img.)
 
 Fork it!
 --------
