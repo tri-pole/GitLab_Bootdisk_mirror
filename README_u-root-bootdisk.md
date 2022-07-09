@@ -95,9 +95,9 @@ permitted.)
 
 Depending on the TV box, some experimentation with combinations of u-boot.ext
 and `u-root-bootdisk` on SD or USB, and with target Linux image connected from
-boot or only after u-root prompt, may have to be done. (On the GT King Pro
-and the AM6 plus everything can be connected at boot for `u-root-bootdisk`
-on at least one of SD or USB (try SD first).)
+boot or only after reaching u-root prompt, may have to be done. On the two
+platforms tesded (see below) everything can be connected at boot for
+`u-root-bootdisk-nc` on at least one of SD/USB (recommended to try SD first).
 
 Platforms tested
 ----------------
