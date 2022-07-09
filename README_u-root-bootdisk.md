@@ -44,9 +44,10 @@ Variants
 The `u-root-bootdisk` exist in two variants; one with the chainloader
 u-boot.ext and one without the chainloader (which boots using resident `u-boot`
 together with boot scripts on the `u-root-bootdisk`).
-The latter bootdisks have names ending in `-nc` ("no chainload") and enable a
-faster boot process but will only work on Amlogic s922x SoCs whereas the
-bootdisks using chainloading can probably be made to work also for other SoCs.
+The latter bootdisk has a name ending in `-nc` ("no chainload") and enable
+a faster boot process but will only work on Amlogic s922x SoCs whereas the
+bootdisk using chainloading can probably be made to work also for other SoCs
+(several alternative u-boot.ext available on the chainloader bootdisk).
 
 Downloads
 ---------
@@ -63,12 +64,16 @@ md5sums of latest release:
 
 `u-root-bootdisk-0v25.img.gz  33fe43cb484bf71df239a80ee8785947`
 
+`u-root-bootdisk-0v26.img.gz  55eee4b1713594476106021db07becfc`
+
 `u-root-bootdisk-nc_0v25.img.gz  eaa86cde9d8bf24f3c39ec93e0758382`
+
+`u-root-bootdisk-nc_0v26.img.gz  6c46aeb9ef82c0f46492f4c7bd878f57`
 
 Caveats
 -------
 
-At present, the following two caveats exist for booting ARM64 with `u-root`:
+At present, the following three caveats exist for booting ARM64 with `u-root`:
 
 - The device tree (dtb) blob present on the target image (as indicated in the
 grub.cfg or extlinux.conf file) is not picked up and loaded along with the
@@ -87,6 +92,12 @@ permitted.)
 
 - The grub.cfg file must reside in one of a few standard locations (see
   the `u-root` function `grub()` used in `localboot()`).
+
+Depending on the TV box, some experimentation with combinations of u-boot.ext
+and `u-root-bootdisk` on SD or USB, and with target Linux image connected from
+boot or only after u-root prompt, may have to be done. (On the GT King Pro
+and the AM6 plus everything can be connected at boot for `u-root-bootdisk`
+on at least one of SD or USB (try SD first).)
 
 Platforms tested
 ----------------
@@ -122,16 +133,6 @@ merely assembled and compiled other people's source code, or copied freely
 available scripts, and made disk images of the result.
 More detailed descriptions of the origin of files can be found in the README
 files on the bootdisks.
-
-Note: Currently, some attributions in these README files are incorrect:
-The boot script files aml_autoscript and s905_autoscript on the bootdisks as
-well as the three u-boot binaries u-boot-s905.bin, u-boot-s905x2-s922.bin and
-u-boot-s905x-s912.bin were really originally produced by the Armbian project
-(probably by Balbes150). These five files have been repackaged and
-redistributed by other projects without proper attribution, causing confusion.
-(For instance, files names have been changed or AML headers have been changed.
-However, the contents of the five files match that of files found e.g. om the
-image Armbian_20.10_Arm-64_bullseye_current_5.9.0.img.)
 
 Fork it!
 --------
