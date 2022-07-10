@@ -93,21 +93,23 @@ permitted.)
 - The grub.cfg file must reside in one of a few standard locations (see
   the `u-root` function `grub()` used in `localboot()`).
 
-Depending on the TV box, some experimentation with combinations of u-boot.ext
-and `u-root-bootdisk` on SD or USB, and with target Linux image connected from
-boot or only after reaching u-root prompt, may have to be done. On the two
-platforms tesded (see below) everything can be connected at boot for
-`u-root-bootdisk-nc` on at least one of SD/USB (recommended to try SD first).
+Part of the idea with the `u-root-bootdisk` was to be able to have the bootdisk
+on SD and then have several different USBs with boot target Linux distros
+attached during boot and then simply use the bootdisk as a boot selection tool.
+This works as intended on the two platforms tested (see below) but for other
+boxes some experimentation may be needed with e.g. the bootdisk on USB, with
+different u-boot.ext, with target image(s) connected from boot or only after
+reaching u-root prompt.
 
 Platforms tested
 ----------------
 
 The u-root-bootdisks have been tested on two Amlogic s922x TV boxes; the
 Beelink GT King Pro and the Ugoos Am6 plus.
-The initramfs that implements `u-root` is generic and should work with any
-other SoC but the kernel on the bootdisk that runs `u-root` might only work
-with Amlogic boxes (although most of the `u-root` kernels on the bootdisks are
-compiled with support also for Allwinner and Rockchip SoCs).
+The initramfs that implements (parts of) `u-root` is generic and should work
+with any other SoC but the kernel on the bootdisk that runs `u-root` might
+only work with Amlogic boxes (although most of the `u-root` kernels on the
+bootdisks are compiled with support also for Allwinner and Rockchip SoCs).
 (More details can be found in the README files on the bootdisks.)
 
 Linux distros tested
@@ -121,18 +123,24 @@ listed above but the installer images typically work as intended.
 (One must then remember to create a rootfs partition of type EXT4 to be able
 to boot into the newly installed system.)
 In other cases, live images work (e.g. Ubuntu server and Ubuntu desktop for
-recent releases) but for some reason the install-to-disk process malfunctions
-(but this is likely not directly related to the `u-root` booting method used to
-boot the live image).
+recent releases) but the install-to-disk process on these live images
+malfunctions. (This typically happensa at the stage where an initramfs is
+generated or a bootloader installed; the latter is not necessary for us since
+we need only a valid grub config to boot).
 
 Authorship
 ----------
 
 Nothing of what is present on these bootdisks is my original work; I have
 merely assembled and compiled other people's source code, or copied freely
-available scripts, and made disk images of the result.
-More detailed descriptions of the origin of files can be found in the README
-files on the bootdisks.
+available scripts, and made disk images of the result. Detailed descriptions
+of the sources of my material can be found in the README files on the
+bootdisks. In some cases, such as script files, the material has been used and
+evolved, with small modifications, in several projects or by several people.
+To properly trace the origin of various ideas/concepts one then has to follow
+the links backwards from my sources. Two projects that have produced many of
+the original versions of scripts are [LibreElec](https://libreelec.tv) and
+[Armbian](https://www.armbian.com).
 
 Fork it!
 --------
