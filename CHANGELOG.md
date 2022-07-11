@@ -2,7 +2,7 @@
 
 Changelog for u-root-bootdisk and u-root-bootdisk-nc
 
-u-root-bootdisk:
+# u-root-bootdisk:
 
 ## [v0.26] - 22-07-09
 
@@ -12,7 +12,7 @@ u-root-bootdisk:
 ### Removed
  - Three u-boot.ext files.
 
-u-root-bootdisk-nc:
+# u-root-bootdisk-nc:
 
 ## [v0.26] - 22-07-09
 

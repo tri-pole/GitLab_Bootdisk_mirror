@@ -62,11 +62,7 @@ material):
 
 md5sums of latest release:
 
-`u-root-bootdisk-0v25.img.gz  33fe43cb484bf71df239a80ee8785947`
-
 `u-root-bootdisk-0v26.img.gz  55eee4b1713594476106021db07becfc`
-
-`u-root-bootdisk-nc_0v25.img.gz  eaa86cde9d8bf24f3c39ec93e0758382`
 
 `u-root-bootdisk-nc_0v26.img.gz  6c46aeb9ef82c0f46492f4c7bd878f57`
 
@@ -118,13 +114,13 @@ Linux distros tested
 The u-root-bootdisks have been tested with Fedora 36 (Gnome, KDE), openSuse
 Leap 15.4 (KDE) and with Armbian generic ARM64 images (XFCE).
 
-Some live images of these distros and others do not work because of the caveats
-listed above but the installer images typically work as intended.
+Some live images of these distros and others do not work because of the
+caveats listed above but the installer images typically work as intended.
 (One must then remember to create a rootfs partition of type EXT4 to be able
 to boot into the newly installed system.)
 In other cases, live images work (e.g. Ubuntu server and Ubuntu desktop for
 recent releases) but the install-to-disk process on these live images
-malfunctions. (This typically happensa at the stage where an initramfs is
+malfunctions. (This typically happens at the stage where an initramfs is
 generated or a bootloader installed; the latter is not necessary for us since
 we need only a valid grub config to boot).
 
