@@ -2,28 +2,28 @@
 
 ## Background
 
-The Ubuntu installer for ARM64 (on Ubuntu server and on the live images)
-currently has a bug which prevents a clean install on some systems, for
-instance on some arm SBCs/TV-boxes (which otherwise can run Ubuntu, e.g. the
-live images).
+The Ubuntu installer for ARM64 (on the Ubuntu Server image and the other live
+images) currently has a bug which prevents a clean install on some systems, for
+instance on some arm SBCs/TV-boxes (which otherwise can run the Ubuntu images).
 This bug is related to the package flash-kernel and the creation of the
 initramfs, and manifests itself by the installation aborting near the end
 which leaves the installed image in a non bootable state.
 (A simple search for `"flash-kernel install bug"` will provide more info.)
 
-The present writeup describes a workaround this bug and how do a clean install
-of e.g. Ubuntu Server ARM64 to e.g. a USB stick, which can then be booted for
-instance with `u-root-bootdisk` (using a simple grub.cfg file on the USB).
+The present writeup describes a workaround to this bug and shows how to do a
+clean install of Ubuntu Server ARM64 to e.g. a USB stick, which can then be
+booted for instance with `u-root-bootdisk` (or any other boot mechanism that
+relies only on a grub.cfg file).
 Our method relies on the Ubuntu installer iso but uses the iso image only to
 get up to a running state of the installer from which a Ubuntu rootfs from
 [Ubuntu Base](https://wiki.ubuntu.com/Base) can be straightforwardly installed.
 
 ## Scope
 
-These notes use Ubuntu Server as an example but the method should work for any
-Ubuntu Desktop ARM64 image as well, provided a rootfs tarball is available
-(perhaps with some minor modifications).
-An Ubuntu server  image can moreover easily be upgraded to a desktop image
+These notes use Ubuntu Server as an example but the method should work to
+install (perhaps with minor modifications) any other Ubuntu ARM64 flavor,
+provided a rootfs tarball is available.
+An Ubuntu server image can moreover easily be upgraded to a desktop image
 using e.g. `tasksel` or directy via `apt` (e.g. `apt install ubuntu-desktop`).
 The method has been tested on a Ugoos AM6 plus (Amlogic s922x SoC).
 
@@ -38,8 +38,8 @@ It is also good to have the install target USB stick formatted in advance:
 Here, we are going to assume that the install target USB stick is 32GB (28.7G
 usable) and we let the Ubuntu system occupy the entire stick. (With
 `u-root-bootdisk` as boot mechanism, it is convenient to have `u-root-bootdisk`
-on a SD and then attach to the USB ports or a USB hub the various Linux images
-to be booted.)
+on a SD and then attach to the USB ports, or a USB hub, the various Linux
+images to be booted.)
 
 Our partition layout for the install target USB is the following (with
 partitions created by e.g. `fdisk` for MBR or `gdisk` for GPT, and file system
@@ -54,7 +54,7 @@ Partition 3 (/dev/sdX3): ext4 (MBR partition type 83), 26.1G (for /)
 ```
 
 The UUIDs of these partitions will be used later below so it is assumed that
-these UUIDs have been recorded (using e.g. the command `blkid`).
+the UUIDs have been listed (using e.g. the command `blkid`) and recorded.
 
 For brevity, we are going use the following shorthand labels (in the obvious
 notation) for the UUIDs of the three partitions:
@@ -74,12 +74,12 @@ copy-pasting), but are inherently straightforward.
 
 ### (1) Start the installer
 
-- Boot the Ubuntu installer iso image.
+- Boot the Ubuntu Server installer iso image.
 
-- Do the first few steps; set installation language, set keyboard, set up
-  network and select download repo. Stop when you reach the partitioning
-  screen.
-  
+- Go through the first few steps of the installation; set installation
+  language, set keyboard, set up network and select download repo.
+  Stop when you reach the partitioning (install target) screen.
+
 - Switch to a virtual terminal, e.g. vt2 (by issuing `Ctrl-Alt-F2`).
 
 - Give the command `$ sudo su` to become root user.
@@ -92,8 +92,9 @@ copy-pasting), but are inherently straightforward.
 In order to facilitate copying of long strings of characters (such as
 commands and disk UUIDs) it is convenient to do the rest of the install
 from a remote machine.
-For this we need to enable ssh login on the running installer image:
-  
+For this we need to enable ssh login on the running Ubuntu Server installer
+image:
+
 - Edit the file `/etc/ssh/sshd_config` and enable the following
 
 ```
@@ -105,14 +106,19 @@ For this we need to enable ssh login on the running installer image:
 
 - Restart the ssh server with `# systemctl restart ssh`
 
+- The IP of the installer system network interface `eth0` (for ssh login from
+  remote machine with `ssh root@IP`) can be seen e.g. by doing `# ip a`.
+
 ### (3) Installation of rootfs
 
-From now on we assume that you have a root prompt on the installer image,
-either at the local machine (SBC/Tv-box) or at the remote machine (i.e. logged
-in to SBD/TV-box from remote via ssh).
+From now on we assume that you have a root prompt on the Ubuntu Server
+installer machine, either locally or via remote ssh login.
+
+All operations from now on are done at this root prompt.
 
 Download and extract the rootfs, and mount the root partition and boot
-partition (under `/mnt` and `/mnt/boot` on the installer image, respectively):
+partition (under `/mnt` and `/mnt/boot` on the installer machine,
+respectively):
 
 - `# cd /tmp`
 
@@ -128,7 +134,7 @@ partition (under `/mnt` and `/mnt/boot` on the installer image, respectively):
 
 ### (4) Set up some configuration files
 
-Prevent the flash-kernel package from being installed:
+We must prevent the flash-kernel package from being installed:
 
 - Open an editor (e.g. nano) and create a file
   `/mnt/etc/apt/preferences.d/no-flash-kernel` with the following contents
@@ -142,7 +148,7 @@ Pin-Priority: -1
 Prepare for network setup:
 
 - Edit the file `/mnt/etc/resolv.conf` to taste, e.g. like so
-  
+
 ```
 nameserver 192.168.0.1
 nameserver 8.8.8.8
@@ -220,8 +226,9 @@ It is time to finish the install and reboot.
 - `# shutdown -r now`
 
 The so installed Ubuntu server image should now be bootable with the grub boot
-entry label Ubuntu 5.15.0-41 created above and you should arrive at a text
-console prompt from which you can login as e.g. user memyselfandi.
+entry label `Ubuntu 5.15.0-41` created above and after booting it you should
+arrive at a text console prompt from which you can login as e.g. user
+memyselfandi.
 
 ### Post install 
 
