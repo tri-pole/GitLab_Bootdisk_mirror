@@ -188,7 +188,7 @@ UUID=uuid-partition1  /boot  ext4  defaults  0  2
 UUID=uuid-partition2  none   swap  sw  0  0
 ```
 
-### (5) Enter the chroot jail
+### (5) Enter the chroot jail and install the kernel
 
 Now it is time to enter into the chroot jail in which some further install
 commands are executed (mirror `/sys` `/proc` and `/dev`, and install kernel):
@@ -231,9 +231,9 @@ To set a new hostname (permanently) do this
 
 To install a desktop environment one can use tasksel
 
-`$ sudo install tasksel`
+`$ sudo apt install tasksel`
 
-`$sudo tasksel`
+`$ sudo tasksel`
 
 Alternatively, the various desktop environments can be installed directly with
 `apt`, for instance `apt install ubuntu-desktop` (for Gnome) or
