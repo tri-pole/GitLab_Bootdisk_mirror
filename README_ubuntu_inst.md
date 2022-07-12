@@ -4,18 +4,18 @@
 
 The Ubuntu installer for ARM64 (on Ubuntu server and on the live images)
 currently has a bug which prevents a clean install on some systems, for
-instance on some arm SBCs/TV boxes (which can otherwise run Ubuntu, e.g. the
+instance on some arm SBCs/TV-boxes (which otherwise can run Ubuntu, e.g. the
 live images).
-(A simple search for `"flash-kernel install bug"` will provide more info.)
 This bug is related to the package flash-kernel and the creation of the
 initramfs, and manifests itself by the installation aborting near the end
 which leaves the installed image in a non bootable state.
+(A simple search for `"flash-kernel install bug"` will provide more info.)
 
 The present writeup describes a workaround this bug and how do a clean install
-of e.g. Ubuntu Server ARM64 to e.g. a USB which can then be booted for
+of e.g. Ubuntu Server ARM64 to e.g. a USB stick, which can then be booted for
 instance with `u-root-bootdisk` (using a simple grub.cfg file on the USB).
-Our method relies on the Ubuntu installer iso but uses the iso image only to get
-up to a running state from which a rootfs from
+Our method relies on the Ubuntu installer iso but uses the iso image only to
+get up to a running state of the installer from which a rootfs from
 [Ubuntu Base](https://wiki.ubuntu.com/Base) can be straightforwardly installed.
 
 ## Scope
@@ -29,18 +29,18 @@ The method has been tested on a Ugoos AM6 plus (Amlogic s922x SoC).
 ## Prerequisites
 
 We assume that the user has available the Ubuntu Server installer iso for
-ARM64 copied (e.g. with the Linux `dd` command) to a USB stick. (A good
-starting point to look for the images is
-[cdimage.ubuntu.com](http://cdimage.ubuntu.com/).)
+ARM64 copied (e.g. with the Linux `dd` command) to a USB stick. (A good source
+for such images is [cdimage.ubuntu.com](http://cdimage.ubuntu.com/).)
 
-It is also good to have the target USB stick pre formatted.
+It is also good to have the target USB stick formatted in advance:
+
 Here, we are going to assume that the USB stick is 32GB (28.7G usable) and we
 let the Ubuntu system occupy the entire stick. (With `u-root-bootdisk` as boot
 mechanism, it is convenient to have `u-root-bootdisk` on a SD and then attach
 the various images to be booted to the USB ports or a USB hub.)
 
-Our partition layout is the following (partitioning created by e.g. `fdisk` for
-MBR or `gdisk` for GPT, and file system creation with e.g. `mkfs.ext4` and
+Our partition layout is the following (partitioning created by e.g. `fdisk`
+for MBR or `gdisk` for GPT, and file system creation with e.g. `mkfs.ext4` and
 `mkswap`):
 
 ```
@@ -52,6 +52,7 @@ Partition 3 (/dev/sdX3): ext4 (MBR partition type 83), 26.1G (for /)
 ```
 
 Take note of the UUIDs of these partitions (e.g. using `blkid`).
+
 We are going use the following shorthand labels (in the obvious notation) for
 these UUIDs in the text below
 
@@ -73,11 +74,11 @@ uuid-partition3
   network and select download repo. Stop when you reach the partitioning
   screen.
   
-- Switch to a virtual terminal, e.g. vt2 (by issuing Ctrl-Alt-F2).
+- Switch to a virtual terminal, e.g. vt2 (by issuing `Ctrl-Alt-F2`).
 
 - Give the command `$ sudo su` to become root user.
 
-- Set the root password for the installer image (not necessary but convenient)
+- Not necessary but convenient: Set the root password for the installer image
   by issuing the command `# passwd`
 
 ### Optional: Enable ssh login from remote machine.
@@ -101,7 +102,8 @@ For this we need to enable ssh login on the running installer image:
 ### Installation of rootfs
 
 From now on we assume that you have a root prompt on the installer image,
-either at the local machine or at the remote machine (i.e. logged in via ssh).
+either at the local machine (SBC/Tv-box) or at the remote machine (i.e. logged
+in to SBD/TV-box from remote via ssh).
 
 Download and extract the rootfs, and mount the root partition and boot
 partition (under `/mnt` and `/mnt/boot` on the installer image, respectively):
@@ -131,8 +133,9 @@ Pin: release *
 Pin-Priority: -1
 ```
 
-- Prepare for network setup.
-  Edit the file `/mnt/etc/resolv.conf` to taste, e.g. like so
+Prepare for network setup:
+
+- Edit the file `/mnt/etc/resolv.conf` to taste, e.g. like so
   
 ```
 nameserver 192.168.0.1
@@ -151,9 +154,9 @@ auto eth0
 iface eth0 inet dhcp
 ```
 
-- Setup a basic grub configuration:
+Setup a basic grub configuration:
 
-Create a file /mnt/boot/grub/grub.cfg with the following contents (recall
+- Create a file /mnt/boot/grub/grub.cfg with the following contents (recall
 how `uuid-partition3` was defined above)
 
 ```
@@ -166,7 +169,7 @@ initrd /initrd.img-5.15.0-41-generic
 }
 ```
 
-In the future (after these notes are written) the actual numbers of the
+Note: In the future (after these notes are written) the actual numbers of the
 kernel and initrd might have changed (check what they are in `/mnt/boot`).
 
 Set up an fstab file for the target image:
@@ -189,7 +192,7 @@ commands are executed (mirror `/sys` `/proc` and `/dev`, and install kernel):
 - `# apt-get update && apt-get install linux-{headers,image}-generic`
   (this will also install a lot of grub-* components but not flash-kernel).
 
-Install some more packages
+Install some more packages:
 
 - `# apt install man-db apt-utils sudo nano ifupdown ssh`
 
