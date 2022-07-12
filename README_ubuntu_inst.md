@@ -148,7 +148,7 @@ nameserver 192.168.0.1
 nameserver 8.8.8.8
 ```
 
-Create a basic netowrk interface setup file:
+Create a basic network interface setup file:
 
 - `# mkdir /mnt/etc/network`
 
@@ -162,7 +162,7 @@ iface eth0 inet dhcp
 
 Setup a basic grub configuration:
 
-- Create a file /mnt/boot/grub/grub.cfg with the following contents (recall
+- Create a file `/mnt/boot/grub/grub.cfg` with the following contents (recall
 how `uuid-partition3` was defined above)
 
 ```
@@ -221,7 +221,7 @@ It is time to finish the install and reboot.
 
 The so installed Ubuntu server image should now be bootable with the grub boot
 entry label Ubuntu 5.15.0-41 created above and you should arrive at a text
-console promt from which you can login as e.g. user memyselfandi.
+console prompt from which you can login as e.g. user memyselfandi.
 
 ### Post install 
 
