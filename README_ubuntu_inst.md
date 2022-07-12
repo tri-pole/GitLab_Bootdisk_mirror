@@ -1,0 +1,221 @@
+# ubuntu install
+
+## Background
+
+The Ubuntu installer for ARM64 (on Ubuntu server and on the live images)
+currently has a bug which prevents a clean install on some systems, for
+instance on some arm SBCs/TV boxes (which can otherwise run Ubuntu, e.g. the
+live images).
+(A simple search for `"flash-kernel install bug"` will provide more info.)
+This bug is related to the package flash-kernel and the creation of the
+initramfs, and manifests itself by the installation aborting near the end
+which leaves the installed image in a non bootable state.
+
+The present writeup describes a workaround this bug and how do a clean install
+of e.g. Ubuntu Server ARM64 to e.g. a USB which can then be booted for
+instance with `u-root-bootdisk` (using a simple grub.cfg file on the USB).
+Our method relies on the Ubuntu installer iso but uses the iso image only to get
+up to a running state from which a rootfs from
+[Ubuntu Base](https://wiki.ubuntu.com/Base) can be straightforwardly installed.
+
+## Scope
+
+These notes use Ubuntu Server as an example but the method should work for any
+Ubuntu Desktop ARM64 image as well (perhaps with minor modifications).
+(The Ubuntu server image can also easily be upgraded to a desktop image using
+e.g. `tasksel`.)
+The method has been tested on a Ugoos AM6 plus (Amlogic s922x SoC).
+
+## Prerequisites
+
+We assume that the user has available the Ubuntu Server installer iso for
+ARM64 copied (e.g. with the Linux `dd` command) to a USB stick. (A good
+starting point to look for the images is
+[cdimage.ubuntu.com](http://cdimage.ubuntu.com/).)
+
+It is also good to have the target USB stick pre formatted.
+Here, we are going to assume that the USB stick is 32GB (28.7G usable) and we
+let the Ubuntu system occupy the entire stick. (With `u-root-bootdisk` as boot
+mechanism, it is convenient to have `u-root-bootdisk` on a SD and then attach
+the various images to be booted to the USB ports or a USB hub.)
+
+Our partition layout is the following (partitioning created by e.g. `fdisk` for
+MBR or `gdisk` for GPT, and file system creation with e.g. `mkfs.ext4` and
+`mkswap`):
+
+```
+/dev/sdX:
+
+Partition 1 (/dev/sdX1): ext4 (MBR partition type 83), 600M  (for /boot)
+Partition 2 (/dev/sdX2): swap (MBR partition type 82), 2G    (for swap part.)
+Partition 3 (/dev/sdX3): ext4 (MBR partition type 83), 26.1G (for /)
+```
+
+Take note of the UUIDs of these partitions (e.g. using `blkid`).
+We are going use the following shorthand labels (in the obvious notation) for
+these UUIDs in the text below
+
+```
+uuid-partition1
+
+uuid-partition2
+
+uuid-partition3
+```
+
+## Steps for installation
+
+### Start the installer
+
+- Boot the Ubuntu installer iso image.
+
+- Do the first few steps; set installation language, set keyboard, set up
+  network and select download repo. Stop when you reach the partitioning
+  screen.
+  
+- Switch to a virtual terminal, e.g. vt2 (by issuing Ctrl-Alt-F2).
+
+- Give the command `$ sudo su` to become root user.
+
+- Set the root password for the installer image (not necessary but convenient)
+  by issuing the command `# passwd`
+
+### Optional: Enable ssh login from remote machine.
+
+In order to facilitate copying of long strings of characters (such as
+commands and disk UUIDs) it is convenient to do the rest of the install
+from a remote machine.
+For this we need to enable ssh login on the running installer image:
+  
+- Edit the file `/etc/ssh/sshd_config` and enable the following
+
+```
+  PermitRootLogin yes
+  PasswordAuthentication yes
+```
+
+- Check that the edit was clean by doing `# ssh -t` (no news is good news).
+
+- Restart the ssh server with `# systemctl restart ssh`
+
+### Installation of rootfs
+
+From now on we assume that you have a root prompt on the installer image,
+either at the local machine or at the remote machine (i.e. logged in via ssh).
+
+Download and extract the rootfs, and mount the root partition and boot
+partition (under `/mnt` and `/mnt/boot` on the installer image, respectively):
+
+- `# cd /tmp`
+
+- `# wget https://cdimage.ubuntu.com/ubuntu-base/jammy/daily/current/jammy-base-arm64.tar.gz`
+
+- `# mount /dev/sdX3 /mnt`
+
+- `# cd /mnt`
+
+- `# tar -xf /tmp/jammy-base-arm64.tar.gz`
+
+- `# mount /dev/sdX1 /mnt/boot`
+
+### Set up some configuration files
+
+Prevent the flash-kernel package from being installed:
+
+- Open an editor (e.g. nano) and create a file
+  `/mnt/etc/apt/preferences.d/no-flash-kernel` with the following contents
+
+```
+Package: flash-kernel
+Pin: release *
+Pin-Priority: -1
+```
+
+- Prepare for network setup.
+  Edit the file `/mnt/etc/resolv.conf` to taste, e.g. like so
+  
+```
+nameserver 192.168.0.1
+nameserver 8.8.8.8
+```
+
+Create a basic netowrk interface setup file:
+
+- `# mkdir /mnt/etc/network`
+
+and create a file `/mnt/etc/network/interfaces` with the following contents
+
+```
+allow-hotplug eth0
+auto eth0
+iface eth0 inet dhcp
+```
+
+- Setup a basic grub configuration:
+
+Create a file /mnt/boot/grub/grub.cfg with the following contents (recall
+how `uuid-partition3` was defined above)
+
+```
+menuentry "Ubuntu 5.15.0-41" {
+
+# devicetree /meson-g12b-ugoos-am6.dtb
+linux /vmlinuz-5.15.0-41-generic root=UUID=uuid-partition3
+initrd /initrd.img-5.15.0-41-generic
+
+}
+```
+
+In the future (after these notes are written) the actual numbers of the
+kernel and initrd might have changed (check what they are in `/mnt/boot`).
+
+Set up an fstab file for the target image:
+
+- Edit the file `/mnt/etc/fstab` to read
+
+```
+UUID=uuid-partition3  /      ext4  errors=remount-ro  0  1
+UUID=uuid-partition1  /boot  ext4  defaults  0  2
+UUID=uuid-partition2  none   swap  sw  0  0
+```
+
+### Enter the chroot jail
+
+Now it is time to enter into the chroot jail in which some further install
+commands are executed (mirror `/sys` `/proc` and `/dev`, and install kernel):
+
+- `# for f in /sys /proc /dev ; do mount --rbind $f /mnt/$f ; done ; chroot /mnt`
+
+- `# apt-get update && apt-get install linux-{headers,image}-generic`
+  (this will also install a lot of grub-* components but not flash-kernel).
+
+Install some more packages
+
+- `# apt install man-db apt-utils sudo nano ifupdown ssh`
+
+Add local user (e.g. memyselfandi) and add this user to the `adm` and `sudo`
+groups:
+
+- `# usermod -a -G adm,sudo memyselfandi`
+
+If you want to have the root user enabled on the target image then also do:
+
+- `# passwd`
+
+### Exit the chroot jail and reboot
+
+It is time to finish the install and reboot.
+
+- `# exit`
+
+- `# shutdown -r now`
+
+The so installed Ubuntu server image should now be bootable with the grub boot
+entry label Ubuntu 5.15.0-41 created above and you should arrive at a text
+console promt from which you can login as e.g. user memyselfandi.
+
+### Post install 
+
+To set a new hostname (permanently) do this
+
+`sudo hostnamectl set-hostname myhostname`
