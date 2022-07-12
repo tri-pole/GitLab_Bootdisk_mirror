@@ -15,33 +15,35 @@ The present writeup describes a workaround this bug and how do a clean install
 of e.g. Ubuntu Server ARM64 to e.g. a USB stick, which can then be booted for
 instance with `u-root-bootdisk` (using a simple grub.cfg file on the USB).
 Our method relies on the Ubuntu installer iso but uses the iso image only to
-get up to a running state of the installer from which a rootfs from
+get up to a running state of the installer from which a Ubuntu rootfs from
 [Ubuntu Base](https://wiki.ubuntu.com/Base) can be straightforwardly installed.
 
 ## Scope
 
 These notes use Ubuntu Server as an example but the method should work for any
-Ubuntu Desktop ARM64 image as well (perhaps with minor modifications).
-(The Ubuntu server image can also easily be upgraded to a desktop image using
-e.g. `tasksel`.)
+Ubuntu Desktop ARM64 image as well, provided a rootfs tarball is available
+(perhaps with some minor modifications).
+An Ubuntu server  image can moreover easily be upgraded to a desktop image
+using e.g. `tasksel` or directy via `apt` (e.g. `apt install ubuntu-desktop`).
 The method has been tested on a Ugoos AM6 plus (Amlogic s922x SoC).
 
 ## Prerequisites
 
 We assume that the user has available the Ubuntu Server installer iso for
-ARM64 copied (e.g. with the Linux `dd` command) to a USB stick. (A good source
-for such images is [cdimage.ubuntu.com](http://cdimage.ubuntu.com/).)
+ARM64 copied (e.g. with the Linux `dd` command) to a USB stick. (A good
+source for such images is [cdimage.ubuntu.com](http://cdimage.ubuntu.com/).)
 
-It is also good to have the target USB stick formatted in advance:
+It is also good to have the install target USB stick formatted in advance:
 
-Here, we are going to assume that the USB stick is 32GB (28.7G usable) and we
-let the Ubuntu system occupy the entire stick. (With `u-root-bootdisk` as boot
-mechanism, it is convenient to have `u-root-bootdisk` on a SD and then attach
-the various images to be booted to the USB ports or a USB hub.)
+Here, we are going to assume that the install target USB stick is 32GB (28.7G
+usable) and we let the Ubuntu system occupy the entire stick. (With
+`u-root-bootdisk` as boot mechanism, it is convenient to have `u-root-bootdisk`
+on a SD and then attach to the USB ports or a USB hub the various Linux images
+to be booted.)
 
-Our partition layout is the following (partitioning created by e.g. `fdisk`
-for MBR or `gdisk` for GPT, and file system creation with e.g. `mkfs.ext4` and
-`mkswap`):
+Our partition layout for the install target USB is the following (with
+partitions created by e.g. `fdisk` for MBR or `gdisk` for GPT, and file system
+created with e.g. `mkfs.ext4` and `mkswap`):
 
 ```
 /dev/sdX:
@@ -51,10 +53,11 @@ Partition 2 (/dev/sdX2): swap (MBR partition type 82), 2G    (for swap part.)
 Partition 3 (/dev/sdX3): ext4 (MBR partition type 83), 26.1G (for /)
 ```
 
-Take note of the UUIDs of these partitions (e.g. using `blkid`).
+The UUIDs of these partitions will be used later below so it is assumed that
+these UUIDs have been recorded (using e.g. the command `blkid`).
 
-We are going use the following shorthand labels (in the obvious notation) for
-these UUIDs in the text below
+For brevity, we are going use the following shorthand labels (in the obvious
+notation) for the UUIDs of the three partitions:
 
 ```
 uuid-partition1
@@ -66,7 +69,10 @@ uuid-partition3
 
 ## Steps for installation
 
-### Start the installer
+The installation proceeds in six steps, and require some typing (or
+copy-pasting), but are inherently straightforward.
+
+### (1) Start the installer
 
 - Boot the Ubuntu installer iso image.
 
@@ -81,7 +87,7 @@ uuid-partition3
 - Not necessary but convenient: Set the root password for the installer image
   by issuing the command `# passwd`
 
-### Optional: Enable ssh login from remote machine.
+### (2) Optional: Enable ssh login from remote machine
 
 In order to facilitate copying of long strings of characters (such as
 commands and disk UUIDs) it is convenient to do the rest of the install
@@ -99,7 +105,7 @@ For this we need to enable ssh login on the running installer image:
 
 - Restart the ssh server with `# systemctl restart ssh`
 
-### Installation of rootfs
+### (3) Installation of rootfs
 
 From now on we assume that you have a root prompt on the installer image,
 either at the local machine (SBC/Tv-box) or at the remote machine (i.e. logged
@@ -120,7 +126,7 @@ partition (under `/mnt` and `/mnt/boot` on the installer image, respectively):
 
 - `# mount /dev/sdX1 /mnt/boot`
 
-### Set up some configuration files
+### (4) Set up some configuration files
 
 Prevent the flash-kernel package from being installed:
 
@@ -182,14 +188,14 @@ UUID=uuid-partition1  /boot  ext4  defaults  0  2
 UUID=uuid-partition2  none   swap  sw  0  0
 ```
 
-### Enter the chroot jail
+### (5) Enter the chroot jail
 
 Now it is time to enter into the chroot jail in which some further install
 commands are executed (mirror `/sys` `/proc` and `/dev`, and install kernel):
 
 - `# for f in /sys /proc /dev ; do mount --rbind $f /mnt/$f ; done ; chroot /mnt`
 
-- `# apt-get update && apt-get install linux-{headers,image}-generic`
+- `# apt update && apt install linux-{headers,image}-generic`
   (this will also install a lot of grub-* components but not flash-kernel).
 
 Install some more packages:
@@ -205,7 +211,7 @@ If you want to have the root user enabled on the target image then also do:
 
 - `# passwd`
 
-### Exit the chroot jail and reboot
+### (6) Exit the chroot jail and reboot
 
 It is time to finish the install and reboot.
 
@@ -221,4 +227,14 @@ console promt from which you can login as e.g. user memyselfandi.
 
 To set a new hostname (permanently) do this
 
-`sudo hostnamectl set-hostname myhostname`
+`$ sudo hostnamectl set-hostname myhostname`
+
+To install a desktop environment one can use tasksel
+
+`$ sudo install tasksel`
+
+`$sudo tasksel`
+
+Alternatively, the various desktop environments can be installed directly with
+`apt`, for instance `apt install ubuntu-desktop` (for Gnome) or
+`apt install mate-desktop` (for MATE).
