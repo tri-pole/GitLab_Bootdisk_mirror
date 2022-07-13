@@ -96,6 +96,11 @@ This works as intended on the two platforms tested (see below) but for other
 boxes some experimentation may be needed with e.g. the bootdisk on USB, with
 different u-boot.ext, with target image(s) connected from boot or only after
 reaching u-root prompt.
+Finally, the ability to boot from external media (sometimes called
+"multiboot") for the SBC or TV-box must have been enabled.
+For TV-boxes this often amounts to going through a "toothpick" reset with an
+appropriate Linux image attached (descriptions of this procedure are easy to
+find).
 
 Platforms tested
 ----------------

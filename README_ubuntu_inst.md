@@ -1,4 +1,4 @@
-# ubuntu install
+# Ubuntu install
 
 ## Background
 
@@ -70,30 +70,34 @@ uuid-partition3
 ## Steps for installation
 
 The installation proceeds in six steps, and require some typing (or
-copy-pasting), but are inherently straightforward.
+copy-pasting), but is inherently straightforward.
 
 ### (1) Start the installer
 
 - Boot the Ubuntu Server installer iso image.
 
 - Go through the first few steps of the installation; set installation
-  language, set keyboard, set up network and select download repo.
-  Stop when you reach the partitioning (install target) screen.
+  language, set keyboard, set type of install, set up network and select
+  Ubuntu archive mirror.
+  Stop when you reach the partitioning (Guided storage configuration) screen.
 
-- Switch to a virtual terminal, e.g. vt2 (by issuing `Ctrl-Alt-F2`).
+- Switch to a virtual terminal, e.g. vt2 (by issuing `Alt-F2`).
 
 - Give the command `$ sudo su` to become root user.
 
-- Not necessary but convenient: Set the root password for the installer image
-  by issuing the command `# passwd`
+Necessary only if you use ssh remote login (see below) for the rest of the
+install:
+
+- Set the root password for the installer image by issuing the command
+  `# passwd`
 
 ### (2) Optional: Enable ssh login from remote machine
 
 In order to facilitate copying of long strings of characters (such as
 commands and disk UUIDs) it is convenient to do the rest of the install
 from a remote machine.
-For this we need to enable ssh login on the running Ubuntu Server installer
-image:
+For this we need to enable ssh login on the machine running the Ubuntu Server
+installer image:
 
 - Edit the file `/etc/ssh/sshd_config` and enable the following
 
@@ -182,7 +186,8 @@ initrd /initrd.img-5.15.0-41-generic
 ```
 
 Note: In the future (after these notes are written) the actual numbers of the
-kernel and initrd might have changed (check what they are in `/mnt/boot`).
+kernel and initrd might have changed (check what they are in `/mnt/boot` after
+completing step (5) below).
 
 Set up an fstab file for the target image:
 
@@ -197,7 +202,7 @@ UUID=uuid-partition2  none   swap  sw  0  0
 ### (5) Enter the chroot jail and install the kernel
 
 Now it is time to enter into the chroot jail in which some further install
-commands are executed (mirror `/sys` `/proc` and `/dev`, and install kernel):
+commands are executed:
 
 - `# for f in /sys /proc /dev ; do mount --rbind $f /mnt/$f ; done ; chroot /mnt`
 
@@ -219,13 +224,13 @@ If you want to have the root user enabled on the target image then also do:
 
 ### (6) Exit the chroot jail and reboot
 
-It is time to finish the install and reboot.
+It is time to finish the install and reboot:
 
 - `# exit`
 
 - `# shutdown -r now`
 
-The so installed Ubuntu server image should now be bootable with the grub boot
+The so installed Ubuntu Server image should now be bootable with the grub boot
 entry label `Ubuntu 5.15.0-41` created above and after booting it you should
 arrive at a text console prompt from which you can login as e.g. user
 memyselfandi.
@@ -245,3 +250,10 @@ To install a desktop environment one can use tasksel
 Alternatively, the various desktop environments can be installed directly with
 `apt`, for instance `apt install ubuntu-desktop` (for Gnome) or
 `apt install mate-desktop` (for MATE).
+
+Note: The grub file that was set up in step (4) above only works for the kernel
+installed in step (5) and if the kernel is later upgraded the grub file needs
+to be adjusted accordingly.
+A simple way to do this is to just add or edit entries in grub.cfg manually
+but the process can of course also be automated (but this is above my pay
+grade).
