@@ -213,8 +213,8 @@ Install some more packages:
 
 - `# apt install man-db apt-utils sudo nano ifupdown ssh`
 
-Add local user (e.g. memyselfandi) and add this user to the `adm` and `sudo`
-groups:
+Add an ordinary user (e.g. memyselfandi) and add this user to the `adm` and
+`sudo` groups:
 
 - `# usermod -a -G adm,sudo memyselfandi`
 
@@ -235,7 +235,7 @@ entry label `Ubuntu 5.15.0-41` created above and after booting it you should
 arrive at a text console prompt from which you can login as e.g. user
 memyselfandi.
 
-### Post install 
+### Post install
 
 To set a new hostname (permanently) do this
 
@@ -252,8 +252,8 @@ Alternatively, the various desktop environments can be installed directly with
 `apt install mate-desktop` (for MATE).
 
 Note: The grub file that was set up in step (4) above only works for the kernel
-installed in step (5) and if the kernel is later upgraded the grub file needs
-to be adjusted accordingly.
+installed in step (5) and if the kernel name is different (e.g. because of a
+later kernel upgrade) the grub file needs to be adjusted accordingly.
 A simple way to do this is to just add or edit entries in grub.cfg manually
 but the process can of course also be automated (but this is above my pay
 grade).
