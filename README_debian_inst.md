@@ -176,22 +176,20 @@ Add the security updates to the apt sources:
   `deb http://security.debian.org/ bullseye-security main`
   to /mnt/etc/apt/sources.list
 
-### (5) Enter the chroot jail and install some more packages
+### (5) Enter the chroot jail and install the kernel
 
 Now it is time to enter into the chroot jail in which some further install
 commands are executed:
 
 - `# for f in /sys /proc /dev ; do mount --rbind $f /mnt/$f ; done ; chroot /mnt`
 
+- `# apt update && apt install linux-{headers,image}-arm64`
+
 - `# apt install locales`
 
 - `# apt install console-setup`
 
 - `# apt install ntp sudo`
-
-(The mirroring of `/sys`, `/proc` and `/dev` is not necessary here since we
-used `debootstrap` above but it can be useful to keep if one wants to add
-packages and for some reason or another rebuild the initramfs here.)
 
 Add an ordinary user (e.g. memyselfandi) and add this user to the `adm` and
 `sudo` groups:
@@ -231,53 +229,3 @@ installed in step (5) and if the kernel name is different (e.g. because of a
 later kernel upgrade) the grub file needs to be adjusted accordingly.
 A simple way to do this is to just add or edit entries in grub.cfg manually but
 the process can of course also be automated (by some clever person, not me).
-
-------------
-
-at first remote login:
-
-apt install debootstrap
-
-/dev/sdf1: UUID="d5c00c97-5064-4ed8-bf4a-5a21890f6013" BLOCK_SIZE="4096" TYPE="ext4" PARTUUID="3762ceb6-01"
-/dev/sdf2: UUID="8379e18c-9c1e-40c9-98c4-9bf731f53e6b" TYPE="swap" PARTUUID="3762ceb6-02"
-/dev/sdf3: UUID="e5b2e942-0988-418f-b87e-d055b0861392" BLOCK_SIZE="4096" TYPE="ext4" PARTUUID="3762ceb6-03"
-
-mount /dev/sdc3 /mnt/
-
-debootstrap --arch arm64 bullseye /mnt http://ftp.us.debian.org/debian
-
-mount /dev/sdc1 /mnt/boot/
-
-do not edit /mnt/etc/resolv.conf (managed by resolvconf)
-
-edit /etc/network/interfaces
-
-mkdir /mnt/boot/grub
-
-nano /mnt/boot/grub/grub.cfg
-
-nano /mnt/etc/fstab
-
-for f in /sys /proc /dev ; do mount --rbind $f /mnt/$f ; done ; chroot /mnt
-
-add
-deb http://security.debian.org/ bullseye-security main
-to /etc/apt/sources.list
-
-apt install locales
-dpkg-reconfigure locales
-
-apt install console-setup
-
-apt install ntp sudo
-
-adduser memyselfandi
-usermod -a -G sudo memyselfandi
-
-exit (from chroot jail)
-shutdown -r now
-
-
-Post install
-echo DebianHostName > /etc/hostname
-
