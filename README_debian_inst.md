@@ -69,7 +69,7 @@ uuid-partition3
 
 ## Steps for installation
 
-The installation proceeds in six steps, and require some typing (or
+The installation proceeds in seven steps, and require some typing (or
 copy-pasting), but is inherently straightforward.
 
 ### (1) Start the installer
@@ -141,25 +141,6 @@ auto eth0
 iface eth0 inet dhcp
 ```
 
-Setup a basic grub configuration:
-
-- Create a file `/mnt/boot/grub/grub.cfg` with the following contents (recall
-how `uuid-partition3` was defined above)
-
-```
-menuentry "Debian 5.10.0-16" {
-
-# devicetree /meson-g12b-ugoos-am6.dtb
-linux /vmlinuz-5.10.0-16-arm64 root=UUID=uuid-partition3
-initrd /initrd.img-5.10.0-16-arm64
-
-}
-```
-
-Note: In the future (after these notes are written) the actual numbers of the
-kernel and initrd might have changed (check what they are in `/mnt/boot` after
-completing step (5) below).
-
 Set up an fstab file for the target image:
 
 - Edit the file `/mnt/etc/fstab` to read
@@ -202,11 +183,33 @@ If you want to have the root user enabled on the target image then also do:
 
 - `# passwd`
 
-### (6) Exit the chroot jail and reboot
+### (6) Exit the chroot jail and set up a grub.cfg file
 
-It is time to finish the install and reboot:
+Exit the chroot jail:
 
 - `# exit`
+
+Setup a basic grub configuration:
+
+- Create a file `/mnt/boot/grub/grub.cfg` with the following contents (recall
+how `uuid-partition3` was defined above)
+
+```
+menuentry "Debian 5.10.0-16" {
+
+# devicetree /meson-g12b-ugoos-am6.dtb
+linux /vmlinuz-5.10.0-16-arm64 root=UUID=uuid-partition3
+initrd /initrd.img-5.10.0-16-arm64
+
+}
+```
+
+Note: The actual numbers of the kernel and initrd might be different on your
+install (check what they are in `/mnt/boot`).
+
+### (7) Reboot
+
+It is time to finish the install and reboot:
 
 - `# shutdown -r now`
 
@@ -224,7 +227,7 @@ To install a desktop environment one can use tasksel
 
 `$ sudo tasksel`
 
-Note: The grub file that was set up in step (4) above only works for the kernel
+Note: The grub file that was set up in step (6) above only works for the kernel
 installed in step (5) and if the kernel name is different (e.g. because of a
 later kernel upgrade) the grub file needs to be adjusted accordingly.
 A simple way to do this is to just add or edit entries in grub.cfg manually but

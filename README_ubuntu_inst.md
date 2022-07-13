@@ -69,7 +69,7 @@ uuid-partition3
 
 ## Steps for installation
 
-The installation proceeds in six steps, and require some typing (or
+The installation proceeds in seven steps, and require some typing (or
 copy-pasting), but is inherently straightforward.
 
 ### (1) Start the installer
@@ -111,7 +111,7 @@ installer image:
 - Restart the ssh server with `# systemctl restart ssh`
 
 - The IP of the installer system network interface `eth0` (for ssh login from
-  remote machine with `ssh root@IP`) can be seen e.g. by doing `# ip a`.
+  remote machine with `ssh root@IP`) can be seen e.g. by doing `# ip a`
 
 ### (3) Installation of rootfs
 
@@ -136,6 +136,9 @@ respectively):
 
 - `# mount /dev/sdX1 /mnt/boot`
 
+(Variations on a theme: The rootfs can also be put in place by using
+`debootstrap`; see the README file for Debian installation.)
+
 ### (4) Set up some configuration files
 
 We must prevent the flash-kernel package from being installed:
@@ -158,36 +161,17 @@ nameserver 192.168.0.1
 nameserver 8.8.8.8
 ```
 
-Create a basic network interface setup file:
+Create a basic network interface setup file
 
 - `# mkdir /mnt/etc/network`
 
-and create a file `/mnt/etc/network/interfaces` with the following contents
+and create a file `/mnt/etc/network/interfaces` with the following contents:
 
 ```
 allow-hotplug eth0
 auto eth0
 iface eth0 inet dhcp
 ```
-
-Setup a basic grub configuration:
-
-- Create a file `/mnt/boot/grub/grub.cfg` with the following contents (recall
-how `uuid-partition3` was defined above)
-
-```
-menuentry "Ubuntu 5.15.0-41" {
-
-# devicetree /meson-g12b-ugoos-am6.dtb
-linux /vmlinuz-5.15.0-41-generic root=UUID=uuid-partition3
-initrd /initrd.img-5.15.0-41-generic
-
-}
-```
-
-Note: In the future (after these notes are written) the actual numbers of the
-kernel and initrd might have changed (check what they are in `/mnt/boot` after
-completing step (5) below).
 
 Set up an fstab file for the target image:
 
@@ -213,7 +197,7 @@ Install some more packages:
 
 - `# apt install man-db apt-utils sudo nano ifupdown ssh`
 
-Add an ordinary user (e.g. memyselfandi) and add this user to the `adm` and
+Create an ordinary user (e.g. memyselfandi) and add this user to the `adm` and
 `sudo` groups:
 
 - `# usermod -a -G adm,sudo memyselfandi`
@@ -222,11 +206,33 @@ If you want to have the root user enabled on the target image then also do:
 
 - `# passwd`
 
-### (6) Exit the chroot jail and reboot
+### (6) Exit the chroot jail and set up a grub.cfg file
+
+Exit the chroot jail:
+
+ - `# exit`
+
+Setup a basic grub configuration:
+
+- Create a file `/mnt/boot/grub/grub.cfg` with the following contents (recall
+how `uuid-partition3` was defined above):
+
+```
+menuentry "Ubuntu 5.15.0-41" {
+
+# devicetree /meson-g12b-ugoos-am6.dtb
+linux /vmlinuz-5.15.0-41-generic root=UUID=uuid-partition3
+initrd /initrd.img-5.15.0-41-generic
+
+}
+```
+
+Note: The actual numbers of the kernel and initrd might be different on your
+install (check what they are in `/mnt/boot`).
+
+### (7) Reboot
 
 It is time to finish the install and reboot:
-
-- `# exit`
 
 - `# shutdown -r now`
 
@@ -251,7 +257,7 @@ Alternatively, the various desktop environments can be installed directly with
 `apt`, for instance `apt install ubuntu-desktop` (for Gnome) or
 `apt install mate-desktop` (for MATE).
 
-Note: The grub file that was set up in step (4) above only works for the kernel
+Note: The grub file that was set up in step (6) above only works for the kernel
 installed in step (5) and if the kernel name is different (e.g. because of a
 later kernel upgrade) the grub file needs to be adjusted accordingly.
 A simple way to do this is to just add or edit entries in grub.cfg manually
