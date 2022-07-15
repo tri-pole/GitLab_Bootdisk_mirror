@@ -38,8 +38,8 @@
 # (2) Switch to a virtial terminal (e.g. At-F2).
 # (3) Become root (sudo su).
 # (4) Download this script:
-#     wget https://gitlab.com/tripole-inc/bootdisk/-/blob/main/lnxarm64inst.bash
-#     Make it executable: chmod +x lnxarm64inst.bash
+#     wget https://gitlab.com/tripole-inc/bootdisk/-/raw/main/debuntu_inst.bash
+#     Make it executable: chmod +x debuntu_inst.bash
 # (5) Identify the install target USB device, e.g. /dev/sdX, among the devices
 #     attached, e.g. by issuing the command lsblk and looking at the output.
 # (6) Run the script with install target device and distro as arguments, e.g.:
