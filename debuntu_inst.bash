@@ -43,7 +43,7 @@
 # (5) Identify the install target USB device, e.g. /dev/sdX, among the devices
 #     attached, e.g. by issuing the command lsblk and looking at the output.
 # (6) Run the script with install target device and distro as arguments, e.g.:
-#     ./lnxarm64inst.bash /dev/sdX debian
+#     ./debuntu_inst.bash /dev/sdX debian
 #     (For available choices here, see below.) This will install the selected
 #     distro into /dev/sdX with the partitioning layout above.
 
