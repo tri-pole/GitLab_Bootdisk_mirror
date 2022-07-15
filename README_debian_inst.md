@@ -230,5 +230,7 @@ To install a desktop environment one can use tasksel
 Note: The grub file that was set up in step (6) above only works for the kernel
 installed in step (5) and if the kernel name is different (e.g. because of a
 later kernel upgrade) the grub file needs to be adjusted accordingly.
-A simple way to do this is to just add or edit entries in grub.cfg manually but
-the process can of course also be automated (by some clever person, not me).
+Also, we have not set up a dtb file in grub.cfg (only a placeholder) since
+when booting with `u-root-bootdisk` the dtb used by `u-root` is inherited.
+In general, however, a dtb must be present on the install target disk and
+specified in grub.cfg.

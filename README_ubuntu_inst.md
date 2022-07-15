@@ -200,6 +200,8 @@ Install some more packages:
 Create an ordinary user (e.g. memyselfandi) and add this user to the `adm` and
 `sudo` groups:
 
+- `# adduser memyselfandi`
+
 - `# usermod -a -G adm,sudo memyselfandi`
 
 If you want to have the root user enabled on the target image then also do:
@@ -260,6 +262,8 @@ Alternatively, the various desktop environments can be installed directly with
 Note: The grub file that was set up in step (6) above only works for the kernel
 installed in step (5) and if the kernel name is different (e.g. because of a
 later kernel upgrade) the grub file needs to be adjusted accordingly.
-A simple way to do this is to just add or edit entries in grub.cfg manually
-but the process can of course also be automated (but this is above my pay
-grade).
+Also, we have not set up a dtb file in grub.cfg (only a placeholder) since
+when booting with `u-root-bootdisk` the dtb used by `u-root` is inherited.
+In general, however, a dtb must be present on the install target disk and
+specified in grub.cfg.
+

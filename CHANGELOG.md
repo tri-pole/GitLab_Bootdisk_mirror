@@ -21,3 +21,10 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
 
 ### Removed
  - One misplaced bmp file.
+
+# debuntu_inst.bash:
+
+## [v0.1] - 22-07-15
+
+### Added
+ - First commit.
