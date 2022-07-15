@@ -14,7 +14,7 @@ General info about the bootdisk(s) `u-root-bootdisk` can be found in the
 associated README file and the other README files contain information
 specific to different install methods or distros.
 
-There is also a script `debuntu_inst,bash` that can be used to automate the
+There is also a script `debuntu_inst.bash` that can be used to automate the
 procedure of installing Ubuntu or Debian for ARM64 to e.g. a USB by using
 debootstrap from e.g. a running Ubuntu Server live iso image.
 This workaround (with a script) is needed for many TV-boxes/SBSc since both the
