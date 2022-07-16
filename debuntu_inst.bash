@@ -29,13 +29,13 @@
 #
 # The sizes can be different but the layout is fixed. (The /boot partition
 # must be formatted for ext4 booting but / can be anything that Ubuntu/Debian
-# can mount and use.)
+# can mount and use but then /etc/fstab must then be adjusted accordingly.)
 
 # - Usage of the script -
 # (0) Prepare an install target USB according to the recipe above.
 # (1) Boot up the Ubuntu Server install iso (e.g. using u-root-bootdisk) and go
 #     through the first steps indicated above (stop at partitioning screen).
-# (2) Switch to a virtial terminal (e.g. At-F2).
+# (2) Switch to a virtial terminal (e.g. Alt-F2).
 # (3) Become root (sudo su).
 # (4) Download this script:
 #     wget https://gitlab.com/tripole-inc/bootdisk/-/raw/main/debuntu_inst.bash
@@ -50,7 +50,8 @@
 # Notes: We do not set up a dtb file with the install (there is a placeholder
 # in grub.cfg though) since this is not currently used with u-root-bootdisk.
 # It is easy to modify the script to add more packages or tweak the debootstrap
-# procedure. This install script has been tested on an Ugoos Am6 plus.
+# procedure. The script installs the package debootstrap and possibly the
+# package debian-archive-keyring.
 
 # ToDo:
 # - Set up networking properly for Ubuntu install (currently we use ifupdown).
@@ -185,6 +186,7 @@ apt update
 apt -y install linux-image-generic
 # apt -y install linux-headers-generic
 apt -y install man-db apt-utils sudo nano ssh ifupdown
+apt -y install dialog keyboard-configuration
 adduser ${loc_username}
 usermod -a -G adm,sudo ${loc_username}
 EOF
