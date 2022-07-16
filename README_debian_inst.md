@@ -24,7 +24,7 @@ image.)
 By following these notes you will be able to install and get up and running
 a base Debian 11 system, without graphics.
 However, it is a simple matter to add a graphics environment to the
-installation by using e.g. `tasksel` (see below).
+installation by using e.g. `aptitude` (see below).
 The method has been tested on a Ugoos AM6 plus.
 
 ## Prerequisites
@@ -223,9 +223,11 @@ To set a new hostname, simply do
 
 `$ sudo echo echo myhostname > /etc/hostname`
 
-To install a desktop environment one can use tasksel
+To install a desktop environment one can use `aptitude`
 
-`$ sudo tasksel`
+`$ sudo apt install aptitude`
+
+and then from Tasks -> End user in `aptitude` menu select the appropriate task.
 
 Note: The grub file that was set up in step (6) above only works for the kernel
 installed in step (5) and if the kernel name is different (e.g. because of a

@@ -24,7 +24,7 @@ These notes use Ubuntu Server as an example but the method should work to
 install (perhaps with minor modifications) any other Ubuntu ARM64 flavor,
 provided a rootfs tarball is available.
 An Ubuntu server image can moreover easily be upgraded to a desktop image
-using e.g. `tasksel` or directy via `apt` (e.g. `apt install ubuntu-desktop`).
+using e.g. via `apt` (e.g. `apt install ubuntu-desktop`).
 The method has been tested on a Ugoos AM6 plus (Amlogic s922x SoC).
 
 ## Prerequisites
@@ -245,15 +245,21 @@ memyselfandi.
 
 ### Post install
 
+The install set obtained by a default Ubuntu debootstrap is rather small and
+therefore the first thing you might want to on a first login is to run the
+command `unminimize`.
+This will expand the set of installed packages to a more reasonable set for
+general use.
+
 To set a new hostname (permanently) do this
 
 `$ sudo hostnamectl set-hostname myhostname`
 
-To install a desktop environment one can use tasksel
+To install a desktop environment one can use `aptitude`
 
-`$ sudo apt install tasksel`
+`$ sudo apt install aptitude`
 
-`$ sudo tasksel`
+and then from Tasks -> End user in `aptitude` menu select the appropriate task.
 
 Alternatively, the various desktop environments can be installed directly with
 `apt`, for instance `apt install ubuntu-desktop` (for Gnome) or
