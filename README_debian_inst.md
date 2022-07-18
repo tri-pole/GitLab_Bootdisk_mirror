@@ -221,7 +221,7 @@ at a text console prompt from which you can login as e.g. user memyselfandi.
 
 To set a new hostname, simply do
 
-`$ sudo echo echo myhostname > /etc/hostname`
+`$ sudo echo myhostname > /etc/hostname`
 
 To install a desktop environment one can use `aptitude`
 

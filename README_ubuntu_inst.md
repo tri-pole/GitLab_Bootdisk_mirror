@@ -245,9 +245,12 @@ memyselfandi.
 
 ### Post install
 
-The install set obtained by a default Ubuntu debootstrap is rather small and
+The install set obtained by a default Ubuntu rootfs is rather small and
 therefore the first thing you might want to on a first login is to run the
-command `unminimize`.
+follwwing command
+
+`$ sudo unminimize`
+
 This will expand the set of installed packages to a more reasonable set for
 general use.
 

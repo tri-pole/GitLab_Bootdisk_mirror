@@ -16,7 +16,8 @@ to different install methods or distros.
 
 There is also a script `debuntu_inst.bash` that can be used to automate the
 procedure of installing Ubuntu or Debian for ARM64 to a USB or SD by using
-debootstrap from e.g. a running Ubuntu Server live iso image.
-This workaround (with a script) is needed for many TV-boxes/SBSc since both the
-Ubuntu and Debian installers for ARM64 currently have bugs which prevent them
-from working correctly on these platforms.
+debootstrap from e.g. a running Ubuntu Server live iso image. Alternatively,
+the script can produce a compressed image file. The workaround with a script
+is needed for many TV-boxes/SBSc since both the Ubuntu and Debian installers
+for ARM64 currently have bugs which prevent them from working correctly on
+these devices.

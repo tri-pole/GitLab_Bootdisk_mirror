@@ -24,6 +24,14 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
 
 # debuntu_inst.bash:
 
+## [v0.12] - 22-07-18
+
+### Added
+ - Possibility to generate a compressed disk image as install target.
+
+### Changed
+ - Order of arguments for running the script.
+ 
 ## [v0.1] - 22-07-15
 
 ### Added
