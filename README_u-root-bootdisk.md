@@ -37,15 +37,16 @@ the target ARM64 Linux image, and then executes a `kexec()` call into the new
 kernel-initramfs.
 From this point on, the normal boot process proceeds for the target ARM64
 Linux image.
+
 The boot process is also described in the README files on the bootdisks.
 
 It should be noted that since `u-root` scans also for bootable syslinux
 configurations (e.g. extlinux.conf) `u-root-bootdisk` can boot also disk
 images that are set up for chainloading with u-boot.ext (simply beacuse
-`u-root` bypasses u-boot.ext). Therefore, `u-root-bootdisk` implements a
-unified boot solution for the final stages on booting and provides a
-separating layer between the SoC/board specific parts of the boot process and
-the parts shared among Linux distributions.
+`u-root` bypasses u-boot.ext on the image to be booted). Therefore,
+`u-root-bootdisk` implements a unified boot solution for the final stages on
+booting and provides a separating layer between the SoC/board specific parts
+of the boot process and the parts shared among Linux distributions.
 
 Variants
 --------
