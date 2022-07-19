@@ -5,11 +5,19 @@ booting generic ARM64 Linux images (a.k.a. UEFI or generic images) on ARM64
 single board computers (SBC) and TV boxes with a resident `u-boot`.
 The `u-root-bootdisk` disk images can be copied (by e.g. the Linux `dd`
 command) to an SD card or a USB stick and this card/stick is used in a middle
-stage in the booting process.
-This middle stage is invoked after the first few stages of board initialization
-has been done (by a board resident version of `u-boot`) and is responsible for
-loading and booting the kernel and initramfs of the target ARM64 Linux image
-(typically residing on another USB).
+stage in the normal `u-boot`-based booting process.
+When booting a SBC/TV box with a u-root-bootdisk attached, the boot process
+will pause at the `u-root` prompt where the user can issue the "boot" command.
+This initiates a scan of bootable configurations (grub or syslinux) and a menu
+is presented to the user where one of the bootable configurations can be
+selected for continued booting by `u-root` (utilizing a `kexec()` call).
+
+In more detail it works as follows:
+The middle stage in the boot process alluded to above is invoked after the
+first few stages of board initialization has been done (by a board resident
+version of `u-boot`).
+This stage is responsible for loading and booting the kernel and initramfs of
+the target ARM64 Linux image (typically residing on another USB).
 The middle stage utilizes a certain ARM64 Linux kernel present on the bootdisk
 which is loaded (by SoC resident `u-boot` which reads boot scripts on the
 bootdisk or chainloaded by u-boot.ext on the bootdisk) and executed along with
@@ -17,9 +25,9 @@ a specially crafted initramfs.
 This special initramfs implements a subset of the tools from
 [u-root](https://github.com/u-root/)
 which provide the mechanism to continue the booting process.
-When the middle stage kernel and initramfs is loaded and running (i.e.
-`u-root` is working) it presents the user with a prompt (think busybox) at
-which the user can enter e.g. the command "boot".
+When the middle stage kernel and initramfs is loaded and running (i.e. `u-root`
+is working) it presents the user with a prompt (think busybox) at which the
+user can enter e.g. the command "boot".
 This action initiates a scan for bootable grub (or syslinux) configurations on
 the attached media and the discovered bootable configurations are then
 (typically after a couple of seconds) presented in a boot menu.
@@ -30,13 +38,7 @@ kernel-initramfs.
 From this point on, the normal boot process proceeds for the target ARM64
 Linux image.
 
-In summary, when booting a SBC/TV box with a u-root-bootdisk attached, the
-boot process will pause at the `u-root` prompt where the user can issue the
-"boot" command.
-At the boot menu then appearing the user can select one of the bootable
-configurations presented and this configuration is booted by `u-root`.
-
-(The boot process is also described in the README files on the bootdisks.)
+The boot process is also described in the README files on the bootdisks.
 
 Variants
 --------

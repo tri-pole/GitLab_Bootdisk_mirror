@@ -131,7 +131,7 @@ install_to_imgfile=0
 # be enough to hold your install (with everything on a single root partition).
 imgfile_sizeMB=3500
 
-# For disk Iimage install: Root partition label.
+# For disk image install: Root partition label.
 root_label=DBNT_ROOT
 
 echo -e "\n-- You have selected to install $distro_name ($distro_release). --\n"
@@ -306,13 +306,13 @@ usermod -a -G adm,sudo ${user_name}
 EOF
 )
 
-echo -n "Mounting the install target root partition under $mnt_dir..."
+echo -n "Mounting the install target root partition under ${mnt_dir}..."
 mount $root_part_dev $mnt_dir
 echo " Done"
 
 case $1 in
 "ubuntu")
-    echo "Performing debootstrapping of Ubuntu system to $mnt_dir."
+    echo "Performing debootstrapping of Ubuntu system to ${mnt_dir}."
     debootstrap --arch arm64 \
     --keyring /usr/share/keyrings/ubuntu-archive-keyring.gpg \
     $distro_release $mnt_dir $distro_repourl

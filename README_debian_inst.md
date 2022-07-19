@@ -129,7 +129,7 @@ Install `debootstrap` and mount the root partition and boot partition
 
 - `# debootstrap --arch arm64 bullseye /mnt http://ftp.us.debian.org/debian`
 
-- `# mount /dev/sdc1 /mnt/boot`
+- `# mount /dev/sdX1 /mnt/boot`
 
 ### (4) Set up some configuration files
 
