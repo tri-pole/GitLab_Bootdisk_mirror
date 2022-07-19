@@ -6,7 +6,7 @@ single board computers (SBC) and TV boxes with a resident `u-boot`.
 The `u-root-bootdisk` disk images can be copied (by e.g. the Linux `dd`
 command) to an SD card or a USB stick and this card/stick is used in a middle
 stage in the normal `u-boot`-based booting process.
-When booting a SBC/TV box with a u-root-bootdisk attached, the boot process
+When booting a SBC/TV box with a `u-root-bootdisk` attached, the boot process
 will pause at the `u-root` prompt where the user can issue the "boot" command.
 This initiates a scan of bootable configurations (grub or syslinux) and a menu
 is presented to the user where one of the bootable configurations can be
@@ -37,8 +37,15 @@ the target ARM64 Linux image, and then executes a `kexec()` call into the new
 kernel-initramfs.
 From this point on, the normal boot process proceeds for the target ARM64
 Linux image.
-
 The boot process is also described in the README files on the bootdisks.
+
+It should be noted that since `u-root` scans also for bootable syslinux
+configurations (e.g. extlinux.conf) `u-root-bootdisk` can boot also disk
+images that are set up for chainloading with u-boot.ext (simply beacuse
+`u-root` bypasses u-boot.ext). Therefore, `u-root-bootdisk` implements a
+unified boot solution for the final stages on booting and provides a
+separating layer between the SoC/board specific parts of the boot process and
+the parts shared among Linux distributions.
 
 Variants
 --------
