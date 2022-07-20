@@ -241,7 +241,10 @@ initrd /initrd.img-5.15.0-41-generic
 ```
 
 Note: The actual numbers of the kernel and initrd might be different on your
-install (check what they are in `/mnt/boot`).
+install (check what they are in `/mnt/boot`). (It is possible that a correct
+grub.cfg can be generated already at the end of step (5) above by simply
+running `update-grub`, or directly `exec grub-mkconfig -o /boot/grub/grub.cfg`,
+but I haven't tried this.)
 
 ### (7) Reboot
 
