@@ -13,7 +13,7 @@ an install of a base system of Debian 11 for ARM64 on e.g. a USB stick, which
 can then booted for instance with `u-root-bootdisk` (or any other boot
 mechanism that relies only on a grub.cfg file).
 Our method is a (slight) variant of the method we have devised for installing
-Ubuntu and uses the Debian tool
+Ubuntu (cf. the associated README) and uses the Debian tool
 [debootstrap](https://www.debian.org/releases/stable/arm64/apds03.en.html)
 to install the rootfs.
 (This tool is available in the repositories for the Ubuntu Server installation
@@ -26,6 +26,11 @@ a base Debian 11 system, without graphics.
 However, it is a simple matter to add a graphics environment to the
 installation by using e.g. `aptitude` (see below).
 The method has been tested on a Ugoos AM6 plus.
+
+The install method here should more generally be applicable to many Debian
+like Linux distributions. One such example is Devuan, for which we have
+explicitly outlined the differences in installation steps at the end of this
+document.
 
 ## Prerequisites
 
@@ -189,6 +194,12 @@ Exit the chroot jail:
 
 - `# exit`
 
+If you are running this install from a continuously running host (i.e. not
+Ubuntu Server iso) then the following two steps may be useful:
+
+- `# mount --make-rprivate /mnt`
+- `# for f in /sys /proc /dev ; do umount -R /mnt/$f ; done`
+
 Setup a basic grub configuration:
 
 - Create a file `/mnt/boot/grub/grub.cfg` with the following contents (recall
@@ -229,6 +240,16 @@ To install a desktop environment one can use `aptitude`
 
 and then from Tasks -> End user in `aptitude` menu select the appropriate task.
 
+If grub is not installed by default, this is easily fixed by running e.g.
+
+`$ sudo apt install grub-common`
+
+Then you grub.cfg will be updated each time the kernel configuration(s) change.
+
+To get sound working it is necessary on many TV-boxes to run (as user) the
+script `g12_sound.sh` which can be found e.g.
+[here.](https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/blob/master/g12_sound.sh)
+
 Note: The grub file that was set up in step (6) above only works for the kernel
 installed in step (5) and if the kernel name is different (e.g. because of a
 later kernel upgrade) the grub file needs to be adjusted accordingly.
@@ -236,3 +257,28 @@ Also, we have not set up a dtb file in grub.cfg (only a placeholder) since
 when booting with `u-root-bootdisk` the dtb used by `u-root` is inherited.
 In general, however, a dtb must be present on the install target disk and
 specified in grub.cfg.
+
+## Devuan install
+
+The installation procedure for Devuan is virtually identical to that of Debian,
+with the following small modifications, at three of the steps above.
+
+(1) The step `apt install debootstrap` above is replaced by the following four
+items:
+
+- `# wget https://pkgmaster.devuan.org/devuan/pool/main/d/devuan-keyring/devuan-keyring_2017.10.03_all.deb`
+- `# wget https://pkgmaster.devuan.org/devuan/pool/main/d/debootstrap/debootstrap_1.0.114+devuan5_all.deb`
+- `# dpkg -i devuan-keyring_2017.10.03_all.deb`
+- `# dpkg -i debootstrap_1.0.114+devuan5_all.deb`
+
+(2) In the step above where
+  `deb http://security.debian.org/ bullseye-security main`
+  is added to /mnt/etc/apt/sources.list the repo should be replaced by
+  `deb http://deb.devuan.org/merged chimaera-security main`
+
+  For access to newer kernels (e.g. to get sound working) you might want to
+  add also the unstable repo like so
+  `deb http://deb.devuan.org/merged unstable main`
+
+(3) Finally, you also have to edit the entries in the grub.cfg file according
+to what you have in /boot on the install target disk (mounted as /mnt/boot).

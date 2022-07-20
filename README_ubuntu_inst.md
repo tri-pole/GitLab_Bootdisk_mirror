@@ -17,6 +17,8 @@ relies only on a grub.cfg file).
 Our method relies on the Ubuntu installer iso but uses the iso image only to
 get up to a running state of the installer from which a Ubuntu rootfs from
 [Ubuntu Base](https://wiki.ubuntu.com/Base) can be straightforwardly installed.
+(Thus, the install method can be applied using any other Debian/Ubuntu like
+ARM64 Linux distro as host.)
 
 ## Scope
 
@@ -214,6 +216,15 @@ Exit the chroot jail:
 
  - `# exit`
 
+The following two steps are only meaningful on a continuously running host
+(not Ubuntu Server iso; it will be reooted shotly anyway)
+
+If you are running this install from a continuously running host (i.e. not
+Ubuntu Server iso) then the following two steps may be useful:
+
+- `# mount --make-rprivate`
+- `# for f in /sys /proc /dev ; do umount -R /mnt/$f ; done`
+
 Setup a basic grub configuration:
 
 - Create a file `/mnt/boot/grub/grub.cfg` with the following contents (recall
@@ -268,6 +279,10 @@ instance
 `$ sudo apt install mate-desktop`
 
 (for MATE).
+
+To get sound working it is necessary on many TV-boxes to run (as user) the
+script `g12_sound.sh` which can be found e.g.
+[here.](https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/blob/master/g12_sound.sh)
 
 Note: The grub.cfg file that was set up in step (6) above only works for the
 kernel installed in step (5). This grub.cfg file is only needed until the

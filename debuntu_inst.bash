@@ -146,8 +146,8 @@ if [[ $# -eq 2 ]] ; then
     uuid_swap_part=$(blkid -s UUID -o value $swap_part_dev)
 
     echo -e "The target device for the install is\n"
-    echo -e "${1}\n"
-    echo -e "with the following partition default assignments\n"
+    echo -e "${2}\n"
+    echo -e "with the following partition assignments\n"
 
     echo "$boot_part_dev  UUID=$uuid_boot_part  boot partition (/boot)"
     echo "$root_part_dev  UUID=$uuid_root_part  root partition (/)"
