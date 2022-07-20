@@ -244,17 +244,14 @@ If grub is not installed by default, this is easily fixed by running e.g.
 
 `$ sudo apt install grub-common`
 
-Then you grub.cfg will be updated each time the kernel configuration(s) change.
+Then your grub.cfg will be updated each time the kernel configuration(s) change.
 
 To get sound working it is necessary on many TV-boxes to run (as user) the
 script `g12_sound.sh` which can be found e.g.
 [here.](https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/blob/master/g12_sound.sh)
 
-Note: The grub file that was set up in step (6) above only works for the kernel
-installed in step (5) and if the kernel name is different (e.g. because of a
-later kernel upgrade) the grub file needs to be adjusted accordingly.
-Also, we have not set up a dtb file in grub.cfg (only a placeholder) since
-when booting with `u-root-bootdisk` the dtb used by `u-root` is inherited.
+We have not set up a dtb file in grub.cfg (only a placeholder) since when
+booting with `u-root-bootdisk` the dtb used by `u-root` is inherited.
 In general, however, a dtb must be present on the install target disk and
 specified in grub.cfg.
 

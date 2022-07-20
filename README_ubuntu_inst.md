@@ -284,9 +284,8 @@ To get sound working it is necessary on many TV-boxes to run (as user) the
 script `g12_sound.sh` which can be found e.g.
 [here.](https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/blob/master/g12_sound.sh)
 
-Note: The grub.cfg file that was set up in step (6) above only works for the
-kernel installed in step (5). This grub.cfg file is only needed until the
-first update that require rebuilding of grub.cfg (which is done automatically
-by the relevant Ubuntu post install scripts).
+The grub file grub.cfg set up in step (6) above is only needed until the first
+update that require rebuilding of grub.cfg (which is done automatically by the
+relevant Ubuntu post install scripts on the target image).
 Also, we have not set up a dtb file in grub.cfg (only a placeholder) since
 when booting with `u-root-bootdisk` the dtb used by `u-root` is inherited.
