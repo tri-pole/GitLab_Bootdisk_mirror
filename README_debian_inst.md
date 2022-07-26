@@ -41,10 +41,10 @@ source for such images is [cdimage.ubuntu.com](http://cdimage.ubuntu.com/).)
 It is also good to have the install target USB stick formatted in advance:
 
 Here, we are going to assume that the install target USB stick is 32GB (28.7G
-usable) and we let the Ubuntu system occupy the entire stick. (With
-`u-root-bootdisk` as boot mechanism, it is convenient to have `u-root-bootdisk`
-on a SD and then attach to the USB ports, or a USB hub, the various Linux
-images to be booted.)
+usable) and we let the (to be) installed Debian system occupy the entire stick.
+(With `u-root-bootdisk` as boot mechanism, it is convenient to have
+`u-root-bootdisk` on a SD and then attach to the USB ports, or a USB hub, the
+various Linux images to be booted.)
 
 Our partition layout for the install target USB is the following (with
 partitions created by e.g. `fdisk` for MBR or `gdisk` for GPT, and file system
