@@ -1,18 +1,23 @@
 # bootdisk
 
-In this repo you can find information relating to bootdisks for TV-boxes/SBCs
-based on the ARM64 architecture.
-With these bootdisks you can boot many ("generic") ARM64 Linux images with
+This repo contains information relating to bootdisks for TV-boxes/SBCs based
+on the ARM64 architecture.
+With these bootdisks you can e.g. boot many ("generic") ARM64 Linux images with
 UEFI+grub from major distributions such as Fedora 36, Ubuntu (e.g. Jammy),
 Debian (e.g. Bullseye) and openSuse (Leap 15.4 and Tumbleweed).
 A good use case for TV-boxes is to have the bootdisk installed on SD and have
 several Linux distros installed on USBs to choose from.
-The built in menu function of `u-root` on the bootdisk can then be used to
-select boot target during boot.
+
+All the bootdisks employ a chainloading mechanism based on the Linux
+`kexec()` system call and the bootdisks come in two variants; one pair of
+disks based on the `u-root` boot loader and another pair based on the
+`Petitboot` boot loader. The disks are named after the chainloader.
 
 General info about the bootdisk(s) `u-root-bootdisk` can be found in the file
-README_u-root-bootdisk.md. The other README files contain information specific
-to different install methods or distros.
+README_u-root-bootdisk.md and general info about the bootdisk(s)
+`petit-bootdisk` can be found in README_petit-bootdisk.md.
+The other README files contain information specific to different install
+methods or distros.
 
 There is also a script `debuntu_inst.bash` that can be used to automate the
 procedure of installing Ubuntu or Debian for ARM64 to a USB or SD by using

@@ -22,6 +22,16 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
 ### Removed
  - One misplaced bmp file.
 
+# petit-bootdisk:
+
+## [v0.15] - 22-07-26
+- First upload
+
+# petit-bootdisk-nc
+
+## [v0.15] - 22-07-26
+- First upload (of initramfs)
+
 # debuntu_inst.bash:
 
 ## [v0.12] - 22-07-18
