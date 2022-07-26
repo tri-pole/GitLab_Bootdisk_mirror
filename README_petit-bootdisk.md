@@ -49,7 +49,8 @@ directory for uInitrd-petitboot-0v15.)
 Caveats
 -------
 
-At present, the following two caveats exist for booting ARM64 with `u-root`:
+At present, the following two caveats exist for booting ARM64 with
+`petit-bootdisk`:
 
 - The device tree (dtb) blob present on the target image (as indicated in the
 grub.cfg or extlinux.conf file) is not picked up and loaded along with the
