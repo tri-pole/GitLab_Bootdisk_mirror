@@ -129,27 +129,3 @@ Acknowledgements
 
 Many thanks to user JFL at e.g. the Beelink and Manjaro forums for helping me
 test, debug and develop these bootdisks.
-
--------------------------------------------------------
-Essentially, we have followed the outline at [Raptor Engineering](https://www.raptorengineering.com/content/kb/1.html)
-for compiling the various software components required to run Petitboot.
-
-The various components needed to run Petitboot (parts of systemd, kexec-tools
-and busybox) are starightforward to compile, with some small modifications.
-
-For systemd, nowadays only udevadm is needed and this and related components
-are compiled with meson.
-
-The boot script (init) has been modified so that autoboot is turned off with
-a switch to pb-discover and a slight time delay of four seconds had to be
-introduced to avoid a one-line-off draw error of the initial menu window in
-ncurses.
-
-Petitboot doesn't pick up the `devicetree` directive in `grub.cfg` and
-therefor the dtb is "inherited" from the bootdisk (just as for u-root).
-For an explanation and motivation of this see the 
-[ozlab's mailing list](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html).
-(One can argue that the device tree is hardware dependent and therefore
-"solowly varying" (or indeed constant) but in practice there may be updates
-coming with newer kernels that one may want to immediately be picked up and
-used.)
