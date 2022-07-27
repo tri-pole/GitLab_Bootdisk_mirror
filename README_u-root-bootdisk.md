@@ -59,7 +59,7 @@ a faster boot process but will only work on Amlogic s922x SoCs whereas the
 bootdisk using chainloading can probably be made to work also for other SoCs
 (several alternative u-boot.ext available on the chainloader bootdisk).
 
-(Note: The term chainloading is used to describe two diffrent things here.
+(Note that the term chainloading is used to describe two diffrent things here.
 First, the bootdisk itself which is chainloaded by the SoC resident `u-boot`.
 Second, on one of the bootdisks the binary u-boot.ext is used to chainload
 the kernel and initramfs that runs `u-boot`.)
