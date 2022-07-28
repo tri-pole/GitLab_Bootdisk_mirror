@@ -3,10 +3,10 @@
 `petit-bootdisk` is the name of a utility disk for booting various forms of
 Linux images on ARM64 single board computers (SBC) and TV boxes with a resident
 `u-boot`.
-Booting is done via chainloading of another bootloader, Petitboot, which is
+Booting is done via chainloading of another bootloader, `Petitboot`, which is
 located on `petit-bootdisk` and acts as a middle stage in the booting process.
 When booting a SBC/TV box with a `petit-bootdisk` attached the boot process
-pauses at the Petitboot boot menu where a list of bootable devices is
+pauses at the `Petitboot` boot menu where a list of bootable devices is
 displayed.
 After selection of a boot menu entry, the new boot configuration (kernel and
 initramfs) is loaded into memory and booting proceeds with the new
@@ -14,7 +14,7 @@ configuration (utilizing a `kexec()` call).
 (The process is analogous to that of `u-root`, see
 README_u-root-bootdisk.md)
 
-Petitboot is capable of reading and parsing a range of different boot
+`Petitboot` is capable of reading and parsing a range of different boot
 configuration files, such as grub setups, syslinux and Petitboot's own
 [native format.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 
@@ -68,13 +68,13 @@ running Petitboot) is inherited.
 This seems to be a design decision and some reasons therefore are hinted at
 [here.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 
-- Under certain circumstances the Petitboot loader disables (via direct edits
-to the device tree in the /sys or /proc file systems) the network interface
-if a correct response to a broadcast message is not received.
+- Under certain circumstances the Petitboot loader disables the network
+interface (or at least puts it in a nonresponsive state, similar to
+[this](https://forum.armbian.com/topic/17112-odroid-c2-no-eth0-with-latest-image)).
+(This is possibly related to Petitboot not receiving a correct response to a
+broadcast message or DHCP request.)
 This has been observed on a Beelink GT King pro but not on a Ugoos AM6 plus.
-It is possible that a workaround is to edit the relevant nodes in the dtb file
-as read-only, but we haven't tried that yet.
-(The build of Petitboot that we use has bee configured only to boot from
+(The build of Petitboot that we use has been configured only to boot from
 USB and DISK.)
 
 Platforms tested
