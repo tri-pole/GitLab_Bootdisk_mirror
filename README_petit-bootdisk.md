@@ -15,7 +15,7 @@ configuration (utilizing a `kexec()` call).
 README_u-root-bootdisk.md)
 
 `Petitboot` is capable of reading and parsing a range of different boot
-configuration files, such as grub setups, syslinux and Petitboot's own
+configuration files, such as grub setups, syslinux and `Petitboot`'s own
 [native format.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 
 Variants
@@ -32,7 +32,7 @@ bootdisk using chainloading can probably be made to work also for other SoCs
 (Note that the term chainloading is used to describe two diffrent things here.
 First, the bootdisk itself which is chainloaded by the SoC resident `u-boot`.
 Second, on one of the bootdisks the binary u-boot.ext is used to chainload
-the kernel and initramfs that runs Petitboot.)
+the kernel and initramfs that runs `Petitboot`.)
 
 Downloads
 ---------
@@ -50,9 +50,9 @@ md5sums of latest release:
 
 `153b2872af39b92535d04d1d02612b72  uInitrd-petitboot-0v15`
 
-(The file uInitrd-petitboot-0v15 is intended as a plug-in replacement of a
-file on one of the u-root-bootdisks, cf. the README file in the download
-directory for uInitrd-petitboot-0v15.)
+(The file `uInitrd-petitboot-0v15` is intended as a plug-in replacement of a
+file on one of the `u-root-bootdisk`s, cf. the README file in the download
+directory for `uInitrd-petitboot-0v15`.)
 
 Caveats
 -------
@@ -64,26 +64,32 @@ At present, the following two caveats exist for booting ARM64 with
 grub.cfg or extlinux.conf file) is not picked up and loaded along with the
 target kernel and initramfs.
 Instead, the dtb residing on the `petit-bootdisk` (and used by the kernel
-running Petitboot) is inherited.
+running `Petitboot`) is inherited.
 This seems to be a design decision and some reasons therefore are hinted at
 [here.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 
-- Under certain circumstances the Petitboot loader disables the wired network
+- Under certain circumstances the `Petitboot` loader disables the wired network
 interface (or at least puts it in a nonresponsive state, similar to
 [this](https://forum.armbian.com/topic/17112-odroid-c2-no-eth0-with-latest-image)).
-(This is possibly related to Petitboot not receiving a correct response to a
+(This is possibly related to `Petitboot` not receiving a correct response to a
 broadcast message or DHCP request.)
 This has been observed on a Beelink GT King pro but not on a Ugoos AM6 plus.
-(The build of Petitboot that we use has been configured only to boot from
+(The build of `Petitboot` that we use has been configured only to boot from
 USB and DISK.)
+
+Finally, the ability to boot from external media (sometimes called "multiboot")
+for the SBC or TV-box must have been enabled.
+For TV-boxes this often amounts to going through a "toothpick" reset with an
+appropriate Linux image attached (descriptions of this procedure are easy to
+find).
 
 Platforms tested
 ----------------
 
-The petit-bootdisks have been tested on two Amlogic s922x TV boxes; the
+The `petit-bootdisk`(s) have been tested on two Amlogic s922x TV boxes; the
 Beelink GT King Pro and the Ugoos Am6 plus.
-The initramfs that implements Petitboot is generic and should work with any
-other SoC but the kernel on the bootdisk that runs Petitboot might only work
+The initramfs that implements `Petitboot` is generic and should work with any
+other SoC but the kernel on the bootdisk that runs `Petitboot` might only work
 with Amlogic boxes (although the kernel on the bootidsk has been compiled
 with support also for Allwinner and Rockchip SoCs).
 (More details can be found in the README files on the bootdisk.)
