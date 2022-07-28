@@ -68,7 +68,7 @@ running Petitboot) is inherited.
 This seems to be a design decision and some reasons therefore are hinted at
 [here.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 
-- Under certain circumstances the Petitboot loader disables the network
+- Under certain circumstances the Petitboot loader disables the wired network
 interface (or at least puts it in a nonresponsive state, similar to
 [this](https://forum.armbian.com/topic/17112-odroid-c2-no-eth0-with-latest-image)).
 (This is possibly related to Petitboot not receiving a correct response to a
@@ -80,7 +80,7 @@ USB and DISK.)
 Platforms tested
 ----------------
 
-The u-root-bootdisks have been tested on two Amlogic s922x TV boxes; the
+The petit-bootdisks have been tested on two Amlogic s922x TV boxes; the
 Beelink GT King Pro and the Ugoos Am6 plus.
 The initramfs that implements Petitboot is generic and should work with any
 other SoC but the kernel on the bootdisk that runs Petitboot might only work
@@ -91,7 +91,7 @@ with support also for Allwinner and Rockchip SoCs).
 Linux distros tested
 --------------------
 
-The u-root-bootdisks have been tested with Fedora 36 (Gnome, KDE), openSuse
+The petit-bootdisks have been tested with Fedora 36 (Gnome, KDE), openSuse
 Leap 15.4 (KDE), Armbian generic ARM64 images (XFCE) and with the Ubuntu and
 Debian images built according to the instructions in adjacent README files.
 
@@ -130,8 +130,7 @@ Discourse
 
 There is a 
 [thread](https://forum.bee-link.com/forum.php?mod=viewthread&tid=72255)
-over at the Beelink forums (GT King Pro subforum) about the
-u-root-bootdisks.
+over at the Beelink forums (GT King Pro subforum) about the bootdisks.
 
 Acknowledgements
 ----------------
