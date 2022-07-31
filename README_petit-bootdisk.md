@@ -5,14 +5,13 @@ Linux images on ARM64 single board computers (SBC) and TV boxes with a resident
 `u-boot`.
 Booting is done via chainloading of another bootloader, `Petitboot`, which is
 located on `petit-bootdisk` and acts as a middle stage in the booting process.
-When booting a SBC/TV box with a `petit-bootdisk` attached the boot process
+When booting a SBC/TV box with a `petit-bootdisk` attached, the boot process
 pauses at the `Petitboot` boot menu where a list of bootable devices is
 displayed.
 After selection of a boot menu entry, the new boot configuration (kernel and
 initramfs) is loaded into memory and booting proceeds with the new
 configuration (utilizing a `kexec()` call).
-(The process is analogous to that of `u-root`, see
-README_u-root-bootdisk.md)
+(The process is analogous to that of `u-root`, see README_u-root-bootdisk.md)
 
 `Petitboot` is capable of reading and parsing a range of different boot
 configuration files, such as grub setups, syslinux and `Petitboot`'s own
@@ -27,7 +26,7 @@ u-boot.ext and one without the chainloader (which boots using resident
 The latter bootdisk has a name ending in `-nc` ("no chainload") and enable
 a faster boot process but will only work on Amlogic s922x SoCs whereas the
 bootdisk using chainloading can probably be made to work also for other SoCs
-(several alternative u-boot.ext available on the chainloader bootdisk).
+(several alternative u-boot.ext are available on the chainloader bootdisk).
 
 (Note that the term chainloading is used to describe two diffrent things here.
 First, the bootdisk itself which is chainloaded by the SoC resident `u-boot`.
@@ -56,7 +55,7 @@ md5sums of latest release(s):
 
 (The file `uInitrd-petitboot-0vX` is intended as a plug-in replacement of a
 file on one of the `u-root-bootdisk`s, cf. the README file in the download
-directory for `uInitrd-petitboot-0vX`.)
+directory for `petit-bootdisk-nc`.)
 The current version of `Petitboot` on the `petit-bootdisk`(s) listed above is
 v1.13.
 
@@ -82,8 +81,9 @@ broadcast message or DHCP request.)
 This has been observed on a Beelink GT King pro but not on a Ugoos AM6 plus.
 (The build of `Petitboot` that we use has been configured only to boot from
 USB and DISK.)
-There is a possible workaround for this in the latest release, see the README
-file on `petit-bootdisk` and look for the `pb_nonet=true` kernel cmd. arg.
+There is a workaround for this in the latest release which appears to work for
+the GT King pro, see the README file on `petit-bootdisk` and look for the
+`pb_nonet=true` kernel command line argument.
 
 Finally, the ability to boot from external media (sometimes called "multiboot")
 for the SBC or TV-box must have been enabled.
