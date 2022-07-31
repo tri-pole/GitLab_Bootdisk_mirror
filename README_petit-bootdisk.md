@@ -77,13 +77,14 @@ This seems to be a design decision and some reasons therefore are hinted at
 interface (or at least puts it in a nonresponsive state, similar to
 [this](https://forum.armbian.com/topic/17112-odroid-c2-no-eth0-with-latest-image)).
 (This is possibly related to `Petitboot` not receiving a correct response to a
-broadcast message or DHCP request.)
-This has been observed on a Beelink GT King pro but not on a Ugoos AM6 plus.
-(The build of `Petitboot` that we use has been configured only to boot from
-USB and DISK.)
-There is a workaround for this in the latest release which appears to work for
-the GT King pro, see the README file on `petit-bootdisk` and look for the
-`pb_nonet=true` kernel command line argument.
+broadcast message or DHCP request and it happens even though we have set up
+the default boot configuration of `Petitboot` so that only USB and DISK are
+boot targets.)
+The issue with the network interface has been observed on a Beelink GT King
+pro (but not on a Ugoos AM6 plus).
+Starting with relase v0.20 of `petit-bootdisk`(s) there is a workaround
+available which appears to work for the GT King pro, see the README file on
+`petit-bootdisk` and look for the `pb_nonet=true` kernel command line argument.
 
 Finally, the ability to boot from external media (sometimes called "multiboot")
 for the SBC or TV-box must have been enabled.
