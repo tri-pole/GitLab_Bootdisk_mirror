@@ -40,19 +40,24 @@
 # (1) Boot up the Ubuntu Server install iso (e.g. using u-root-bootdisk) and go
 #     through the first steps indicated above (stop at partitioning screen).
 # (2) Switch to a virtial terminal (e.g. Alt-F2).
-# (3) Become root: sudo su
+# (3) Become root:
+#     sudo su
 # (4) Make sure that you have enough disk space: Ubuntu Server typically finds
 #     and allocates all available remaining space on the USB where is resides,
 #     and mounts this space (called/labeled "writable") under /var/log.
-#     Thus, we do: cd /var/log ; mkdir debuntu ; cd debuntu
+#     Thus, we do:
+#     cd /var/log ; mkdir debuntu ; cd debuntu
 # (5) Then, download this script:
 #     wget https://gitlab.com/tripole-inc/bootdisk/-/raw/main/debuntu_inst.bash
-#     Make it executable: chmod +x debuntu_inst.bash
-# (6) Only for USB install: Identify the install target USB device, e.g. /dev/
-#     e.g. by issuing the command lsblk and looking at the output.
+#     Make it executable:
+#     chmod +x debuntu_inst.bash
+# (6) Only for USB install: Identify the install target USB device, such as
+#     /dev/sdX, e.g. by issuing the command lsblk and looking at the output.
 # (7) Run the script.
-#     (a) For USB install do e.g.: ./debuntu_inst.bash debian /dev/sdX
-#     (b) For disk image creation do e.g.: ./debuntu_inst.bash debian
+#     (a) For USB install do e.g.:
+#         ./debuntu_inst.bash debian /dev/sdX
+#     (b) For disk image creation do e.g.:
+#         ./debuntu_inst.bash debian
 #         Note: /var/log is transient storage; you must move and save a newly
 #         created disk image before you reboot Ubuntu Server live.
 
