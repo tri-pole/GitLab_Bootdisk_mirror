@@ -97,13 +97,14 @@ can be used as mount point for the Raspberry Pi image.
   from outside, this location would be `/mnt/boot/grub/grub.cfg`).
   The grub.cfg file should have one single menu entry like so:
   
-```menuentry "Ubuntu Jammy (kernel 5.15.0-43)" {
+```
+menuentry "Ubuntu Jammy (kernel 5.15.0-43)" {
   
-    linux /boot/vmlinuz-5.15.0-43-generic root=LABEL=writable 
+linux /boot/vmlinuz-5.15.0-43-generic root=LABEL=writable 
  
-    initrd /boot/initrd.img-5.15.0-43-generic
+initrd /boot/initrd.img-5.15.0-43-generic
  
-  }
+}
 ```
 
 - Check that the names of kernel and initramfs in grub.cfg actually match
