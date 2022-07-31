@@ -24,13 +24,23 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
 
 # petit-bootdisk:
 
+## [v0.2] - 22-07-31
+
+### Added
+ - Possibility to disable network access (and netbooting).
+
 ## [v0.15] - 22-07-26
-- First upload
+- First upload.
 
 # petit-bootdisk-nc
 
+## [v0.2] - 22-07-31
+
+### Added
+ - Possibility to disable network access (and netbooting).
+
 ## [v0.15] - 22-07-26
-- First upload (of initramfs)
+- First upload (of initramfs).
 
 # debuntu_inst.bash:
 

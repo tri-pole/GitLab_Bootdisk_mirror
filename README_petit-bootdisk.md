@@ -44,15 +44,21 @@ The actual bootdisk images are hosted outside of Gitlab, at the links below
 
 [petit-bootdisk-nc](https://1drv.ms/u/s!Aqo_UY80B5WOerTOjvn7KxQjPcU?e=8NvWFO)
 
-md5sums of latest release:
+md5sums of latest release(s):
 
 `7fe94271d3c27802170872c1431a2605  petit-bootisk-0v15.img.gz`
 
 `153b2872af39b92535d04d1d02612b72  uInitrd-petitboot-0v15`
 
-(The file `uInitrd-petitboot-0v15` is intended as a plug-in replacement of a
+`620cb3791a3694600e9a26ebd9e75226  petit-bootisk-0v2.img.gz`
+
+`8554b78c6ebd8ee08b54f8eec94f9944  uInitrd-petitboot-0v2`
+
+(The file `uInitrd-petitboot-0vX` is intended as a plug-in replacement of a
 file on one of the `u-root-bootdisk`s, cf. the README file in the download
-directory for `uInitrd-petitboot-0v15`.)
+directory for `uInitrd-petitboot-0vX`.)
+The current version of `Petitboot` on the `petit-bootdisk`(s) listed above is
+v1.13.
 
 Caveats
 -------

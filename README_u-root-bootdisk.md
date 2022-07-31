@@ -27,7 +27,7 @@ This special initramfs implements a subset of the tools from
 which provide the mechanism to continue the booting process.
 When the middle stage kernel and initramfs is loaded and running (i.e. `u-root`
 is working) it presents the user with a prompt (think busybox) at which the
-user can enter e.g. the command "boot".
+user can enter the command "boot".
 This action initiates a scan for bootable grub (or syslinux) configurations on
 the attached media and the discovered bootable configurations are then
 (typically after a couple of seconds) presented in a boot menu.
@@ -81,6 +81,9 @@ md5sums of latest release:
 
 `u-root-bootdisk-nc_0v26.img.gz  6c46aeb9ef82c0f46492f4c7bd878f57`
 
+The current version of `u-root` on the `u-root-bootdisk`(s) listed above is
+v0.8.1.
+
 Caveats
 -------
 
@@ -111,8 +114,8 @@ This works as intended on the two platforms tested (see below) but for other
 boxes some experimentation may be needed with e.g. the bootdisk on USB, with
 different u-boot.ext, with target image(s) connected from boot or only after
 reaching u-root prompt.
-Finally, the ability to boot from external media (sometimes called
-"multiboot") for the SBC or TV-box must have been enabled.
+Finally, the ability to boot from external media (sometimes called "multiboot")
+for the SBC or TV-box must have been enabled.
 For TV-boxes this often amounts to going through a "toothpick" reset with an
 appropriate Linux image attached (descriptions of this procedure are easy to
 find).
