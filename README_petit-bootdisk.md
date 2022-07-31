@@ -82,6 +82,8 @@ broadcast message or DHCP request.)
 This has been observed on a Beelink GT King pro but not on a Ugoos AM6 plus.
 (The build of `Petitboot` that we use has been configured only to boot from
 USB and DISK.)
+There is a possible workaround for this in the latest release, see the README
+file on `petit-bootdisk` and look for the `pb_nonet=true` kernel cmd. arg.
 
 Finally, the ability to boot from external media (sometimes called "multiboot")
 for the SBC or TV-box must have been enabled.
