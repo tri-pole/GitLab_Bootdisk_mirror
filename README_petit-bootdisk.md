@@ -75,19 +75,13 @@ running `Petitboot`) is inherited.
 This seems to be a design decision and some reasons therefore are hinted at
 [here.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 
-- Under certain circumstances the `Petitboot` loader disables the wired network
-interface (or at least puts it in a nonresponsive state, similar to
-[this](https://forum.armbian.com/topic/17112-odroid-c2-no-eth0-with-latest-image)).
-(This is possibly related to `Petitboot` not receiving a correct response to a
-broadcast message or DHCP request and it happens even though we have set up
-the default boot configuration of `Petitboot` so that only USB and DISK are
-boot targets.)
-The issue with the network interface has been observed on a Beelink GT King
-pro when booting the non chainloader (i.e. no u-boot.ext) version of the
-bootdisk.
-Starting with relase v0.20 of `petit-bootdisk`(s) there is a workaround
-available which appears to work for the GT King pro, see the README file on
-`petit-bootdisk` and look for the `pb_nonet=true` kernel command line argument.
+- Our build of `Petitboot` is set up to have only USB and DISK as default boot
+targets. Despite this, `Petitboot` sets up network interfaces for netbooting
+and tries to establish network connections. Since this is not desirable for
+everyone we have added an option (in v0.20) to run `Petitboot` in a network
+namespace where only the loopback interface `lo` can be brought up. More info
+can be found in the README file on `petit-bootdisk` (specifically the
+`pb_nonet=true` kernel command line argument).
 
 Finally, the ability to boot from external media (sometimes called "multiboot")
 for the SBC or TV-box must have been enabled.
