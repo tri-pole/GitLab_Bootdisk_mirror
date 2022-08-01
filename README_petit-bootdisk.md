@@ -83,7 +83,8 @@ broadcast message or DHCP request and it happens even though we have set up
 the default boot configuration of `Petitboot` so that only USB and DISK are
 boot targets.)
 The issue with the network interface has been observed on a Beelink GT King
-pro (but not on a Ugoos AM6 plus).
+pro when booting the non chainloader (i.e. no u-boot.ext) version of the
+bootdisk.
 Starting with relase v0.20 of `petit-bootdisk`(s) there is a workaround
 available which appears to work for the GT King pro, see the README file on
 `petit-bootdisk` and look for the `pb_nonet=true` kernel command line argument.
