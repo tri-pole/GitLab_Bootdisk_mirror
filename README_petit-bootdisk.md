@@ -16,6 +16,8 @@ configuration (utilizing a `kexec()` call).
 `Petitboot` is capable of reading and parsing a range of different boot
 configuration files, such as grub setups, syslinux and `Petitboot`'s own
 [native format.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
+More documentation about `Petitboot` can be found
+[here](https://open-power.github.io/petitboot).
 
 Variants
 --------

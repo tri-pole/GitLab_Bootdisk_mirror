@@ -45,13 +45,14 @@ can be used as mount point for the Raspberry Pi image.
   is, e.g. using `lsblk`)
   
   `/dev/sdX1` labeled "system-boot" (contains u-boot files; will be obsolete)
+
   `/dev/sdX2` labeled "writable"    (contains the root file system)
 
 - Make sure that these two partitions are not auto-mounted, for instance by
   some desktop auto-mount daemon/service. (The two partitions should be
   visible in a file manager file system overview pane (i.e. not ejected) but
   not *mounted*.) (In a command line environment this can be determined by
-  watching the output of the command `lsblk` and then pissbly apply `umount`.)
+  watching the output of the command `lsblk` and then possbly apply `umount`.)
 
 - Become root on the host machine:
 
