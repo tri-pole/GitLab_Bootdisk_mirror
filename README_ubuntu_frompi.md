@@ -31,7 +31,7 @@ the image will boot.
 ## Prerequisites
 
 We assume that the user already has a running ARM64 Linux image on the host
-machine (e.g. Ubunto Server command line environment or Fedora desktop) and has
+machine (e.g. Ubuntu Server command line environment or Fedora desktop) and has
 downloaded and burned/flashed to SD/USB a recent Ubuntu desktop image for
 Raspberry Pi (e.g. `ubuntu-22.04-preinstalled-desktop-arm64+raspi.img.xz` from
 [cdimage.ubuntu.com](http://cdimage.ubuntu.com/)).

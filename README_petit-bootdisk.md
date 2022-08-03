@@ -55,9 +55,11 @@ md5sums of latest release(s):
 
 `8554b78c6ebd8ee08b54f8eec94f9944  uInitrd-petitboot-0v2`
 
-(The file `uInitrd-petitboot-0vX` is intended as a plug-in replacement of a
-file on one of the `u-root-bootdisk`s, cf. the README file in the download
-directory for `petit-bootdisk-nc`.)
+Right now there doesn't exist a complete `petit-bootdisk-nc` but you can easily
+make one: The file `uInitrd-petitboot-0vX` is intended as a plug-in replacement
+for the `uInitrd` on the `u-root-bootdisk-nc`s which effectively converts the
+latter bootdisk into a `petit-bootdisk-nc`. (See also the the README file in the
+download directory for `petit-bootdisk-nc`)
 The current version of `Petitboot` on the `petit-bootdisk`(s) listed above is
 v1.13.
 
@@ -109,23 +111,21 @@ Debian images built according to the instructions in adjacent README files.
 
 Some live images of these distros and others do not work because of the
 caveats listed above but the installer images typically work as intended.
-(One must then remember to create a rootfs partition of type EXT4 to be able
-to boot into the newly installed system.)
 In other cases, live images work (e.g. Ubuntu server and Ubuntu desktop for
 recent releases) but the install-to-disk process on these live images
-malfunctions. (This typically happens at the stage where an initramfs is
-generated or a bootloader installed; the latter is not necessary for us since
-we need only a valid grub config to boot).
+malfunctions (typically at the stage where an initramfs is created, cf. the
+other READMEs about Ubuntu/Debian install).
 
 Authorship
 ----------
 
 Nothing of what is present on these bootdisks is my original work; I have
-merely assembled and compiled other people's source code, or copied freely
-available scripts, and made disk images of the result. Detailed descriptions
-of the sources of my material can be found in the README files on the
-bootdisks. In some cases, such as script files, the material has been used and
-evolved, with small modifications, in several projects or by several people.
+merely assembled and compiled (and slightly tweaked) other people's source
+code, or copied freely available scripts, and made disk images of the result.
+Detailed descriptions of the sources of my material can be found in the README
+files on the bootdisks.
+In some cases, such as script files, the material has been used and evolved,
+with small modifications, in several projects or by several people.
 To properly trace the origin of various ideas/concepts one then has to follow
 the links backwards from my sources. Two projects that have produced many of
 the original versions of scripts are [LibreElec](https://libreelec.tv) and
