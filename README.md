@@ -13,7 +13,7 @@ All the bootdisks employ a chainloading mechanism based on the Linux
 disks based on the `u-root` boot loader and another pair based on the
 `Petitboot` boot loader. The disks are named after the chainloader.
 
-General info about the bootdisk(s) `u-root-bootdisk` and `petit-bootdisk` can
+General info about the bootdisks `u-root-bootdisk` and `petit-bootdisk` can
 can be found in the README files with associated names.
 The other README files contain information specific to different install
 methods or distros.
@@ -25,3 +25,6 @@ the script can produce a compressed image file. The workaround with a script
 is needed for many TV-boxes/SBSc since both the Ubuntu and Debian installers
 for ARM64 currently have bugs which prevent them from working correctly on
 these devices.
+A working Ubuntu desktop image for a TV-box can also easily be obtained by
+a simple conversion procedure starting with a Raspberry Pi image, see the
+associated README file.

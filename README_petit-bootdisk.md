@@ -57,7 +57,7 @@ md5sums of latest release(s):
 
 Right now there doesn't exist a complete `petit-bootdisk-nc` but you can easily
 make one: The file `uInitrd-petitboot-0vX` is intended as a plug-in replacement
-for the `uInitrd` on the `u-root-bootdisk-nc`s which effectively converts the
+for the `uInitrd` on the `u-root-bootdisk-nc` which effectively converts the
 latter bootdisk into a `petit-bootdisk-nc`. (See also the the README file in the
 download directory for `petit-bootdisk-nc`)
 The current version of `Petitboot` on the `petit-bootdisk`(s) listed above is
