@@ -1,11 +1,11 @@
 # u-root-bootdisk
 
-`u-root-bootdisk` is the collective name for a couple of utility disks for
-booting generic ARM64 Linux images (a.k.a. UEFI or generic images) on ARM64
-single board computers (SBC) and TV boxes with a resident `u-boot`.
-The `u-root-bootdisk` disk images can be copied (by e.g. the Linux `dd`
-command) to an SD card or a USB stick and this card/stick is used in a middle
-stage in the normal `u-boot`-based booting process.
+`u-root-bootdisk` is the name of a utility disk for booting various forms of
+Linux images on ARM64 single board computers (SBC) and TV boxes with a resident
+`u-boot`.
+The `u-root-bootdisk` disk image can be copied (by e.g. the Linux `dd` command)
+to an SD card or a USB stick and this card/stick is used in a middle stage in
+the normal `u-boot`-based booting process.
 When booting a SBC/TV box with a `u-root-bootdisk` attached, the boot process
 will pause at the `u-root` prompt where the user can issue the "boot" command.
 This initiates a scan of bootable configurations (grub or syslinux) and a menu
@@ -13,30 +13,18 @@ is presented to the user where one of the bootable configurations can be
 selected for continued booting by `u-root` (utilizing a `kexec()` call).
 
 In more detail it works as follows:
-The middle stage in the boot process alluded to above is invoked after the
-first few stages of board initialization has been done (by a board resident
-version of `u-boot`).
-This stage is responsible for loading and booting the kernel and initramfs of
-the target ARM64 Linux image (typically residing on another USB).
-The middle stage utilizes a certain ARM64 Linux kernel present on the bootdisk
-which is loaded (by SoC resident `u-boot` which reads boot scripts on the
-bootdisk or chainloaded by u-boot.ext on the bootdisk) and executed along with
-a specially crafted initramfs.
-This special initramfs implements a subset of the tools from
-[u-root](https://github.com/u-root/)
-which provide the mechanism to continue the booting process.
-When the middle stage kernel and initramfs is loaded and running (i.e. `u-root`
-is working) it presents the user with a prompt (think busybox) at which the
-user can enter the command "boot".
-This action initiates a scan for bootable grub (or syslinux) configurations on
-the attached media and the discovered bootable configurations are then
-(typically after a couple of seconds) presented in a boot menu.
-Once a menu entry has been selected by the user and its execution is started,
-the `localboot()` function of `u-root` loads the new kernel and initramfs from
-the target ARM64 Linux image, and then executes a `kexec()` call into the new
-kernel-initramfs.
-From this point on, the normal boot process proceeds for the target ARM64
-Linux image.
+After the board resident `u-boot` has has finished the board initialization
+stages it loads a default Linux kernel and initramfs on
+`u-root-bootdisk`.
+This kernel and initramfs are specially crafted to run (a subset of) the tools
+from [u-root](https://github.com/u-root).
+In `u-root`, the user is presented with a prompt (think busybox) at which the
+user can e.g. enter the command "boot".
+This initiates a scan for bootable grub (or syslinux) configurations on the
+attached media and the results of the scan are presented in a boot menu.
+When an entry is selected the `localboot()` function of `u-root` loads the new
+kernel and initramfs from the final boot target Linux image, and then executes
+a `kexec()` call into the target kernel-initramfs.
 
 The boot process is also described in the README files on the bootdisks.
 
