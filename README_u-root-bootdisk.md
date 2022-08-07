@@ -4,13 +4,10 @@
 Linux images on ARM64 single board computers (SBC) and TV boxes with a resident
 `u-boot`.
 The `u-root-bootdisk` disk image can be copied (by e.g. the Linux `dd` command)
-to an SD card or a USB stick and this card/stick is used in a middle stage in
-the normal `u-boot`-based booting process.
-When booting a SBC/TV box with a `u-root-bootdisk` attached, the boot process
-will pause at the `u-root` prompt where the user can issue the "boot" command.
-This initiates a scan of bootable configurations (grub or syslinux) and a menu
-is presented to the user where one of the bootable configurations can be
-selected for continued booting by `u-root` (utilizing a `kexec()` call).
+to an SD card or a USB stick and this card/stick can be used as a middle stage
+in the normal `u-boot`-based booting process.
+In this middle stage a boot manager based on `u-root` can be launched which
+is capable of autodetecting bootable configurations and executing the boot.
 
 In more detail it works as follows:
 After the board resident `u-boot` has has finished the board initialization
