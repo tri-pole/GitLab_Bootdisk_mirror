@@ -14,12 +14,11 @@ on the bootdisks).
 Scope
 -----
 
-The notes her pertain to openSuse but can be adapted to other distros as well.
+The notes here pertain to openSuse but can be adapted to other distros as well.
 (However, note that your mileage will vary with other installers: For instance,
 the Debian installer will (apparently) boot but the HDMI display output will
 not work, at least not on my Ugoos Am6 plus, so console access will have to be
 set up some other way.)
-
 
 Outline of the disk
 -------------------
@@ -36,7 +35,7 @@ where linux and initrd is the installer kernel and initramfs and dtbfile.dtb
 is a dtb file for kernel 5.x matching your box.
 
 For openSuse, the files linux and initrd are taken from here
-https://download.opensuse.org/ports/aarch64/factory/repo/oss/boot/aarch64
+[download.opensuse.org](https://download.opensuse.org/ports/aarch64/factory/repo/oss/boot/aarch64)
 
 and the grub.cfg file can look like this
 
@@ -58,8 +57,8 @@ initrd /boot/initrd
 }
 ```
 
-Notes for openSuse
-------------------
+Notes for openSuse install
+--------------------------
 
 The following has been tried on a Ugoos AM6 plus with u-root-bootdisk-0v25
 to install openSuse Tumbleweed server and KDE plasma (see also notes at the
@@ -141,5 +140,6 @@ no longer needed and can be discarded/wiped or reused for something else.
 ` netsetup=hostip,netmask,gateway,nameserver`
 
 More information about installer kernel arguments and the install process can
-be found here
-https://doc.opensuse.org/documentation/leap/startup/single-html/book-startup/#ch
+be found at [doc.opensuse.org](https://doc.opensuse.org/documentation/leap/startup/single-html/book-startup/#ch)
+and more information about network install is available at
+[openSuse Wiki](https://en.opensuse.org/SDB:Network_installation#Media-free_network_installation).
