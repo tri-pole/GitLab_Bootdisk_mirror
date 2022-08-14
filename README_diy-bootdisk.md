@@ -36,7 +36,7 @@
   The requirements for the kernel are straightforward; it must be able to
   recognize and read the block devices and file systems, including (perhaps)
   btrfs and iso, and to have the kexec functionality enabled (kexec crash
-  kernel functionality is not required.)
+  kernel functionality is not required).
   The boot loader (i.e. a file `u-boot.ext` for chainloading, installed on the
   first partition, or a binary `u-boot.bin`, installed to in MBR and in the
   gap before the first partition) is often the most critical part, together
@@ -128,7 +128,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   The three files `aml_autoscript, boot.scr, s905_autoscript` can be copied
   either from `u-root-bootdisk` (i.e. chainloader version) or downloaded
-  directly from [](https://github.com/FauthD/amlogic-u-boot-scripts)
+  directly from [Github](https://github.com/FauthD/amlogic-u-boot-scripts)
   (These files are basically text files but with Amlogic signatures in the
   headers, produced by the `mkimage` command from the `u-boot-tools` package.)
 
@@ -169,7 +169,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   == Kernel ==
 
   A good place for the `vmlinuz` file (chanloaded disk) or `zImage` (non
-  chainloaded disk) is at the root of the disk.
+  chainloaded disk) is at the root of the disk, as indicated above.
   On `u-root-bootdisk` there are several kernels to choose from which should
   work with Amlogic, Allwinner or Rockchip SoCs (see `config-` files on
   `u-root-bootdisk`).
