@@ -17,6 +17,8 @@ General info about the bootdisks `u-root-bootdisk` and `petit-bootdisk` can
 can be found in the README files with associated names.
 The other README files contain information specific to different install
 methods or distros.
+Instructions for recreating/adapting the bootdisks can be found in the file
+README_diy-bootdisk.md
 
 There is also a script `debuntu_inst.bash` that can be used to automate the
 procedure of installing Ubuntu or Debian for ARM64 to a USB or SD by using
