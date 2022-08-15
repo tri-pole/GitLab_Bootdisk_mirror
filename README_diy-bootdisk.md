@@ -23,8 +23,8 @@
   components on the bootdisks but all the binaries needed to produce the disks,
   including `u-boot.bin`, can be compiled from sources available at Github
   or other public git repos (see below and the README files on the disks).
-  Thus, it should be easy to customize and adapt the bootdisks to various
-  needs.
+  Thus, it should be easy to customize, enhance and adapt the bootdisks to
+  various needs based on the information provided here.
   
   The procedure outlined here has been used to produce bootdisks for booting
   from SD on Beelink GT King pro and Ugoos Am6 plus.
@@ -58,7 +58,7 @@
   The setup is basically a two step procedure; prepare the disk (SD/USB) and
   copy the files.
 
-- Prepare the disk (SD/USB):
+  ### Prepare the disk (SD/USB)
 
   It is possible to use one and the same disk geometry both for a chainloading
   disk and for a non-chainloading disk.
@@ -81,7 +81,7 @@
   and for a *non chainloaded disk* the "bootable" flag on Partition 1 should
   be *set*.
  
-  = *Only for non chainloaded disk* =
+  - *Only for non chainloaded disk*
   
   Install bootloader (here `u-boot.bin`) to SD/USB:
 
@@ -89,7 +89,7 @@
   
   `dd if=u-boot.bin of=/dev/mydev bs=512 skip=1 seek=1 conv=fsync,notrunc`
   
-- Set up the necessary files:
+  ### Set up the necessary files
 
   Assuming that `/dev/mydev` is mounted at at `/mnt/mydisk`, a minimal
   bootdisk file tree under `/mnt/mydisk` could look like this for a
@@ -125,9 +125,9 @@ and for a non chainloaded (`-nc`) disk it could look like this
   └── zImage
 ```
 
-  Details of the files:
+  ### Details of the files
 
-  == Script files ==
+  #### Script files
 
   The three files `aml_autoscript, boot.scr, s905_autoscript` can be copied
   either from `u-root-bootdisk` (i.e. chainloader version) or downloaded
@@ -141,14 +141,14 @@ and for a non chainloaded (`-nc`) disk it could look like this
   `u-boot` to update its (boot) environment variables (as part of a "recovery
   procedure") when enabling multi-boot using the "toothpick" method.)
 
-  = *Only for non chainloaded disk* =
+  - *Only for non chainloaded disk*
 
   The `uEnv.txt` file is a small text file with e.g. the following contents
 
 ```
   LINUX=/zImage
   INITRD=/uInitrd
-  FDT=/dtb/amlogic/meson-g12b-gtking-pro.dtb
+  FDT=/dtbs/amlogic/meson-g12b-gtking-pro.dtb
   APPEND=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 net.ifnames=0 nr_cpus=1
 ```
 
@@ -156,7 +156,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   the kernel to use only one CPU during the kexec call (which otherwise may
   lead to errors in the dmesg log of the kexec booted kernel.)
 
-  =*Only for chainloaded disk*=
+  - *Only for chainloaded disk*
 
   A simplistic version of the file `extlinux.conf` (for an Amlogic SoC) can
   look like this (the `console` parameter varies between SoCs)
@@ -170,7 +170,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
  
   For the kernel command line argument `nr_cpus=1`, see above.
 
-  == Kernel ==
+  #### Kernel
 
   A good place for the `vmlinuz` file (chanloaded disk) or `zImage` (non
   chainloaded disk) is at the root of the disk, as indicated above.
@@ -180,16 +180,16 @@ and for a non chainloaded (`-nc`) disk it could look like this
   work with Amlogic, Allwinner or Rockchip SoCs (see `config-` files on
   `u-root-bootdisk`).
 
-  == dtb file ==
+  #### dtb file
 
   The dtb file is typically placed at `dtbs/boardmaker/boardfile.dtb`.
   (A selection of dtb files to start with is provided on `u-root-bootdisk`.)
 
-  =*Only for chainloaded disk*=
+  - *Only for chainloaded disk*
   
   The `u-boot.ext` must be placed in the root directory of the disk.
 
-  == initramfs ==
+  #### initramfs
   
   For a chainloaded disk, the initramfs file that contains either `u-root` or
   `Petitboot` is contained in a file with a name like `initramfs.cpio.gz` (as
@@ -201,7 +201,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   This conversion operation has been done using the `mkimage` command
   typically found in a package called `u-boot-tools` on many Linux distos.
 
-  = Packing and unpacking =
+  ##### Packing and unpacking the initramfs
 
   The file `initramfs.cpio.gz` can be straightforwardly unpacked like so
   
@@ -222,7 +222,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   
   and the result will appear in `uInitrd`.
   
-  = Doing customizations =
+  #### Doing customizations of the initramfs
 
   The initramfs containing `u-root` can be recreated and adapted by
   downloading and compiling the `u-root` code from
