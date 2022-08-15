@@ -179,6 +179,12 @@ and for a non chainloaded (`-nc`) disk it could look like this
   On `u-root-bootdisk` there are several kernels to choose from which should
   work with Amlogic, Allwinner or Rockchip SoCs (see `config-` files on
   `u-root-bootdisk`).
+  These kernels are compiled using [unifreq's](https://github.com/unifreq)
+  version of the Linux kernel source by employing
+  [ophub's](https://github.com/ophub/amlogic-s9xxx-armbian) build framework.
+  A few extra options have been enabled over the default kernel config such
+  as kexec and support for btrfs and iso filesystems, see the `config-` files
+  on the bootdisks.
 
   #### dtb file
 
@@ -199,7 +205,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
   header to the file and the resulting file is called `uInitrd` (as in the
   listing above).
   This conversion operation has been done using the `mkimage` command
-  typically found in a package called `u-boot-tools` on many Linux distos.
+  typically found in a package called `u-boot-tools` on many Linux distos
+  (see below).
 
   ##### Packing and unpacking the initramfs
 
@@ -230,7 +237,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   (We have cross compiled `u-root` using the instructions posted there.)
   Our version contains all the packages in the `u-root `collections `core` and
   `boot`. It has been compiled from a `u-root` release (tag) as indicated in
-  the initramfs name.
+  the initramfs name, the current version is v0.8.1.
   
   The initramfs for `Petitboot` has been compiled and assembled according by
   following, largely, the instructions posted at
@@ -243,6 +250,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   [Petitboot's Github repo](https://github.com/open-power/petitboot)
   but it was done with a few tweaks (see the README file on the bootdisk,
   where also more Petitboot links can be found).
+  It was based on release (tag) v1.13.
 
   The initramfs also contains a build of the (full) `ip` command from
   [iproute2](https://github.com/shemminger/iproute2), the `udevadm` daemon
