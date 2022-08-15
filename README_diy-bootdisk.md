@@ -25,6 +25,9 @@
   or other public git repos (see below and the README files on the disks).
   Thus, it should be easy to customize and adapt the bootdisks to various
   needs.
+  
+  The procedure outlined here has been used to produce bootdisks for booting
+  from SD on Beelink GT King pro and Ugoos Am6 plus.
 
 ## Prerequisites
 
@@ -128,7 +131,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   The three files `aml_autoscript, boot.scr, s905_autoscript` can be copied
   either from `u-root-bootdisk` (i.e. chainloader version) or downloaded
-  directly from [Github](https://github.com/FauthD/amlogic-u-boot-scripts)
+  directly from
+  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts)
   (These files are basically text files but with Amlogic signatures in the
   headers, produced by the `mkimage` command from the `u-boot-tools` package.)
 
@@ -139,7 +143,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   = *Only for non chainloaded disk* =
 
-  The `uEnv.txt` file is a short text file with e.g. the following contents
+  The `uEnv.txt` file is a small text file with e.g. the following contents
 
 ```
   LINUX=/zImage
@@ -170,6 +174,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   A good place for the `vmlinuz` file (chanloaded disk) or `zImage` (non
   chainloaded disk) is at the root of the disk, as indicated above.
+  (The kernel file `zImage` on the non chainloaded sisk is just a renamed
+  version of a `vmlinuz` file from a chainloaded disk.)
   On `u-root-bootdisk` there are several kernels to choose from which should
   work with Amlogic, Allwinner or Rockchip SoCs (see `config-` files on
   `u-root-bootdisk`).
@@ -183,4 +189,73 @@ and for a non chainloaded (`-nc`) disk it could look like this
   
   The `u-boot.ext` must be placed in the root directory of the disk.
 
-  The above is all that is needed for a basic version of a bootdisk.
+  == initramfs ==
+  
+  For a chainloaded disk, the initramfs file that contains either `u-root` or
+  `Petitboot` is contained in a file with a name like `initramfs.cpio.gz` (as
+  in the listing above).
+  For the non chainloaded disk, the gzipped cpio archive containing the
+  initramfs has moreover been converted to Amlogic format by adding a small
+  header to the file and the resulting file is called `uInitrd` (as in the
+  listing above).
+  This conversion operation has been done using the `mkimage` command
+  typically found in a package called `u-boot-tools` on many Linux distos.
+
+  = Packing and unpacking =
+
+  The file `initramfs.cpio.gz` can be straightforwardly unpacked like so
+  
+  `$ mkdir tmp ; cd tmp ; gunzip -c ../initramfs.cpio.gz | cpio -vi`
+  
+  and after some editing/adaptations it can be packed up again like so
+
+  `find . | cpio -H newc -o | gzip -c > ../initramfs-new.cpio.gz`
+
+  The header in the file `uInitrd` can be stripped off like so
+  
+  `dd if=uInitrd of=initrd.cpio.gz bs=64 skip=1`
+  
+  where the result `initrd.cpio.gz` can be further unpacked like above.
+  To add an Amlogic header to `initrd.cpio.gz` do
+  
+  `mkimage -n 'my bootdisk' -A arm64 -O linux -T ramdisk -C gzip -d initrd.cpio.gz uInitrd`
+  
+  and the result will appear in `uInitrd`.
+  
+  = Doing customizations =
+
+  The initramfs containing `u-root` can be recreated and adapted by
+  downloading and compiling the `u-root` code from
+  [u-root's Github repo](https://github.com/u-root/u-root).
+  (We have cross compiled `u-root` using the instructions posted there.)
+  Our version contains all the packages in the `u-root `collections `core` and
+  `boot`. It has been compiled from a `u-root` release (tag) as indicated in
+  the initramfs name.
+  
+  The initramfs for `Petitboot` has been compiled and assembled according by
+  following, largely, the instructions posted at
+  [Raptor Engineering](https://www.raptorengineering.com/content/kb/1.html)
+  (see also the comments in the README file on the bootdisk).
+  For recreation and adaption of this package the sources below must be
+  collected.
+  
+  The Petitboot build was based on sources from
+  [Petitboot's Github repo](https://github.com/open-power/petitboot)
+  but it was done with a few tweaks (see the README file on the bootdisk,
+  where also more Petitboot links can be found).
+
+  The initramfs also contains a build of the (full) `ip` command from
+  [iproute2](https://github.com/shemminger/iproute2), the `udevadm` daemon
+  from [systemd](https://github.com/systemd/systemd), the package
+  [kexec](https://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git),
+  and the package [busybox](https://github.com/mirror/busybox) (minus the `ip`
+  command).
+
+  (Note: For some of these packages it can be convenient to use `buildroot`
+  for handling of dependencies and building.)
+
+  A few script files have been added to the initramfs as well, most notably a
+  hack to produce a `shutdown` command and a fake `dmidecode` command.
+  In the `init` script/file a few additions/changes have been made in order to
+  enable a smooth boot up and turning off of network connections etc.
+  It is easy to introduce further customizations like this.
