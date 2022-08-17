@@ -33,7 +33,7 @@
 
 - Materials: The simplest is to start with either `u-root-bootdisk` (if the
   goal is to produce a chainloaded version, which is a good start) or
-  `u-root-bootdisk-c` (if the goal is a non chainloaded version).
+  `u-root-bootdisk-nc` (if the goal is a non chainloaded version).
   The files most likely to need customization for other TV-boxes/SBCs are the
   bootloader `u-boot`, the dtb file and the kernel.
   The requirements for the kernel are straightforward; it must be able to
@@ -220,7 +220,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
   This conversion operation has been done using the `mkimage` command
   typically found in a package called `u-boot-tools` on many Linux distos
   (see below).
-  Below we outline the contents of the initramfs and how to edit/adapt the
+  
+  Next we outline the contents of the initramfs and how to edit/adapt the
   initramfs, and where find sources and how to recreate the initramfs.
 
   ##### Packing and unpacking the initramfs
