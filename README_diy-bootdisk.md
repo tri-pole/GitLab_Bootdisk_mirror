@@ -93,7 +93,11 @@
   A good selection of candidates can be found on the images produced by
   [ophub](https://github.com/ophub/amlogic-s9xxx-armbian) and some of them
   can also be found on the non chainloaded bootdisks.
- 
+
+  - *Only for chainloaded disk*
+  
+  The `u-boot.ext` file must be placed in the root directory of the disk.
+
   - *Only for non chainloaded disk*
   
   Install bootloader (here `u-boot.bin`) to SD/USB:
@@ -203,10 +207,6 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   The dtb file is typically placed at `dtbs/boardmaker/boardfile.dtb`.
   (A selection of dtb files to start with is provided on `u-root-bootdisk`.)
-
-  - *Only for chainloaded disk*
-  
-  The `u-boot.ext` must be placed in the root directory of the disk.
 
   #### initramfs
 
