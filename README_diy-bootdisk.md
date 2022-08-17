@@ -65,7 +65,8 @@
 
   The following geometry can be used (512b sectors):
 
-  Sectors 0-2047: MBR and gap (all standard `u-boot.bin` fit in a 1M gap).
+  Sectors 0-2047: MBR and gap (all standard `u-boot.bin` fit in a 1M gap,
+  see below).
 
   Sectors 2048-S: Partition 1, type 'c' in fdisk, formatted with vfat.
 
@@ -74,12 +75,24 @@
   corresponds to 100M (about 206848) is typically enough for a basic install
   (with a couple of kernels).
 
-  From now on we will assume that a disk has been prepared according to the
-  outline above and that it has device descriptor `/dev/mydev`
-
   For a *chainloaded disk* leave the "bootable" flag *unset* for Partition 1
   and for a *non chainloaded disk* the "bootable" flag on Partition 1 should
   be *set*.
+
+  From now on we will assume that a disk has been prepared according to the
+  outline above and that it has device descriptor `/dev/mydev`
+
+  #### Bootloader
+
+  The bootloader can be either a chainloader in the form of a binary file
+  `u-boot.ext` placed in the root directory on the disk (see below) or a
+  binary `u-boot.bin` installed into the MBR and the "gap" leading up to the
+  first partition (see below).
+  In both cases the binary required depends on the SoC but luckily there are
+  many precompiled binaries freely available.
+  A good selection of candidates can be found on the images produced by
+  [ophub](https://github.com/ophub/amlogic-s9xxx-armbian) and some of them
+  can also be found on the non chainloaded bootdisks.
  
   - *Only for non chainloaded disk*
   
@@ -196,7 +209,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   The `u-boot.ext` must be placed in the root directory of the disk.
 
   #### initramfs
-  
+
   For a chainloaded disk, the initramfs file that contains either `u-root` or
   `Petitboot` is contained in a file with a name like `initramfs.cpio.gz` (as
   in the listing above).
@@ -207,6 +220,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
   This conversion operation has been done using the `mkimage` command
   typically found in a package called `u-boot-tools` on many Linux distos
   (see below).
+  Below we outline the contents of the initramfs and how to edit/adapt the
+  initramfs, and where find sources and how to recreate the initramfs.
 
   ##### Packing and unpacking the initramfs
 
@@ -259,7 +274,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
   and the package [busybox](https://github.com/mirror/busybox) (minus the `ip`
   command).
 
-  (Note: For some of these packages it can be convenient to use `buildroot`
+  (Note: For some of these packages it can be convenient to use
+  [buildroot](https://buildroot.org/)
   for handling of dependencies and building.)
 
   A few script files have been added to the initramfs as well, most notably a
