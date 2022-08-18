@@ -149,14 +149,21 @@ and for a non chainloaded (`-nc`) disk it could look like this
   The three files `aml_autoscript, boot.scr, s905_autoscript` can be copied
   either from `u-root-bootdisk` (i.e. chainloader version) or downloaded
   directly from
-  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts)
+  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts).
   (These files are basically text files but with Amlogic signatures in the
-  headers, produced by the `mkimage` command from the `u-boot-tools` package.)
+  headers, produced by the `mkimage` command from the `u-boot-tools` package.
+  According to the description on
+  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts)
+  the file `aml_autoscript` is strictly not needed on a TV-box which has
+  multiboot already enabled (but the accompanying `s905_autoscript` is needed).
 
   The zero-length file `aml_autoscript.zip` is just a placeholder file.
-  (I think the presence of this file is what triggers the board resident
-  `u-boot` to update its (boot) environment variables (as part of a "recovery
-  procedure") when enabling multi-boot using the "toothpick" method.)
+  (Per my understanding, the presence of `aml_autoscript.zip` is what
+  triggers the board resident `u-boot` to update its (boot) environment
+  variables (as part of a "recovery procedure") when enabling multi-boot
+  using the "toothpick" method, at least on some boxes.
+  Thus, the script file setup on the bootdisk should be sufficient to use when
+  enabling multiboot on a TV-box for the first time.)
 
   - *Only for non chainloaded disk*
 

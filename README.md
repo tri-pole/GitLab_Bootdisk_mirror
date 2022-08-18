@@ -30,5 +30,6 @@ is needed for many TV-boxes/SBSc since both the Ubuntu and Debian installers
 for ARM64 currently have bugs which prevent them from working correctly on
 these devices.
 A working Ubuntu desktop image for a TV-box can also easily be obtained by
-a simple conversion procedure starting with a Raspberry Pi image, see the
-associated README file.
+a simple conversion procedure starting with a Raspberry Pi image, see
+README_ubuntu_frompi.md.
+
