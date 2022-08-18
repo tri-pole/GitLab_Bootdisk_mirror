@@ -16,7 +16,9 @@ disks based on the `u-root` boot loader and another pair based on the
 General info about the bootdisks `u-root-bootdisk` and `petit-bootdisk` can
 can be found in the README files with associated names.
 The other README files contain information specific to different install
-methods or distros.
+methods or distributions.
+In README_working_distros.md there is a an annotated list of distributions
+that can be installed and booted with the bootdisks.
 Instructions for recreating/adapting the bootdisks can be found in the file
 README_diy-bootdisk.md
 

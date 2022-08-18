@@ -191,10 +191,10 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   A good place for the `vmlinuz` file (chanloaded disk) or `zImage` (non
   chainloaded disk) is at the root of the disk, as indicated above.
-  (The kernel file `zImage` on the non chainloaded sisk is just a renamed
+  (The kernel file `zImage` on the non chainloaded disk is just a renamed
   version of a `vmlinuz` file from a chainloaded disk.)
   On `u-root-bootdisk` there are several kernels to choose from which should
-  work with Amlogic, Allwinner or Rockchip SoCs (see `config-` files on
+  work with Amlogic, Allwinner or Rockchip SoCs (see the `config-` files on
   `u-root-bootdisk`).
   These kernels are compiled using [unifreq's](https://github.com/unifreq)
   version of the Linux kernel source by employing
@@ -245,7 +245,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   
   and the result will appear in `uInitrd`.
   
-  #### Doing customizations of the initramfs
+  ##### Doing customizations of the initramfs
 
   The initramfs containing `u-root` can be recreated and adapted by
   downloading and compiling the `u-root` code from
