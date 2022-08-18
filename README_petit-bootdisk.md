@@ -85,6 +85,30 @@ namespace where only the loopback interface `lo` can be brought up. More info
 can be found in the README file on `petit-bootdisk` (specifically the
 `pb_nonet=true` kernel command line argument).
 
+- `Petitboot` searches the following locations for a grub boot configuration
+(cf. `discover/grub2/grub2.c`):
+
+```
+    "/grub.cfg",
+    "/menu.lst",
+    "/grub/grub.cfg",
+    "/grub2/grub.cfg",
+    "/grub/menu.lst",
+    "/boot/grub/grub.cfg",
+    "/boot/grub2/grub.cfg",
+    "/boot/grub/menu.lst",
+    "/efi/boot/grub.cfg",
+    "/GRUB.CFG",
+    "/MENU.LST",
+    "/GRUB/GRUB.CFG",
+    "/GRUB2/GRUB.CFG",
+    "/GRUB/MENU.LST",
+    "/BOOT/GRUB/GRUB.CFG",
+    "/BOOT/GRUB/MENU.LST",
+    "/EFI/BOOT/GRUB.CFG",
+    "/EFI/BOOT/grub.cfg",   # <-- In next release of petit-bootdisk
+```
+
 Finally, the ability to boot from external media (sometimes called "multiboot")
 for the SBC or TV-box must have been enabled.
 For TV-boxes this often amounts to going through a "toothpick" reset with an

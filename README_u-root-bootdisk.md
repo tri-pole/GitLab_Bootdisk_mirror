@@ -90,8 +90,10 @@ the following four types; FAT16, FAT32, EXT4 or XFS.
 scan so e.g. an EXT4 file system on a partition inside a hybrid iso image is
 permitted.)
 
-- The grub.cfg file must reside in one of a few standard locations (see
-  the `u-root` function `grub()` used in `localboot()`).
+- The grub.cfg file must reside in one of a few standard locations:
+On each partition searched, the `u-root` function `grub()` used in
+`localboot()` searches to a depth of 4 all subdirectories of
+`boot,EFI,efi,grub,grub2` for the file `grub.cfg`.
 
 Part of the idea with the `u-root-bootdisk` was to be able to have the bootdisk
 on SD and then have several different USBs with boot target Linux distros

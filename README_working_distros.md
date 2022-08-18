@@ -35,7 +35,8 @@ question (various Internet sources describe this).
 
 In general, the requirements for a Linux ARM64 distribution to boot and run
 from USB is that there is available a kernel and initramfs with sufficient
-support for the boot medium (here USB) and the TV-box/SBC in question.
+support for the boot medium (here USB) and for the TV-box/SBC (SoC) in
+question.
 For some of the distributions everything is in place on the images already as
 posted on the download site, on others only minor tweaks are needed (such as
 setting up a `grub.cfg` file).
@@ -109,10 +110,8 @@ The Armbian Generic ARM64 images can be booted and run as-is.
 
 ### Other distributions
 
-In general it is easy to get an ARM64 Linux distro to boot and run with the
-bootdisks as long as the kernel and initramfs on the image has support for
-the TV-box/SBC in question (and the kernel+initramfs has support for the
-target storage medium, here USB).
+As mentioned above, in general it is easy to get an ARM64 Linux distro to boot
+and run with the bootdisks as long as some basic requirements are fulfilled.
 When this is the case, it is mostly a matter of setting up a `grub.cfg` file,
 as for the openSuse appliance images mentioned above.
 
