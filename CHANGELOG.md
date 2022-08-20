@@ -43,6 +43,9 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
 
 # petit-bootdisk-nc
 
+## [v0.22] - 22-08-20 (initramfs only posted)
+- See changes for petit-bootdisk v0.22
+
 ## [v0.2] - 22-07-31
 
 ### Added

@@ -125,6 +125,8 @@ Linux distros tested
 The u-root-bootdisks have been tested with Fedora 36 (Gnome, KDE), openSuse
 Leap 15.4 (KDE), Armbian generic ARM64 images (XFCE) and with the Ubuntu and
 Debian images built according to the instructions in adjacent README files.
+For a full list of distribtions that work with these bootdisks, see
+README_working_distros.md
 
 Some live images of these distros and others do not work because of the
 caveats listed above but the installer images typically work as intended.
