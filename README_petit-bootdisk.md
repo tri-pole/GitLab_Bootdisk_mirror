@@ -69,7 +69,8 @@ easily make one:
 The file `uInitrd-petitboot-0vX` is intended as a plug-in replacement for the
 `uInitrd` on the `u-root-bootdisk-nc` which effectively converts the latter
 bootdisk into a `petit-bootdisk-nc`.
-(Thus, also `u-root-bootdisk-nc` can be upgraded to a v0.22 initramfs.)
+(Thus, also `petit-bootdisk-nc` can be brought up to v0.22 simply by using
+using the latest version of `uInitrd` which is `uInitrd-petitboot-0v22`.)
 
 The current version of `Petitboot` on the `petit-bootdisk`(s) listed above is
 v1.13.
