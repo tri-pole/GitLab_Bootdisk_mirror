@@ -1,9 +1,9 @@
-# working-distros
+# Working Linux distributions
 
 ## Background
 
-This document provides a list over distributions that are known to work with
-the bootdisks.
+This document provides an annotated list over distributions that are known to
+work with the bootdisks.
 
 ## Scope
 

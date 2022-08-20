@@ -55,11 +55,22 @@ md5sums of latest release(s):
 
 `8554b78c6ebd8ee08b54f8eec94f9944  uInitrd-petitboot-0v2`
 
-Right now there doesn't exist a complete `petit-bootdisk-nc` but you can easily
-make one: The file `uInitrd-petitboot-0vX` is intended as a plug-in replacement
-for the `uInitrd` on the `u-root-bootdisk-nc` which effectively converts the
-latter bootdisk into a `petit-bootdisk-nc`. (See also the the README file in the
-download directory for `petit-bootdisk-nc`)
+`d42f04a5040b786a999f7805a2f355a2  initramfs-petitboot-0v22.cpio.gz`
+
+`528106ae618c1d0a6e0ebdc8714b1d8a  uInitrd-petitboot-0v22`
+
+The latest `petit-bootdisk` is v0.20. You can upgrade this bootdisk to the
+latest version of the initramfs containing `Petitboot` by simply copying the
+file `initramfs-petitboot-0v22.cpio.gz` over to the bootdisk to replace the
+existing `initramfs*.cpio.gz` (and possibly adjusting names in extlinux.conf).
+
+As for `petit-bootdisk-nc`; there currently doesn't exist one but you can
+easily make one:
+The file `uInitrd-petitboot-0vX` is intended as a plug-in replacement for the
+`uInitrd` on the `u-root-bootdisk-nc` which effectively converts the latter
+bootdisk into a `petit-bootdisk-nc`.
+(Thus, also `u-root-bootdisk-nc` can be upgraded to a v0.22 initramfs.)
+
 The current version of `Petitboot` on the `petit-bootdisk`(s) listed above is
 v1.13.
 
@@ -77,13 +88,13 @@ running `Petitboot`) is inherited.
 This seems to be a design decision and some reasons therefore are hinted at
 [here.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 
-- Our build of `Petitboot` is set up to have only USB and DISK as default boot
-targets. Despite this, `Petitboot` sets up network interfaces for netbooting
-and tries to establish network connections. Since this is not desirable for
-everyone we have added an option (in v0.20) to run `Petitboot` in a network
-namespace where only the loopback interface `lo` can be brought up. More info
-can be found in the README file on `petit-bootdisk` (specifically the
-`pb_nonet=true` kernel command line argument).
+- Our build of `Petitboot` is set up to have only USB, DISK and OPTICAL as
+default boot target types. Despite this, `Petitboot` sets up network interfaces
+for netbooting and tries to establish network connections. Since this is not
+desirable for everyone we have added an option (in v0.20) to run `Petitboot`
+in a network namespace where only the loopback interface `lo` can be brought
+up. More info can be found in the README file on `petit-bootdisk`
+(specifically the `pb_nonet=true` kernel command line argument).
 
 - `Petitboot` searches the following locations for a grub boot configuration
 (cf. `discover/grub2/grub2.c`):
@@ -106,7 +117,7 @@ can be found in the README file on `petit-bootdisk` (specifically the
     "/BOOT/GRUB/GRUB.CFG",
     "/BOOT/GRUB/MENU.LST",
     "/EFI/BOOT/GRUB.CFG",
-    "/EFI/BOOT/grub.cfg",   # <-- In next release of petit-bootdisk
+    "/EFI/BOOT/grub.cfg"
 ```
 
 Finally, the ability to boot from external media (sometimes called "multiboot")
@@ -143,9 +154,10 @@ other READMEs about Ubuntu/Debian install).
 Authorship
 ----------
 
-Nothing of what is present on these bootdisks is my original work; I have
-merely assembled and compiled (and slightly tweaked) other people's source
-code, or copied freely available scripts, and made disk images of the result.
+Nothing (almost) of what is present on these bootdisks is my original work;
+I have mostly assembled and compiled (and slightly tweaked) other people's
+source code, or copied freely available scripts, and made disk images of the
+result.
 Detailed descriptions of the sources of my material can be found in the README
 files on the bootdisks.
 In some cases, such as script files, the material has been used and evolved,
