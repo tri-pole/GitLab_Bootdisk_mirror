@@ -155,7 +155,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
   According to the description on
   [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts)
   the file `aml_autoscript` is strictly not needed on a TV-box which has
-  multiboot already enabled (but the accompanying `s905_autoscript` is needed).
+  multiboot already enabled but the accompanying `s905_autoscript` is
+  needed.)
 
   The zero-length file `aml_autoscript.zip` is just a placeholder file.
   (Per my understanding, the presence of `aml_autoscript.zip` is what

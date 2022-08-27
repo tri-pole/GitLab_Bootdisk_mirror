@@ -47,10 +47,6 @@ The actual bootdisk images are hosted outside of Gitlab, at the links below
 
 md5sums of latest release(s):
 
-`7fe94271d3c27802170872c1431a2605  petit-bootisk-0v15.img.gz`
-
-`153b2872af39b92535d04d1d02612b72  uInitrd-petitboot-0v15`
-
 `620cb3791a3694600e9a26ebd9e75226  petit-bootisk-0v2.img.gz`
 
 `8554b78c6ebd8ee08b54f8eec94f9944  uInitrd-petitboot-0v2`
