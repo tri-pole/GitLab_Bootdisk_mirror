@@ -68,8 +68,8 @@ bootdisk into a `petit-bootdisk-nc`.
 (Thus, also `petit-bootdisk-nc` can be brought up to v0.22 simply by using
 using the latest version of `uInitrd` which is `uInitrd-petitboot-0v22`.)
 
-The current version of `Petitboot` on the `petit-bootdisk`(s) listed above is
-v1.13.
+The current version of `Petitboot` on the `petit-bootdisk`(s) listed above (as
+well as the stand alone initramfs's above) is v1.13.
 
 Caveats
 -------

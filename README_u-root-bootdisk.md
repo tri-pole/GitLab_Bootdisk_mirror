@@ -65,10 +65,12 @@ md5sums of latest release:
 
 `u-root-bootdisk-0v26.img.gz  55eee4b1713594476106021db07becfc`
 
+`u-root-bootdisk-0v28.img.gz  082d7804e3a81eb214b5151f7ff1662d`
+
 `u-root-bootdisk-nc_0v26.img.gz  6c46aeb9ef82c0f46492f4c7bd878f57`
 
-The current version of `u-root` on the `u-root-bootdisk`(s) listed above is
-v0.8.1.
+The most recent version of `u-root` on the `u-root-bootdisk`(s) listed above is
+v0.9.0 (found on `u-root-bootdisk-0v28.img.gz`).
 
 Caveats
 -------

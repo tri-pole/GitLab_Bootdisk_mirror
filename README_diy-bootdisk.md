@@ -65,14 +65,14 @@
 
   The following geometry can be used (512b sectors):
 
-  Sectors 0-2047: MBR and gap (all standard `u-boot.bin` fit in a 1M gap,
+  Sectors 0-4095: MBR and gap (all standard `u-boot.bin` fit in a 2M gap,
   see below).
 
-  Sectors 2048-S: Partition 1, type 'c' in fdisk, formatted with vfat.
+  Sectors 4096-S: Partition 1, type 'c' in fdisk, formatted with vfat.
 
   The value of S in the line above above is mostly dependent on how many
   kernels are needed (e.g. for experimentation); a value of S which
-  corresponds to 100M (about 206848) is typically enough for a basic install
+  corresponds to 100M (about 208896) is typically enough for a basic install
   (with a couple of kernels).
 
   For a *chainloaded disk* leave the "bootable" flag *unset* for Partition 1
