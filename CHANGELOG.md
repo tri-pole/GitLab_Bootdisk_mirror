@@ -34,11 +34,12 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
 
 # petit-bootdisk:
 
-## [v0.22] - 22-08-20 (initramfs only posted)
+## [v0.22] - 22-08-29
 
 ### Added
  - Search also for boot configuration in "/EFI/BOOT/grub.cfg".
  - Search also for boot configurations on media type OPTICAL.
+ - Some more u-boot.bin
 
 ### Changed
  - Cosmetics in the Petitboot UI

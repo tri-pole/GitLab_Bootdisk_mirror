@@ -49,16 +49,13 @@ md5sums of latest release(s):
 
 `620cb3791a3694600e9a26ebd9e75226  petit-bootisk-0v2.img.gz`
 
-`8554b78c6ebd8ee08b54f8eec94f9944  uInitrd-petitboot-0v2`
+`4be202d19f77d47e4db50e8839eb6f81  petit-bootdisk-0v22.img.gz`
 
-`d42f04a5040b786a999f7805a2f355a2  initramfs-petitboot-0v22.cpio.gz`
+`8554b78c6ebd8ee08b54f8eec94f9944  uInitrd-petitboot-0v2`
 
 `528106ae618c1d0a6e0ebdc8714b1d8a  uInitrd-petitboot-0v22`
 
-The latest `petit-bootdisk` is v0.20. You can upgrade this bootdisk to the
-latest version of the initramfs containing `Petitboot` by simply copying the
-file `initramfs-petitboot-0v22.cpio.gz` over to the bootdisk to replace the
-existing `initramfs*.cpio.gz` (and possibly adjusting names in extlinux.conf).
+The latest `petit-bootdisk` is v0.22.
 
 As for `petit-bootdisk-nc`; there currently doesn't exist one but you can
 easily make one:
