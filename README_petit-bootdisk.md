@@ -13,8 +13,8 @@ initramfs) is loaded into memory and booting proceeds with the new
 configuration (utilizing a `kexec()` call).
 (The process is analogous to that of `u-root`, see README_u-root-bootdisk.md)
 
-`Petitboot` is capable of reading and parsing a range of different boot
-configuration files, such as grub setups, syslinux and `Petitboot`'s own
+`Petitboot` is capable of reading and parsing several different boot
+configuration file formats, such as grub setups, syslinux and `Petitboot`'s own
 [native format.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 More documentation about `Petitboot` can be found
 [here](https://open-power.github.io/petitboot).
@@ -47,26 +47,13 @@ The actual bootdisk images are hosted outside of Gitlab, at the links below
 
 md5sums of latest release(s):
 
-`620cb3791a3694600e9a26ebd9e75226  petit-bootisk-0v2.img.gz`
+`6d28ef6f1928ee2adf202a785d523fb8  petit-bootdisk-0v2.img.gz`
 
 `4be202d19f77d47e4db50e8839eb6f81  petit-bootdisk-0v22.img.gz`
 
-`8554b78c6ebd8ee08b54f8eec94f9944  uInitrd-petitboot-0v2`
+`10398082d3209f2b385f14883d2f8fcc  petit-bootdisk-nc_0v22.img.gz`
 
-`528106ae618c1d0a6e0ebdc8714b1d8a  uInitrd-petitboot-0v22`
-
-The latest `petit-bootdisk` is v0.22.
-
-As for `petit-bootdisk-nc`; there currently doesn't exist one but you can
-easily make one:
-The file `uInitrd-petitboot-0vX` is intended as a plug-in replacement for the
-`uInitrd` on the `u-root-bootdisk-nc` which effectively converts the latter
-bootdisk into a `petit-bootdisk-nc`.
-(Thus, also `petit-bootdisk-nc` can be brought up to v0.22 simply by using
-using the latest version of `uInitrd` which is `uInitrd-petitboot-0v22`.)
-
-The current version of `Petitboot` on the `petit-bootdisk`(s) listed above (as
-well as the stand alone initramfs's above) is v1.13.
+The version of `Petitboot` on the `petit-bootdisk`(s) above is v1.13.
 
 Caveats
 -------
