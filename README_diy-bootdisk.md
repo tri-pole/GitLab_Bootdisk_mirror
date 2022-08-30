@@ -92,7 +92,7 @@
   many precompiled binaries freely available.
   A good selection of candidates can be found on the images produced by
   [ophub](https://github.com/ophub/amlogic-s9xxx-armbian) and some of them
-  can also be found on the non chainloaded bootdisks.
+  can also be found on the chainloaded bootdisks.
 
   - *Only for chainloaded disk*
   
@@ -115,7 +115,6 @@
 ```
   ├── aml_autoscript
   ├── aml_autoscript.zip
-  ├── boot.scr
   ├── dtbs
   │   └── amlogic
   │       └── meson-g12b-gtking-pro.dtb
@@ -147,8 +146,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
   #### Script files
 
   The three files `aml_autoscript, boot.scr, s905_autoscript` can be copied
-  either from `u-root-bootdisk` (i.e. chainloader version) or downloaded
-  directly from
+  either from `u-root-bootdisk` or `petit-bootdisk` (i.e. chainloader version)
+  or downloaded directly from
   [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts).
   (These files are basically text files but with Amlogic signatures in the
   headers, produced by the `mkimage` command from the `u-boot-tools` package.

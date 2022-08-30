@@ -34,6 +34,11 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
 
 # petit-bootdisk:
 
+## [v0.22-1] - 22-09-30
+
+### Changed
+ - Rewrite of README file.
+
 ## [v0.22] - 22-08-29
 
 ### Added
