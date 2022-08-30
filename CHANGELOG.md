@@ -8,10 +8,10 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
 
 ### Added
  - New initramfs initramfs-cb-v0.9.0.cpio.gz
- - New u-boot.bin files (in dir u-boot-3pole)
+ - New u-boot.bin files (in dir u-boot-3pole).
 
 ### Changed
- - dtbs are now from Manjaro (kernel 5.19.1-2-MANJARO-ARM)
+ - dtbs are now from Manjaro (kernel 5.19.1-2-MANJARO-ARM).
  - Updated README
 
 ## [v0.26] - 22-07-09
@@ -28,14 +28,14 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
 
 ### Changed
  - New initramfs built from initramfs-cb-v0.9.0.cpio.gz
- - New bootloader (built from u-boot-amlogic-220809 w/ GT King pro defconfig)
- - dtbs are now from Manjaro (kernel 5.19.1-2-MANJARO-ARM)
+ - New bootloader (built from u-boot-amlogic-220809 w/ GT King pro defconfig).
+ - dtbs are now from Manjaro (kernel 5.19.1-2-MANJARO-ARM).
  - Reverted to kernel vmlinuz-5.4.209-ophub-kexec-fs+
  
 ## [v0.26] - 22-07-09
 
 ### Changed
- - README, aml_autoscript, s905_autoscript, boot.scr.
+ - README, aml_autoscript, s905_autoscript, boot.scr
 
 ### Removed
  - One misplaced bmp file.
@@ -50,7 +50,7 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
 ## [v0.22] - 22-08-29
 
 ### Added
- - Search also for boot configuration in "/EFI/BOOT/grub.cfg".
+ - Search also for boot configuration in "/EFI/BOOT/grub.cfg"
  - Search also for boot configurations on media type OPTICAL.
  - Some more u-boot.bin
 
@@ -63,12 +63,14 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
  - Possibility to disable network access (and netbooting).
 
 ## [v0.15] - 22-07-26
-- First upload.
+ - First upload.
 
 # petit-bootdisk-nc
 
-## [v0.22] - 22-08-20 (initramfs only posted)
-- See changes for petit-bootdisk v0.22
+## [v0.22] - 22-08-30
+
+ - First commit of full bootdisk, same features as petit-bootdisk v0.28
+ - Same bootloader as u-root-bootdisk-nc v0.28
 
 ## [v0.2] - 22-07-31
 
@@ -76,7 +78,7 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
  - Possibility to disable network access (and netbooting).
 
 ## [v0.15] - 22-07-26
-- First upload (of initramfs).
+ - First upload (of initramfs only).
 
 # debuntu_inst.bash:
 
