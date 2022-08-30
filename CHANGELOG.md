@@ -7,8 +7,8 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
 ## [v0.28] - 22-08-29
 
 ### Added
- - New initramfs initramfs-cb-v0.9.0.cpio.gz, new u-boot.bin files
-   (in dir u-boot-3pole)
+ - New initramfs initramfs-cb-v0.9.0.cpio.gz
+ - New u-boot.bin files (in dir u-boot-3pole)
 
 ### Changed
  - dtbs are now from Manjaro (kernel 5.19.1-2-MANJARO-ARM)
@@ -24,6 +24,14 @@ Changelog for u-root-bootdisk and u-root-bootdisk-nc
 
 # u-root-bootdisk-nc:
 
+## [v0.28] - 22-08-29
+
+### Changed
+ - New initramfs built from initramfs-cb-v0.9.0.cpio.gz
+ - New bootloader (built from u-boot-amlogic-220809 w/ GT King pro defconfig)
+ - dtbs are now from Manjaro (kernel 5.19.1-2-MANJARO-ARM)
+ - Reverted to kernel vmlinuz-5.4.209-ophub-kexec-fs+
+ 
 ## [v0.26] - 22-07-09
 
 ### Changed
