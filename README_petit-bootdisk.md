@@ -18,6 +18,9 @@ configuration file formats, such as grub setups, syslinux and `Petitboot`'s own
 [native format.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 More documentation about `Petitboot` can be found
 [here](https://open-power.github.io/petitboot).
+`Petitboot` also has a built-in shell from which the
+[commands of BusyBox}(https://www.busybox.net/downloads/BusyBox.html)
+are available so `petit-bootdisk` can serve as a rescue disk.
 
 Variants
 --------

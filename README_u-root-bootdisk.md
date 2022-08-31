@@ -15,7 +15,7 @@ stages it loads a default Linux kernel and initramfs on
 `u-root-bootdisk`.
 This kernel and initramfs are specially crafted to run (a subset of) the tools
 from [u-root](https://github.com/u-root).
-In `u-root`, the user is presented with a prompt (think busybox) at which the
+In `u-root`, the user is presented with a prompt (think BusyBox) at which the
 user can e.g. enter the command "boot".
 This initiates a scan for bootable grub (or syslinux) configurations on the
 attached media and the results of the scan are presented in a boot menu.
@@ -33,6 +33,8 @@ images that are set up for chainloading with u-boot.ext (simply beacuse
 booting and provides a separating layer between the SoC/board specific parts
 of the boot process and the parts shared among Linux distributions.
 More information about `u-root` can be found [here](https://u-root.org).
+The general purpose commands available at the `u-root` shell prompt are listed
+[here](https://github.com/u-root/u-root/tree/main/cmds/core).
 
 Variants
 --------
