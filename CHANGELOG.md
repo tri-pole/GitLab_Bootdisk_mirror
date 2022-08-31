@@ -1,6 +1,7 @@
 # Change Log
 
-Changelog for u-root-bootdisk and u-root-bootdisk-nc
+Changelog for u-root-bootdisk, u-root-bootdisk-nc, petit-bootdisk and
+petit-bootdisk-nc
 
 # u-root-bootdisk:
 

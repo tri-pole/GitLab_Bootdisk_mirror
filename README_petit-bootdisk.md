@@ -49,8 +49,6 @@ md5sums of latest release(s):
 
 `6d28ef6f1928ee2adf202a785d523fb8  petit-bootdisk-0v2.img.gz`
 
-`4be202d19f77d47e4db50e8839eb6f81  petit-bootdisk-0v22.img.gz`
-
 `a080034f384c28e87e1b584df0b7229c  petit-bootdisk-0v22-1.img.gz`
 
 `10398082d3209f2b385f14883d2f8fcc  petit-bootdisk-nc_0v22.img.gz`
