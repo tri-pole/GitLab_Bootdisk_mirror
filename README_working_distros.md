@@ -2,15 +2,16 @@
 
 ## Background
 
-This document provides an annotated list over distributions that are known to
-work with the bootdisks.
+This document provides an annotated list over Linux distributions that are
+known to work with the bootdisks.
 
 ## Scope
 
 Here we only give basic information on working distributions and, occasionally,
 minor hints on how to get a distro up and running with the bootdisks.
 For detailed information the reader is referred to the adjacent README files.
-The installation target is USB everywhere below.
+The installation target for the Linux distribution is USB everywhere below
+(with the bootdisk installed on SD).
 
 The list covers distributions that have been tested and found working on
 Beelink GT King Pro and Ugoos Am6 plus (both Amlogic s922x).
@@ -128,9 +129,9 @@ initrd /boot/initrd.img-5.10.43-rockchip64
 }
 ```
 
-For other distributions it can be convenient to make a custom image by
-going through the following steps. (This applies to, for example, Manjaro
-ARM64 images on USB that can be made bootable via the bootdisks.)
+For other distributions, it can be convenient to make a custom image by going
+through the following steps. (This applies to, for example, Manjaro ARM64
+images on USB that can be made bootable via the bootdisks.)
 
 - Copy over all the files from the original image to a newly made USB with one
   single large ext4 partition (using e.g. `rsync` to retain all structure).
@@ -149,3 +150,8 @@ ARM64 images on USB that can be made bootable via the bootdisks.)
 - Do a first boot and upgrade e.g. to the final kernel desired, and then do the
   rest of the customization from there (and update `grub.cfg` accordingly
   unless it is done automagically by an installed grub).
+
+However, it should also be noted that if a Linux distribution image has a valid
+syslinux/extlinux configuration then the `u-root-bootdisk` can in general be
+used to boot the image (from USB) without alterations since `u-root` can parse
+also such boot configurations.
