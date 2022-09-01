@@ -33,3 +33,22 @@ A working Ubuntu desktop image for a TV-box can also easily be obtained by
 a simple conversion procedure starting with a Raspberry Pi image, see
 README_ubuntu_frompi.md.
 
+## Screenshots
+
+Some (low resolution) screenshots of some of the bootdisk screens.
+
+### u-root-bootdisk and u-root-bootdisk-nc
+
+![Prompt in u-root](/images/u-root-shellscreen.png "u-root shell")*The screen
+encountered after boot with u-root bootdisk. If the command "boot" is entered
+at the prompt (lower left corner) a scan for bootable configurations over the
+attached devices is started.*
+
+![Boot menu in u-root](/images/u-root-bootmenu.png "u-root boot")*The menu
+of bootable images displayed after u-root has scanned the attached devices
+(here three USB sticks attached via a USB hub).*
+
+### petit-bootdisk and petit-bootdisk-n
+
+![Boot menu in Petitboot](/images/petitboot-bootscreen.png "petitboot")*The
+boot menu screen encountered after boot with a Petitboot bootdisk.*

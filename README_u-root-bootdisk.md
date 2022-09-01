@@ -32,6 +32,7 @@ images that are set up for chainloading with u-boot.ext (simply beacuse
 `u-root-bootdisk` implements a unified boot solution for the final stages on
 booting and provides a separating layer between the SoC/board specific parts
 of the boot process and the parts shared among Linux distributions.
+
 More information about `u-root` can be found [here](https://u-root.org).
 The general purpose commands available at the `u-root` shell prompt are listed
 [here](https://github.com/u-root/u-root/tree/main/cmds/core).
@@ -111,8 +112,8 @@ reaching u-root prompt.
 Finally, the ability to boot from external media (sometimes called "multiboot")
 for the SBC or TV-box must have been enabled.
 For TV-boxes this often amounts to going through a "toothpick" reset with an
-appropriate Linux image attached (descriptions of this procedure are easy to
-find).
+appropriate Linux image attached (such as one of the bootdisks).
+(Descriptions of this procedure are easy to find.)
 
 Platforms tested
 ----------------

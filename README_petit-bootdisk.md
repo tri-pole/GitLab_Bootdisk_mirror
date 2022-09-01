@@ -106,8 +106,8 @@ up. More info can be found in the README file on `petit-bootdisk`
 Finally, the ability to boot from external media (sometimes called "multiboot")
 for the SBC or TV-box must have been enabled.
 For TV-boxes this often amounts to going through a "toothpick" reset with an
-appropriate Linux image attached (descriptions of this procedure are easy to
-find).
+appropriate Linux image attached (such as one of the bootdisks).
+(Descriptions of this procedure are easy to find.)
 
 Platforms tested
 ----------------
