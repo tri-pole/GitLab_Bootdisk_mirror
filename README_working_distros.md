@@ -107,7 +107,40 @@ end of README_debian_inst.md
 
 ### Armbian
 
-The Armbian Generic ARM64 images can be booted and run as-is.
+The Armbian Generic ARM64 images can be booted and run as-is up to and
+including release 22.05 (later releases might not work).
+
+The images for specific boards can be run if a simple grub.cfg file is added.
+For instance, on Ugoos Am6 plus the image for Odroid N2 can be booted with
+a file `/boot/grub/grub.cfg` like so (example for release 22.08.1):
+
+```
+menuentry "Armbian (kernel 5.19.5-meson64)" {
+
+linux  /boot/vmlinuz-5.19.5-meson64 root=UUID=68fce3a0-0094-49ab-98db-1741d0916724 console=ttyAML0,115200 console=tty1 consoleblank=0
+initrd /boot/initrd.img-5.19.5-meson64
+
+}
+```
+
+#### Ophub's builds
+
+Ophub's [builds](https://github.com/ophub/amlogic-s9xxx-armbian) of Armbian can
+be booted with a simple grub.cfg just like the board specific Armbian images.
+However, ophub's images already have a template for `extlinux.conf` (named
+`extlinux.conf.bak`) which `u-root-bootdisk` can parse.
+Therefore, it is easy to simply edit this file and use `u-root-bootdisk` for
+booting.
+For instance, on Ugoos Am6 plus the image for s922x can be booted with an
+`/extlinux/extlinux.conf` file like so (example for ophub build 220901):
+
+```
+label Armbian
+    kernel /vmlinuz-5.10.140-ophub
+    initrd /initrd.img-5.10.140-ophub
+    fdt /dtb/amlogic/meson-g12b-ugoos-am6.dtb
+    append root=UUID=9e7e9115-0312-4d0a-9587-8b0089cb6837 rootflags=data=writeback rw rootfstype=ext4 console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1 voutmode=hdmi disablehpd=false overscan=100 sdrmode=auto
+```
 
 ### Other distributions
 
