@@ -46,7 +46,7 @@ new image may need to be built because of shortcomings in the existing
 installers.
 (Examples of these scenarios and details are given in the adjacent README
 files.)
-Here, we only give ashort summary of the steps needed to get a certain
+Here, we only give a short summary of the steps needed to get a certain
 distro up and running.
 
 ### Ubuntu
@@ -147,7 +147,7 @@ label Armbian
 As mentioned above, in general it is easy to get an ARM64 Linux distro to boot
 and run with the bootdisks as long as some basic requirements are fulfilled.
 When this is the case, it is mostly a matter of setting up a `grub.cfg` file,
-as for the openSuse appliance images mentioned above.
+as shown above.
 
 Another example where a simple `grub.cfg` setup is sufficient is the
 TwisterOS ArmbianV2-0-3 image (for rk3399/OdroidN2/N2+) which only requires
@@ -161,6 +161,8 @@ initrd /boot/initrd.img-5.10.43-rockchip64
 
 }
 ```
+
+#### Custom
 
 For other distributions, it can be convenient to make a custom image by going
 through the following steps. (This applies to, for example, Manjaro ARM64
@@ -186,5 +188,5 @@ images on USB that can be made bootable via the bootdisks.)
 
 However, it should also be noted that if a Linux distribution image has a valid
 syslinux/extlinux configuration then the `u-root-bootdisk` can in general be
-used to boot the image (from USB) without alterations since `u-root` can parse
-also such boot configurations.
+used to boot the image (from USB) with minor alterations since `u-root` can
+parse also such boot configurations (cf. the comments on ophub's images above).
