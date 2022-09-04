@@ -107,12 +107,19 @@ end of README_debian_inst.md
 
 ### Armbian
 
-The Armbian Generic ARM64 images can be booted and run as-is up to and
-including release 22.05 (later releases might not work).
+The Armbian Generic ARM64 images can be booted and run as-is, up to and
+including release 22.05.
+
+In later releases (e.g. 22.08) HDMI might not work with the default kernel
+(`linux-image-current-arm64`) on some TV boxes (such as Ugoos AM6 plus).
+However, you can still log in via ssh (root@uefi-arm64, p/w "1234") and go
+through the initial setup.
+Then, you can install e.g. the kernel `linux-image-current-meson64` and reboot
+with this kernel to have HDMI working again.
 
 The images for specific boards can be run if a simple grub.cfg file is added.
-For instance, on Ugoos Am6 plus the image for Odroid N2 can be booted with
-a file `/boot/grub/grub.cfg` like so (example for release 22.08.1):
+For instance, on Ugoos Am6 plus the image for Odroid N2 can be booted and run
+with a file `/boot/grub/grub.cfg` like so (example for release 22.08.1):
 
 ```
 menuentry "Armbian (kernel 5.19.5-meson64)" {
