@@ -157,14 +157,26 @@ When this is the case, it is mostly a matter of setting up a `grub.cfg` file,
 as shown above.
 
 Another example where a simple `grub.cfg` setup is sufficient is the
-TwisterOS ArmbianV2-0-3 image (for rk3399/OdroidN2/N2+) which only requires
-a `/boot/grub/grub.cfg` setup like so
+TwisterOS ArmbianV2-0-3 image for rk3399 which only requires a
+`/boot/grub/grub.cfg` setup like so
 
 ```
-menuentry "TwisterOS (kernel 5.10.43)" {
+menuentry "TwisterOS (kernel 5.10.43-rockchip64)" {
 
 linux /boot/vmlinuz-5.10.43-rockchip64 root=UUID=f43869ab-391c-4c4b-98c0-2663c796d171 rootwait rootfstype=ext4 console=ttyAML0,115200n8 console=tty1 no_console_suspend consoleblank=0 loglevel=1
 initrd /boot/initrd.img-5.10.43-rockchip64
+
+}
+```
+
+There is also the image TwisterOS203-n2p-FINAL for OdroidN2/N2+ which likewise
+can be run with a `grub.cfg` file like so
+
+```
+menuentry "TwisterOS (kernel 5.13.12-meson64)" {
+
+linux /boot/vmlinuz-5.13.12-meson64 root=UUID=209ca851-3a74-48ed-a97c-27e3a45bcdcc rootwait rootfstype=ext4 console=ttyAML0,115200n8 console=tty1 no_console_suspend consoleblank=0 loglevel=1
+initrd /boot/initrd.img-5.13.12-meson64
 
 }
 ```
