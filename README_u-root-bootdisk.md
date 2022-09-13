@@ -1,7 +1,7 @@
 # u-root-bootdisk
 
 `u-root-bootdisk` is the name of a utility disk for booting various forms of
-Linux images on ARM64 single board computers (SBC) and TV boxes with a resident
+Linux images on ARM64 single board computers (SBC) and TV-boxes with a resident
 `u-boot`.
 The `u-root-bootdisk` disk image can be copied (by e.g. the Linux `dd` command)
 to an SD card or a USB stick and this card/stick can be used as a middle stage
@@ -118,7 +118,7 @@ appropriate Linux image attached (such as one of the bootdisks).
 Platforms tested
 ----------------
 
-The u-root-bootdisks have been tested on two Amlogic s922x TV boxes; the
+The u-root-bootdisks have been tested on two Amlogic s922x TV-boxes; the
 Beelink GT King Pro and the Ugoos Am6 plus.
 The initramfs that implements (parts of) `u-root` is generic and should work
 with any other SoC but the kernel on the bootdisk that runs `u-root` might

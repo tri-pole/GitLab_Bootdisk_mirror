@@ -111,7 +111,7 @@ The Armbian Generic ARM64 images can be booted and run as-is, up to and
 including release 22.05.
 
 In later releases (e.g. 22.08) HDMI might not work with the default kernel
-(`linux-image-current-arm64`) on some TV boxes (such as Ugoos AM6 plus).
+(`linux-image-current-arm64`) on some TV-boxes (such as Ugoos AM6 plus).
 However, you can still log in via ssh (root@uefi-arm64, p/w "1234") and go
 through the initial setup.
 Then, you can install e.g. the kernel `linux-image-current-meson64` and reboot

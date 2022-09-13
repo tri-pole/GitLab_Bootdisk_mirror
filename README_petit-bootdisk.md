@@ -1,11 +1,11 @@
 # petit-bootdisk
 
 `petit-bootdisk` is the name of a utility disk for booting various forms of
-Linux images on ARM64 single board computers (SBC) and TV boxes with a resident
+Linux images on ARM64 single board computers (SBC) and TV-boxes with a resident
 `u-boot`.
 Booting is done via chainloading of another bootloader, `Petitboot`, which is
 located on `petit-bootdisk` and acts as a middle stage in the booting process.
-When booting a SBC/TV box with a `petit-bootdisk` attached, the boot process
+When booting a SBC/TV-box with a `petit-bootdisk` attached, the boot process
 pauses at the `Petitboot` boot menu where a list of bootable devices is
 displayed.
 After selection of a boot menu entry, the new boot configuration (kernel and
@@ -112,7 +112,7 @@ appropriate Linux image attached (such as one of the bootdisks).
 Platforms tested
 ----------------
 
-The `petit-bootdisk`(s) have been tested on two Amlogic s922x TV boxes; the
+The `petit-bootdisk`(s) have been tested on two Amlogic s922x TV-boxes; the
 Beelink GT King Pro and the Ugoos Am6 plus.
 The initramfs that implements `Petitboot` is generic and should work with any
 other SoC but the kernel on the bootdisk that runs `Petitboot` might only work

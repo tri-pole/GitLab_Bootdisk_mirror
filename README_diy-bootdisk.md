@@ -151,23 +151,30 @@ and for a non chainloaded (`-nc`) disk it could look like this
   [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts).
   (These files are basically text files but with Amlogic signatures in the
   headers, produced by the `mkimage` command from the `u-boot-tools` package.
-  According to the description on
-  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts)
-  the file `aml_autoscript` is strictly not needed on a TV-box which has
-  multiboot already enabled but the accompanying `s905_autoscript` is
-  needed.)
+
+  The file `aml_autoscript` is strictly only needed when multiboot is being
+  enabled on a TV-box through the "toothpick procedure" (when the contents of
+  this script file is read, parsed and stored internally on the TV-box, cf.
+  the code inside `aml_autoscript` and
+  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts).)
 
   The zero-length file `aml_autoscript.zip` is just a placeholder file.
-  (Per my understanding, the presence of `aml_autoscript.zip` is what
-  triggers the board resident `u-boot` to update its (boot) environment
-  variables (as part of a "recovery procedure") when enabling multi-boot
-  using the "toothpick" method, at least on some boxes.
-  Thus, the script file setup on the bootdisk should be sufficient to use when
-  enabling multiboot on a TV-box for the first time.)
+  (My understanding is that the presence of this file is required on some
+  TV-boxes to trigger the board resident `u-boot` to read and parse
+  `aml_autoscript` when enabling multiboot.)
+
+  The script file `s905_autoscript` is always needed (it is referenced by
+  `aml_autoscript`).
 
   - *Only for non chainloaded disk*
 
-  The `uEnv.txt` file is a small text file with e.g. the following contents
+  The file `boot.scr` is required by the board resident u-boot (or by the
+  bootloader `u-boot.bin`; I'm unsure which) when booting from SD (due to
+  fall-through of `s905_autoscript`).
+
+  The `uEnv.txt` file is a small text file where the kernel, initramfs and
+  dtb file is defined (the kernel and initramfs must be in u-boot format).
+  It can for instance look like this
 
 ```
   LINUX=/zImage
@@ -184,7 +191,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   A simplistic version of the file `extlinux.conf` (for an Amlogic SoC) can
   look like this (the `console` parameter varies between SoCs)
-  
+
 ```
   LINUX=/vmlinuz
   INITRD=/initramfs.cpio.gz

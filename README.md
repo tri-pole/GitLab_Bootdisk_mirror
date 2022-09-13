@@ -1,7 +1,8 @@
 # bootdisk
 
-This repo contains information relating to bootdisks for TV-boxes/SBCs based
-on the ARM64 architecture.
+This repo contains information relating to
+[bootdisks](https://en.wikipedia.org/wiki/Boot_disk)
+for TV-boxes/SBCs based on the ARM64 architecture.
 With these bootdisks you can e.g. boot many ("generic") ARM64 Linux images with
 UEFI+grub from major distributions such as Fedora 36, Ubuntu (e.g. Jammy),
 Debian (e.g. Bullseye) and openSuse (Leap 15.4 and Tumbleweed).
