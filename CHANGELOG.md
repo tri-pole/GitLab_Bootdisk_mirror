@@ -25,6 +25,12 @@ petit-bootdisk-nc
 
 # u-root-bootdisk-nc:
 
+## [v0.28-2] - 22-09-14
+
+### Changed
+ - The disk contents is moved over to a tarball (since no special disk is
+   required, only a single FAT partition large enough to hold the files).
+
 ## [v0.28] - 22-08-29
 
 ### Changed
@@ -67,6 +73,12 @@ petit-bootdisk-nc
  - First upload.
 
 # petit-bootdisk-nc
+
+## [v0.22-2] - 22-09-14
+
+### Changed
+ - The disk contents is moved over to a tarball (since no special disk is
+   required, only a single FAT partition large enough to hold the files).
 
 ## [v0.22] - 22-08-30
 

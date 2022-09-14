@@ -16,12 +16,13 @@
   In fact, since the core application of the bootdisks (`u-root` or
   `Petitboot`) is run from an initramfs (which is universal) it should be
   possible to adapt the bootdisks to any TV-box/SBC that is booted via `u-boot`
-  from SD/USB, as long as a proper kernel, dtb and `u-boot` bootloader are
-  available.
+  from SD/USB, as long as a proper kernel, dtb and chainloader (in case of a
+  chainloaded disk) are available.
 
   We have chosen, for convenience, to provide compiled binary versions of the
-  components on the bootdisks but all the binaries needed to produce the disks,
-  including `u-boot.bin`, can be compiled from sources available at Github
+  components on the bootdisks.
+  However, all the binaries needed to produce the disks, including `u-boot.ext`
+  (for a chainloaded disk), can be compiled from sources available at Github
   or other public git repos (see below and the README files on the disks).
   Thus, it should be easy to customize, enhance and adapt the bootdisks to
   various needs based on the information provided here.
@@ -35,23 +36,19 @@
   goal is to produce a chainloaded version, which is a good start) or
   `u-root-bootdisk-nc` (if the goal is a non chainloaded version).
   The files most likely to need customization for other TV-boxes/SBCs are the
-  bootloader `u-boot`, the dtb file and the kernel.
+  the kernel, the dtb file and the chainloader `u-boot.ext` (for chainloaded
+  disk).
   The requirements for the kernel are straightforward; it must be able to
   recognize and read the block devices and file systems, including (perhaps)
   btrfs and iso, and to have the kexec functionality enabled (kexec crash
   kernel functionality is not required).
-  The boot loader (i.e. a file `u-boot.ext` for chainloading, installed on the
-  first partition, or a binary `u-boot.bin`, installed to in MBR and in the
-  gap before the first partition) is often the most critical part, together
-  with the dtb file.
-  However, any combination of dtb plus bootloader (at least for the
-  chainloading case) that works to boot the box otherwise will also work for
-  the bootdisk.
+  However, any combination of kernel, dtb and chainloader (for a chainloaded
+  disk) that works to boot the box otherwise will also work for the bootdisk.
   
 - Skillz: A bit of command line experience, but not much beyond knowing how
   to burn/flash an image using the Linux `dd` command and using `fdisk` to
-  set up a MBR partition table on an SD/USB. (Being able to format and mount
-  the disk is also necessary.)
+  set up a MBR partition table on an SD/USB.
+  (Being able to format and mount the disk is also necessary.)
 
 ## Steps in the procedure
 
@@ -60,51 +57,37 @@
 
   ### Prepare the disk (SD/USB)
 
-  It is possible to use one and the same disk geometry both for a chainloading
-  disk and for a non-chainloading disk.
+  It is possible to use one and the same (simple) disk geometry both for a
+  chainloading disk and for a non chainloading disk (512B sectors):
 
-  The following geometry can be used (512b sectors):
+  Sectors 0-2047: MBR and gap.
 
-  Sectors 0-4095: MBR and gap (all standard `u-boot.bin` fit in a 2M gap,
-  see below).
-
-  Sectors 4096-S: Partition 1, type 'c' in fdisk, formatted with vfat.
+  Sectors 2048-S: Partition 1, type 'c' in fdisk, formatted with vfat.
 
   The value of S in the line above above is mostly dependent on how many
-  kernels are needed (e.g. for experimentation); a value of S which
-  corresponds to 100M (about 208896) is typically enough for a basic install
-  (with a couple of kernels).
-
-  For a *chainloaded disk* leave the "bootable" flag *unset* for Partition 1
-  and for a *non chainloaded disk* the "bootable" flag on Partition 1 should
-  be *set*.
+  kernels are needed (e.g. for experimentation); a value of S which corresponds
+  to 100M is typically enough for a basic install (with a couple of kernels).
+  (The bootable flag for the single partition above should be left unset.)
 
   From now on we will assume that a disk has been prepared according to the
   outline above and that it has device descriptor `/dev/mydev`
 
   #### Bootloader
 
-  The bootloader can be either a chainloader in the form of a binary file
-  `u-boot.ext` placed in the root directory on the disk (see below) or a
-  binary `u-boot.bin` installed into the MBR and the "gap" leading up to the
-  first partition (see below).
-  In both cases the binary required depends on the SoC but luckily there are
-  many precompiled binaries freely available.
+  The bootloader can be either the board resident (vendor) version of `u-boot`
+  (for a non chainloaded disk) or a chainloader in the form of a binary file
+  `u-boot.ext` placed in the root directory on the disk (see below).
+  In the latter case, the version of `u-boot.ext` required depends on the SoC
+  but luckily there are many precompiled binaries freely available.
   A good selection of candidates can be found on the images produced by
   [ophub](https://github.com/ophub/amlogic-s9xxx-armbian) and some of them
   can also be found on the chainloaded bootdisks.
+  (Typically, these binaries have a name which is a variant of `u-boot.bin`
+  and ophub collectively refer to them as "overload" bootloaders.)
 
   - *Only for chainloaded disk*
   
   The `u-boot.ext` file must be placed in the root directory of the disk.
-
-  - *Only for non chainloaded disk*
-  
-  Install bootloader (here `u-boot.bin`) to SD/USB:
-
-  `dd if=u-boot.bin of=/dev/mydev bs=1 count=442 conv=fsync,notrunc`
-  
-  `dd if=u-boot.bin of=/dev/mydev bs=512 skip=1 seek=1 conv=fsync,notrunc`
   
   ### Set up the necessary files
 
@@ -168,9 +151,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   - *Only for non chainloaded disk*
 
-  The file `boot.scr` is required by the board resident u-boot (or by the
-  bootloader `u-boot.bin`; I'm unsure which) when booting from SD (due to
-  fall-through of `s905_autoscript`).
+  The file `boot.scr` is required by the board resident `u-boot` when
+  booting from SD (due to fall-through of `s905_autoscript`).
 
   The `uEnv.txt` file is a small text file where the kernel, initramfs and
   dtb file is defined.
@@ -232,9 +214,9 @@ and for a non chainloaded (`-nc`) disk it could look like this
   `Petitboot` is contained in a file with a name like `initramfs.cpio.gz` (as
   in the listing above).
   For the non chainloaded disk, the gzipped cpio archive containing the
-  initramfs has moreover been converted to u-boot format by adding a small
-  header to the file and the resulting file is called `uInitrd` (as in the
-  listing above).
+  initramfs has been converted to u-boot format by adding a small header to
+  the file.
+  The resulting file is called `uInitrd` (as in the listing above).
   This conversion operation has been done using the `mkimage` command from the
   `u-boot-tools` package (see below).
   

@@ -74,8 +74,14 @@ md5sums of latest release:
 
 `u-root-bootdisk-nc_0v28.img.gz  b153326f3691dcbed31a03a5a7760d80`
 
+`u-root-bootdisk-nc_0v28-2.tgz  59b7722025fa286e4e08df22e3d8eaa7`
+
 The most recent version of `u-root` on the `u-root-bootdisk`(s) listed above is
 v0.9.0 (found on the v0.28 disks).
+
+Starting with v0.28-2 the bootdisks will only be released as tarballs (since
+no special disk is needed, only a single FAT partition large enough to hold
+all the files).
 
 Caveats
 -------

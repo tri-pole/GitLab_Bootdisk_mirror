@@ -26,9 +26,9 @@ Variants
 --------
 
 The `petit-bootdisk` exists in two variants; one with the chainloader
-u-boot.ext and one without the chainloader (which boots using resident
+`u-boot.ext` and one without the chainloader (which boots using resident
 `u-boot` together with boot scripts on the `petit-bootdisk`).
-The latter bootdisk has a name ending in `-nc` ("no chainload") and enable
+The latter bootdisk has a name ending in `-nc` ("no chainload") and enables
 a faster boot process but will only work on Amlogic s922x SoCs whereas the
 bootdisk using chainloading can probably be made to work also for other SoCs
 (several alternative u-boot.ext are available on the chainloader bootdisk).
@@ -43,7 +43,6 @@ Downloads
 
 The actual bootdisk images are hosted outside of Gitlab, at the links below
 
-
 [petit-bootdisk](https://1drv.ms/u/s!Aqo_UY80B5WOdTjyhTFQhoebEwU?e=PwkQHO)
 
 [petit-bootdisk-nc](https://1drv.ms/u/s!Aqo_UY80B5WOerTOjvn7KxQjPcU?e=8NvWFO)
@@ -56,7 +55,13 @@ md5sums of latest release(s):
 
 `10398082d3209f2b385f14883d2f8fcc  petit-bootdisk-nc_0v22.img.gz`
 
+`d956baf8fc4dcebef5171e606f6f99bf  petit-bootdisk-nc_0v22-2.tgz`
+
 The version of `Petitboot` on the `petit-bootdisk`(s) above is v1.13.
+
+Starting with v0.22-2 the bootdisks will only be released as tarballs (since
+no special disk is needed, only a single FAT partition large enough to hold
+all the files).
 
 Caveats
 -------
@@ -80,7 +85,7 @@ up. More info can be found in the README file on `petit-bootdisk`
 (specifically the `pb_nonet=true` kernel command line argument).
 
 - `Petitboot` searches the following locations for a grub boot configuration
-(cf. `discover/grub2/grub2.c`):
+(cf. Petitboot source `discover/grub2/grub2.c`):
 
 ```
     "/grub.cfg",
