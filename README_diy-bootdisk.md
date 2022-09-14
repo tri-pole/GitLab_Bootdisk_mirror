@@ -102,7 +102,7 @@
   
   Install bootloader (here `u-boot.bin`) to SD/USB:
 
-  `dd if=u-boot.bin of=/dev/mydev bs=1 count=444 conv=fsync,notrunc`
+  `dd if=u-boot.bin of=/dev/mydev bs=1 count=442 conv=fsync,notrunc`
   
   `dd if=u-boot.bin of=/dev/mydev bs=512 skip=1 seek=1 conv=fsync,notrunc`
   
@@ -150,13 +150,13 @@ and for a non chainloaded (`-nc`) disk it could look like this
   or downloaded directly from
   [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts).
   (These files are basically text files but with Amlogic signatures in the
-  headers, produced by the `mkimage` command from the `u-boot-tools` package.
+  headers, produced by the `mkimage` command from the `u-boot-tools` package.)
 
   The file `aml_autoscript` is strictly only needed when multiboot is being
   enabled on a TV-box through the "toothpick procedure" (when the contents of
   this script file is read, parsed and stored internally on the TV-box, cf.
   the code inside `aml_autoscript` and
-  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts).)
+  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts)).
 
   The zero-length file `aml_autoscript.zip` is just a placeholder file.
   (My understanding is that the presence of this file is required on some
@@ -173,7 +173,9 @@ and for a non chainloaded (`-nc`) disk it could look like this
   fall-through of `s905_autoscript`).
 
   The `uEnv.txt` file is a small text file where the kernel, initramfs and
-  dtb file is defined (the kernel and initramfs must be in u-boot format).
+  dtb file is defined.
+  (The kernel and initramfs must be in u-boot format on a non chainloaded
+  disk, see below.)
   It can for instance look like this
 
 ```
@@ -189,6 +191,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   - *Only for chainloaded disk*
 
+  On a chainloaded disk the kernel, initramfs and dtb is defined in the text
+  file `extlinux.conf`.
   A simplistic version of the file `extlinux.conf` (for an Amlogic SoC) can
   look like this (the `console` parameter varies between SoCs)
 
@@ -203,7 +207,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   #### Kernel
 
-  A good place for the `vmlinuz` file (chanloaded disk) or `zImage` (non
+  A good place for the `vmlinuz` file (chainloaded disk) or `zImage` (non
   chainloaded disk) is at the root of the disk, as indicated above.
   (The kernel file `zImage` on the non chainloaded disk is just a renamed
   version of a `vmlinuz` file from a chainloaded disk.)
@@ -228,12 +232,11 @@ and for a non chainloaded (`-nc`) disk it could look like this
   `Petitboot` is contained in a file with a name like `initramfs.cpio.gz` (as
   in the listing above).
   For the non chainloaded disk, the gzipped cpio archive containing the
-  initramfs has moreover been converted to Amlogic format by adding a small
+  initramfs has moreover been converted to u-boot format by adding a small
   header to the file and the resulting file is called `uInitrd` (as in the
   listing above).
-  This conversion operation has been done using the `mkimage` command
-  typically found in a package called `u-boot-tools` on many Linux distos
-  (see below).
+  This conversion operation has been done using the `mkimage` command from the
+  `u-boot-tools` package (see below).
   
   Next we outline the contents of the initramfs and how to edit/adapt the
   initramfs, and where find sources and how to recreate the initramfs.
@@ -267,7 +270,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   (We have cross compiled `u-root` using the instructions posted there.)
   Our version contains all the packages in the `u-root `collections `core` and
   `boot`. It has been compiled from a `u-root` release (tag) as indicated in
-  the initramfs name, the current version is v0.8.1.
+  the initramfs name, the current version is v0.9.0.
   
   The initramfs for `Petitboot` has been compiled and assembled according by
   following, largely, the instructions posted at
