@@ -40,9 +40,12 @@ can be used as mount point for the Raspberry Pi image.
 
 ## Steps for conversion
 
-- On the host machine, insert the Raspberry Pi desktop SD/USB and determine
-  the device descriptors for its two partitions (i.e. determine what X below
-  is, e.g. using `lsblk`)
+For simplicity we are going to assume that the Raspberry Pi image is burned
+onto a USB stick.
+
+- On the host machine, insert the Raspberry Pi image USB and determine the
+  device descriptors for its two partitions (i.e. determine what X below is,
+  e.g. using `lsblk`)
   
   `/dev/sdX1` labeled "system-boot" (contains u-boot files; will be obsolete)
 

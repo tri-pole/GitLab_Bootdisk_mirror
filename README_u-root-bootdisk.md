@@ -44,12 +44,12 @@ The `u-root-bootdisk` exist in two variants; one with the chainloader
 u-boot.ext and one without the chainloader (which boots using resident
 `u-boot` together with boot scripts on the `u-root-bootdisk`).
 The latter bootdisk has a name ending in `-nc` ("no chainload") and enable
-a faster boot process but will only work on Amlogic s922x SoCs whereas the
-bootdisk using chainloading can probably be made to work also for other SoCs
-(several alternative u-boot.ext are available on the chainloader bootdisk).
+a faster boot process but may only work for Amlogic s922x SoCs whereas the
+bootdisk using chainloading can (probably) be made to work also for other SoCs
+(several alternative `u-boot.ext` are available on the chainloader bootdisk).
 
 (Note that the term chainloading is used to describe two diffrent things here.
-First, the bootdisk itself which is chainloaded by the SoC resident `u-boot`.
+First, the bootdisk itself which is chainloaded by the board resident `u-boot`.
 Second, on one of the bootdisks the binary u-boot.ext is used to chainload
 the kernel and initramfs that runs `u-boot`.)
 
