@@ -66,15 +66,17 @@ material):
 
 md5sums of latest release:
 
-`u-root-bootdisk-0v26.img.gz  55eee4b1713594476106021db07becfc`
+`u-root-bootdisk-0v26.img.gz     55eee4b1713594476106021db07becfc`
 
-`u-root-bootdisk-0v28.img.gz  082d7804e3a81eb214b5151f7ff1662d`
+`u-root-bootdisk-0v28.img.gz     082d7804e3a81eb214b5151f7ff1662d`
 
 `u-root-bootdisk-nc_0v26.img.gz  6c46aeb9ef82c0f46492f4c7bd878f57`
 
 `u-root-bootdisk-nc_0v28.img.gz  b153326f3691dcbed31a03a5a7760d80`
 
-`u-root-bootdisk-nc_0v28-2.tgz  59b7722025fa286e4e08df22e3d8eaa7`
+`u-root-bootdisk-nc_0v28-2.tgz   d014ba75d7858d10f796ba3e86b93c2a`
+
+`bootdisk_skel.img.gz            1fde903482f2b99f9ee9fec41d02609d`
 
 The most recent version of `u-root` on the `u-root-bootdisk`(s) listed above is
 v0.9.0 (found on the v0.28 disks).
@@ -82,6 +84,9 @@ v0.9.0 (found on the v0.28 disks).
 Starting with v0.28-2 the bootdisks will only be released as tarballs (since
 no special disk is needed, only a single FAT partition large enough to hold
 all the files).
+The skeleton image `bootdisk_skel.img` (one single, empty, 120M FAT partition)
+can be used as a basis when building a bootdisk from a tarball of the bootdisk
+files (just uncompress the tarball onto the skeleton image).
 
 Caveats
 -------

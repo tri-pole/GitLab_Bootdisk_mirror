@@ -49,19 +49,24 @@ The actual bootdisk images are hosted outside of Gitlab, at the links below
 
 md5sums of latest release(s):
 
-`6d28ef6f1928ee2adf202a785d523fb8  petit-bootdisk-0v2.img.gz`
+`petit-bootdisk-0v2.img.gz      6d28ef6f1928ee2adf202a785d523fb8`
 
-`a080034f384c28e87e1b584df0b7229c  petit-bootdisk-0v22-1.img.gz`
+`petit-bootdisk-0v22-1.img.gz   a080034f384c28e87e1b584df0b7229c`
 
-`10398082d3209f2b385f14883d2f8fcc  petit-bootdisk-nc_0v22.img.gz`
+`petit-bootdisk-nc_0v22.img.gz  10398082d3209f2b385f14883d2f8fcc`
 
-`d956baf8fc4dcebef5171e606f6f99bf  petit-bootdisk-nc_0v22-2.tgz`
+`petit-bootdisk-nc_0v22-2.tgz   570706bfa08e45c11a4116221832a39f`
+
+`bootdisk_skel.img.gz           1fde903482f2b99f9ee9fec41d02609d`
 
 The version of `Petitboot` on the `petit-bootdisk`(s) above is v1.13.
 
 Starting with v0.22-2 the bootdisks will only be released as tarballs (since
 no special disk is needed, only a single FAT partition large enough to hold
 all the files).
+The skeleton image `bootdisk_skel.img` (one single, empty, 120M FAT partition)
+can be used as a basis when building a bootdisk from a tarball of the bootdisk
+files (just uncompress the tarball onto the skeleton image).
 
 Caveats
 -------
