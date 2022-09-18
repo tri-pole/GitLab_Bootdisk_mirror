@@ -34,6 +34,9 @@ A working Ubuntu desktop image for a TV-box can also easily be obtained by
 a simple conversion procedure starting with a Raspberry Pi image, see
 README_ubuntu_frompi.md.
 
+The most recent addition to these files/scripts is `ubuntu_mkimg.bash` which
+is a script to produce an Ubuntu Jammy CLI image with ophub/flippy kernel.
+
 ## Screenshots
 
 Some (low resolution) screenshots of some of the bootdisk screens.
