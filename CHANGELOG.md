@@ -110,6 +110,11 @@ petit-bootdisk-nc
 
 # ubuntu_mkimg.bash
 
+## [v0.12] 22-09-19
+
+### Added
+ - Virtualization to enable execution ("cross-scripting") also on x86_64/amd64.
+
 ## [v0.1] 22-09-18
 
 ### Added

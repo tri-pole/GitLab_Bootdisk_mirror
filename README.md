@@ -36,6 +36,8 @@ README_ubuntu_frompi.md.
 
 The most recent addition to these files/scripts is `ubuntu_mkimg.bash` which
 is a script to produce an Ubuntu Jammy CLI image with ophub/flippy kernel.
+Unlike the other files/scripts above this one can be run non natively on an
+x86_64 Ubuntu machine (using qemu-aarch64-static) to generate an ARM64 image.
 
 ## Screenshots
 
