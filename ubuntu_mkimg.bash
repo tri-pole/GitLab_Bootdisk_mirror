@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ubuntu_mkimg.bash (a.k.a. {opbuntu,flibuntu}_mkimg.bash)
-# 22-09-19: v0.12
+# 22-09-21: v0.14
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
@@ -34,25 +34,23 @@
 # https://github.com/manjaro-arm/am6-plus-images/releases
 
 # Notes:
-# - The uImage and uInitrd (u-boot tagged) versions of the kernel and initramfs
-# that are on the fat partition are created "once and for all" by the mkimage
-# command in the script below. Thus, when updating the kernel or initramfs then
-# also uImage and uInitrd have to be recreated manually (unless you rely on
-# grub booting e.g. via bootdisk, then only /boot/grub/grub.cfg on the rootfs
-# partition has to be updated; for inspiration, see below).
-# - The rootfs is installed in "minimized" state for many packages. Therefore,
-# it is advisable to run the command unminimize (and reboot) to restore the
-# system into normal state.
-# - Depending on the terminal used when running the script, the keyboard setup
-# may not run properly so it has to be set up afterwards (by running the cmd
-# dpkg-reconfigure keyboard-configuration, or editing /etc/default/keyboard).
-# (Perhaps this is simply a bug due to my lack of understanding of things.)
-# - In general, the system configuration is minimal, so e.g. no swap is set up.
+# - The rootfs is installed in "minimized" state for many packages.
+#   Therefore, it is advisable to run the command unminimize (and reboot) to
+#   restore the system into normal state at the first boot.
+# - In general, the installed system is "bare-bones", so e.g. no swap is set up.
 # - On some boxes, when booting from USB using the boot scripts, only the image
-# stick can be attached to the USB bus. (When booting using a  chainloader
-# (u-boot.ext) it should not be a problem to have other non bootable USB sticks
-# attached. When booting using grub.cfg (e.g. using a  bootdisk on SD) it is
-# possible to have also other bootable USB sticks attached.)
+#   stick can be attached to the USB bus. When booting using a chainloader
+#   (u-boot.ext) it should not be a problem to have other non bootable USB
+#   sticks attached. When booting using grub.cfg (e.g. using a  bootdisk on SD)
+#   it is possible to have also other bootable USB sticks attached.
+# - The uImage and uInitrd (u-boot tagged) versions of the kernel and initramfs
+#   that are on the fat partition are created "once and for all" by the mkimage
+#   command in the script below. Thus, when updating the kernel or initramfs
+#   then also uImage and uInitrd have to be recreated manually (unless you rely
+#   on grub booting e.g. via bootdisk, then only /boot/grub/grub.cfg on the
+#   rootfs partition has to be updated; see scripts in /usr/local/bin).
+# - Run time for the script is less than 10m on a modern computer with good
+#   network connectivity.
 
 # ------------------------------- parameters ---------------------------------
 
@@ -68,35 +66,24 @@ distro_relstr=daily/current
 distro_buildfile=${distro_release}-base-arm64.tar.gz
 distro_buildurl=${distro_urlbase}/${distro_relstr}/${distro_buildfile}
 
-# Ophub repo with his builds of Flippy/Unifreq kernels (incl. initramfs, thx.).
+# Ophub repo w/ builds of Flippy/Unifreq kernels (incl. initramfs, thx. Ophub).
 kernel_release="5.19.9-flippy-76+" # Name string with special characters.
 kernel_urlboot="https://github.com/ophub/kernel/raw/main/pub/stable/5.19.9/boot-5.19.9-flippy-76%2B.tar.gz"
 kernel_urlmods="https://github.com/ophub/kernel/raw/main/pub/stable/5.19.9/modules-5.19.9-flippy-76%2B.tar.gz"
 kernel_urldtbs="https://github.com/ophub/kernel/raw/main/pub/stable/5.19.9/dtb-amlogic-5.19.9-flippy-76%2B.tar.gz"
 
-# Ophub repo with u-boot.bins (for use as chainloader u-boot.ext).
+# Ophub repo with u-boot.bin files (for use as chainloader u-boot.ext).
 uboot_repo="https://github.com/ophub/amlogic-s9xxx-armbian/blob/main/build-armbian/amlogic-u-boot/overload"
 
-# Edit this to your liking.
-img_tag=${kernel_release}_3pole-$(date +"%y%m%d")
+# Link to g12_sound.sh for enabling sound on some boxes (run as local user).
+g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
 
+# Edit the tag to your liking.
+img_tag=${kernel_release}_3pole-$(date +"%y%m%d")
 imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
 
-# Location (dir) of disk image container during install (for size, see below).
-imgfile_dir=$PWD
-tmpfile_dir=${imgfile_dir}/temp_files
-
-# File system sizes and types (unit MiB).
-# - The partition table type on the image is MBR.
-# - The min skip (gap) size (before 1st part) is 1MB (2048 sectors, 512B each).
-# - The boot fs type is vfat/fat32 and the root fs type is one of {ext4,btrfs}.
-# Note: The boot fs is only for u-boot formatted copies of kernel +initramfs.
-skip_MB=1
-boot_MB=100
-root_MB=3000
-rootfs_type=ext4
-bootfs_label=UBNT_BOOT
-rootfs_label=UBNT_ROOT
+# Host name for image.
+host_name=opbu
 
 # The string root=UUID=${rootfs_UUID} will be prepended below once UUID exists.
 kernel_cmdline_opts="rootdelay=3 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1"
@@ -104,10 +91,26 @@ kernel_cmdline_opts="rootdelay=3 rootflags=data=writeback rw console=ttyAML0,115
 # This is the dtb file name pointed to in uEnv.ini
 dtbfile_name=meson-g12b-ugoos-am6.dtb
 
+# File system sizes and types (unit MiB).
+# - The partition table type on the image is MBR.
+# - The min skip (gap) size (before 1st part) is 1MB (2048 sectors, 512B each).
+# - The boot fs type is vfat/fat32 and the root fs type is one of {ext4,btrfs}.
+# Note: The boot fs is only for u-boot formatted copies of kernel +initramfs.
+skip_MB=1
+boot_MB=150
+root_MB=3500
+rootfs_type=ext4
+bootfs_label=UBNT_BOOT
+rootfs_label=UBNT_ROOT
+
 # Compression (xz) takes some extra time.
 compressed_img=no # {yes,no}
 
-# Temporary moint points (dirs) used during image creation.
+# Location (dir) of disk image container during install (for size, see below).
+imgfile_dir=$PWD
+tmpfile_dir=${imgfile_dir}/temp_files
+
+# Temporary mount points (dirs) used during image creation.
 rootfs_mnt=${imgfile_dir}/rootfs_tmp
 bootfs_dir=/boot/aux
 bootfs_mnt=${rootfs_mnt}/${bootfs_dir}
@@ -175,8 +178,9 @@ fi
 
 # UUIDs can also be generated with the cmd uuidgen from the pkg uuid-runtime.
 rootfs_UUID=$(cat /proc/sys/kernel/random/uuid)
-if [[ -z $rootfs_UUID ]]; then
-    echo ${e_msg}" Cannot generate a valid UUID for the rootfs, exiting."
+eth0nm_UUID=$(cat /proc/sys/kernel/random/uuid)
+if [[ -z $rootfs_UUID || -z $eth0nm_UUID ]]; then
+    echo ${e_msg}" Cannot generate valid UUIDs from kernel random source, exiting."
     exit 1
 fi
 
@@ -191,16 +195,46 @@ UUID=$rootfs_UUID  /  $rootfs_type   errors=remount-ro  0  1
 EOF
 )
 
-interfaces_file=$(cat <<EOF
-allow-hotplug eth0
-auto eth0
-iface eth0 inet dhcp
+# The interfaces and resolv.conf files are only needed if you choose to install
+# the package ifupdown instead of the default networkmanager package.
+# interfaces_file=$(cat <<EOF
+# allow-hotplug eth0
+# auto eth0
+# iface eth0 inet dhcp
+# EOF
+# )
+#
+# resolver_file=$(cat <<EOF
+# nameserver $name_server_1
+# nameserver $name_server_2
+# EOF
+# )
+
+# This conf file may need some tweaking, currently it provides only basic conn.
+eth0_nmconf_file=$(cat <<EOF
+[connection]
+id=Wired connection 1
+uuid=$eth0nm_UUID
+type=ethernet
+interface-name=eth0
+
+[ethernet]
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=stable-privacy
+method=auto
+
+[proxy]
 EOF
 )
 
-resolver_file=$(cat <<EOF
-nameserver $name_server_1
-nameserver $name_server_2
+# This may be useful, see https://jbit.net/NetworkManager_Strictly_Unmanaged
+alloweth_nmconf_file=$(cat <<EOF
+[keyfile]
+unmanaged-devices=*,except:type:wifi,except:type:gsm,except:type:cdma,except:type:ethernet
 EOF
 )
 
@@ -216,6 +250,7 @@ ff02::2 ip6-allrouters
 EOF
 )
 
+# In case we later want to install e.g. linux-image-generic (see comment below).
 flashk_block_file=$(cat <<EOF
 Package: flash-kernel
 Pin: release *
@@ -223,22 +258,30 @@ Pin-Priority: -1
 EOF
 )
 
-# If you want to add packages, this is the place to do it (just before EOF).
-# To add the generic (ARM64) kernel do apt -y install linux-image-generic
-ubuntu_custom_inst=$(cat <<EOF
-apt update
-apt -y install man-db apt-utils nano ssh ifupdown grub2-common dialog
-DEBIAN_FRONTEND=noninteractive apt -y install keyboard-configuration
-dpkg-reconfigure keyboard-configuration
-echo "Set password for root:"
-until passwd; do echo "Try again."; done
-# If you want to add a local user, uncomment these two lines.
-# adduser $user_name
-# usermod -a -G adm,sudo $user_name
+# If you want to add packages (to the default below), this is where to do it.
+# To add the generic (ARM64) kernel add: apt -y install linux-image-generic
+# (The double quotes around the limit string EOF prevents command substitution.)
+ubuntu_custom_extra=$(cat <<"EOF"
+apt-get -y install nano less aptitude
 EOF
 )
 
-# The doble quotes around the limit string EOF prevents command substitution.
+# This is the basic (default) set of packages installed on top of the rootfs.
+# (If you want to add packages, edit the here-doc ubuntu_custom_extra above.)
+ubuntu_custom_inst=$(cat <<EOF
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get -y install man-db apt-utils kmod grub2-common network-manager ssh
+DEBIAN_FRONTEND=noninteractive apt-get -y install dialog locales keyboard-configuration kbd
+dpkg-reconfigure tzdata
+dpkg-reconfigure keyboard-configuration
+echo "Set password for \033[91mroot:\033[0m"
+until passwd; do echo "Try again."; done
+echo "Setting up grub.cfg"
+mkgrubcfg_simple.bash
+$ubuntu_custom_extra
+EOF
+)
+
 aml_autoscript=$(cat <<"EOF"
 defenv
 setenv bootcmd 'run start_autoscript; run storeboot'
@@ -305,46 +348,66 @@ EOF
 )
 
 mkgrubcfg=$(cat <<EOF
-#!/bin.bash
+#!/bin/bash
+
 GRUB_DISTRIBUTOR="$distro_name $distro_edition"
 GRUB_CMDLINE_LINUX="$kernel_cmdline_opts"
+
 if [[ -f /boot/grub/grub.cfg ]]; then
     mv /boot/grub/grub.cfg /boot/grub/grub.cfg.bak
 fi
+
 grub-mkconfig -o /boot/grub/grub.cfg
 EOF
 )
 
-#--------------------------------- functions ---------------------------------
+mkgrubcfg_simple_p1=$(cat <<EOF
+#!/bin/bash
 
-mk_grub_entry() {
-    # Should be run in /boot
-    kernel_version=$1
+distro_name_=$distro_name
+distro_edition_=$distro_edition
+kernel_cmdline_="$kernel_cmdline"
+dtbfile_name_=$dtbfile_name
+
+EOF
+)
+
+mkgrubcfg_simple_p2=$(cat <<"EOF1"
+
+cd /boot
+
+for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
     kernel_name=vmlinuz-${kernel_version}
     initrd_name=initrd.img-${kernel_version}
 
     kernel_path=/boot/$kernel_name
     initrd_path=/boot/$initrd_name
-
+    echo "Adding entry $distro_name_ $distro_edition_ (kernel $kernel_version)"
     # Note: The leading tabs in the here-document below are important.
-    cat <<-EOF >> grub/grub.cfg
-	menuentry "$distro_name $distro_edition (kernel $kernel_version)" {
+	cat <<-EOF >> grub/grub.cfg
+	menuentry "$distro_name_ $distro_edition_ (kernel $kernel_version)" {
 	
-	linux  $kernel_path $kernel_cmdline
+	linux  $kernel_path $kernel_cmdline_
 	initrd $initrd_path
-	# devicetree /dtbs/amlogic/${dtbfile_name} # not used currently
+	# devicetree /dtbs/amlogic/${dtbfile_name_} # not used currently
 	
 	}
-EOF
-}
+	EOF
+done
+EOF1
+)
+
+mkgrubcfg_simple="${mkgrubcfg_simple_p1}""${mkgrubcfg_simple_p2}"
 
 #----------------------------------- code -----------------------------------
 
 imgfile_loc=${imgfile_dir}/${imgfile_name}
+
+# This is a rough estimate: We do not take into account temp files etc.
 imgfile_MB=$((skip_MB +boot_MB +root_MB))
 desired_MB=$((14*${imgfile_MB}/10)) # Approx. space for imgfile +imgfile.xz
 
-echo -e "\n\033[92m -- Installing $distro_name ($distro_edition) -- \033[0m\n"
+echo -e "\n\033[92m -- Making image for $distro_name ($distro_edition) -- \033[0m\n"
 
 echo -e "The image container file will be at:"
 echo $imgfile_loc
@@ -369,13 +432,6 @@ else
     echo "OK, exiting."
     exit 1
 fi
-
-echo -n -e "\nGive a hostname for the new machine >"
-read host_name
-
-# Force setting up a local user (edit also ubuntu_custom_inst above).
-# echo -n -e "\nEnter user name of a local user (will be in adm,sudo groups) >"
-# read user_name
 
 echo -e "\n\033[92m -- Starting the installation -- \033[0m\n"
 
@@ -467,10 +523,44 @@ echo -n -e ${i_msg}" Setting up local host mappings in /etc/hosts ..."
 echo -e "$hosts_file" >${rootfs_mnt}/etc/hosts
 echo " Done."
 
-# The network directory does not exist in the base tarball.
-echo -n -e ${i_msg}" Setting up net interfaces in /etc/network/interfaces ..."
-mkdir -p -m 0755 ${rootfs_mnt}/etc/network
-echo -e "$interfaces_file" >${rootfs_mnt}/etc/network/interfaces
+# The interfaces and resolv.conf files are only needed if you choose to install
+# the package ifupdown instead of the default network manager package.
+#
+# # The network directory (0755) does not exist in the base tarball.
+# echo -n -e ${i_msg}" Setting up net interfaces in /etc/network/interfaces ..."
+# mkdir -p -m 0755 ${rootfs_mnt}/etc/network
+# echo -e "$interfaces_file" >${rootfs_mnt}/etc/network/interfaces
+# echo " Done."
+#
+# # The resolv.conf file (0644) in the base tarball is empty.
+# echo -n -e ${i_msg}" Setting up /etc/resolv.conf ..."
+# rm -f ${rootfs_mnt}/etc/resolv.conf
+# echo -e "$resolver_file" >${rootfs_mnt}/etc/resolv.conf
+# echo " Done."
+
+# To enable sound on some boxes, edit and run this script as local user.
+echo -e ${i_msg}" Installing script at /usr/local/bin/g12_sound.sh ..."
+cd $tmpfile_dir && wget_exticode=$(wget $g12_sound_url)
+if [[ $wget_exitcode -ne 0 ]]; then
+    echo -e ${w_msg}" Unable to download the scrip g12_sound.sh"
+else
+    cp g12_sound.sh ${rootfs_mnt}/usr/local/bin
+    chmod 0755 ${rootfs_mnt}/usr/local/bin/g12_sound.sh
+fi
+echo "Done."
+
+echo -n -e ${i_msg}" Setting up directory /boot/grub ..."
+mkdir -p -m 0755 ${rootfs_mnt}/boot/grub
+echo " Done."
+
+echo -n -e ${i_msg}" Installing grub scripts in /usr/local/bin ..."
+# This script uses grub-mkconfig but it doesn't work inside a loop device.
+# (It is installed for later use, to produce fancier grub menus.)
+echo -e "$mkgrubcfg" >${rootfs_mnt}/usr/local/bin/mkgrubcfg.bash
+chmod 0755 ${rootfs_mnt}/usr/local/bin/mkgrubcfg.bash
+# This script produces a basic grub.cfg file and works inside a loop device.
+echo -e "$mkgrubcfg_simple" >${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
+chmod 0755 ${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
 echo " Done."
 
 echo -e ${i_msg}" Downloading Ophub/Flippy/Unifreq kernel..."
@@ -515,7 +605,7 @@ chmod 0755 ${rootfs_mnt}/root/ubuntu_custom_inst.bash
 echo " Done."
 
 if [[ $arch_str != "aarch64" ]]; then
-    echo -e ${i_msg}" Installing local qemu-aarch64-static binary..."
+    echo -n -e ${i_msg}" Installing local qemu-aarch64-static binary..."
     qemu_binary_loc=$(which qemu-aarch64-static)
     cp $qemu_binary_loc ${rootfs_mnt}/usr/bin
     echo " Done."
@@ -525,6 +615,7 @@ echo -e ${i_msg}" Entering chroot jail. Installing/upgrading some packages..."
 systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
 	       /root/ubuntu_custom_inst.bash
 rm ${rootfs_mnt}/root/ubuntu_custom_inst.bash
+sleep 1 # Just to be able to read some of the messages.
 echo "Done."
 
 if [[ $arch_str != "aarch64" ]]; then
@@ -533,32 +624,16 @@ if [[ $arch_str != "aarch64" ]]; then
     echo " Done."
 fi
 
-# The resolv.conf file (0644) in the base tarball is empty.
-echo -n -e ${i_msg}" Setting up /etc/resolv.conf ..."
-rm -f ${rootfs_mnt}/etc/resolv.conf
-echo -e "$resolver_file" >${rootfs_mnt}/etc/resolv.conf
-echo " Done."
-
-echo -n -e ${i_msg}" Setting up directory /boot/grub ..."
-mkdir -p -m 0755 ${rootfs_mnt}/boot/grub
-echo " Done."
-
-# Bare-hands minimal version of grub.cfg (loop in case we add several kernels).
-echo -n -e ${i_msg}" Creating the file /boot/grub/grub.cfg ..."
-cd ${rootfs_mnt}/boot
-for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
-    mk_grub_entry $kernel_version
-done
-echo " Done."
-
-# echo -e ${i_msg}" This is the contents of the grub.cfg file:\n"
-# cat ${rootfs_mnt}/boot/grub/grub.cfg
-# echo " "
-
-echo -n -e ${i_msg}" Installing script at /usr/local/bin/mkgrubcfg.bash ..."
-cd ${rootfs_mnt}
-echo -e "$mkgrubcfg" >usr/local/bin/mkgrubcfg.bash
-chmod 0755 usr/local/bin/mkgrubcfg.bash
+echo -n -e ${i_msg}" Installing Network Manager configuration files for eth0 ..."
+nm_conf_dir=${rootfs_mnt}/etc/NetworkManager
+eth0_nmconf_name=Wired_connection_1.nmconnection
+eth0_nmconf_loc=${nm_conf_dir}/system-connections/${eth0_nmconf_name}
+echo -e "$eth0_nmconf_file"> $eth0_nmconf_loc
+chmod 0600 $eth0_nmconf_loc
+alloweth_nmconf_name=allow-ethernet.conf
+alloweth_nmconf_loc=${nm_conf_dir}/conf.d/${alloweth_nmconf_name}
+echo -e "$alloweth_nmconf_file" >$alloweth_nmconf_loc
+chmod 0644 $alloweth_nmconf_loc
 echo " Done."
 
 echo -n -e ${i_msg}" Setting up script files and dtb on boot partition..."
@@ -572,6 +647,7 @@ mkimage -A arm -O linux -T script -C none \
         -d s905_autoscript.txt s905_autoscript >/dev/null
 echo -e "$uEnv" >uEnv.ini
 cp ${rootfs_mnt}/boot/dtbs/amlogic/${dtbfile_name} .
+echo " Done."
 
 # Only as a backup, in case vendor u-boot cannot boot via bootscripts.
 echo -e ${i_msg}" Setting up backup boot method (chainloader)..."
@@ -581,7 +657,7 @@ mkdir u-boot
 echo -e "$README_uboot" >u-boot/README_u-boot.txt
 for uboot_bin in ${uboot_list[*]}; do
     uboot_bin_url=${uboot_repo}/${uboot_bin}
-    wget_exticode=$(wget -P u-boot $uboot_bin_url)
+    wget_exticode=$(wget -nv -P u-boot $uboot_bin_url)
     if [[ $wget_exitcode -ne 0 ]]; then
         echo -e ${w_msg}" Unable to download $uboot_bin"
     fi
@@ -622,11 +698,11 @@ if [[ "$compressed_img" == "yes" ]]; then
     echo "Done."
 fi
 
-echo -n -e ${i_msg}" Doing final cleanup of build area..."
 if [[ "$docleanup_after" == "yes" ]]; then
+    echo -n -e ${i_msg}" Doing final cleanup of build area..."
     rm -rf $tmpfile_dir
     rmdir $rootfs_mnt
+    echo " Done."    
 fi
-echo " Done."
 
 echo -e "\n\033[92m -- Finished -- \033[0m\n"

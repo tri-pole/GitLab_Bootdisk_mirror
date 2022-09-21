@@ -110,6 +110,15 @@ petit-bootdisk-nc
 
 # ubuntu_mkimg.bash
 
+## [v0.14] 22-09-21
+
+### Added
+ - Scripts (in /usr/local/bin) for making grub.cfg and sound setup.
+
+### Changed
+ - NetworkManager instead of ifupdown.
+ - Code refactoring.
+
 ## [v0.12] 22-09-19
 
 ### Added
