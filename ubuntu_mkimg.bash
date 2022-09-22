@@ -1,56 +1,75 @@
 #!/bin/bash
 
 # ubuntu_mkimg.bash (a.k.a. {opbuntu,flibuntu}_mkimg.bash)
-# 22-09-21: v0.14
+# 22-09-22: v0.15
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
-# (flippy-76) for Amlogic TV-boxes/SBCs. The Ubuntu infrastructure is based in
+# (flippy/unifreq) for Amlogic TV-boxes/SBCs. The Ubuntu system is based on
 # daily builds of the rootfs of the latest LTS release (currently 22.04 Jammy).
 # The script must be executed (as root) on an Ubuntu/Debian type machine,
 # either natively on aarch64/ARM64 (e.g. Ubuntu Server Live booted via
-# bootdisk) or virtualized on x86_64/amd64.
+# bootdisk) or virtualized (using qemu-aarch64-static) on x86_64/amd64.
 # The generated image can be booted using resident/vendor u-boot (using the
 # boot scripts on the fat partition) or via bootdisk (using the grub.cfg file
-# on the rootfs partition). (Another alternative is chainloader u-boot.ext)
-# Tested on Ugoos AM6 plus (s922x, for booting and running) and on QEMU
+# on the rootfs partition). Another alternative is chainloader u-boot.ext
+
+# Tested on: Ugoos AM6 plus (s922x, for booting and running) and on QEMU
 # (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
 # This script is a template or proof-of-concept, nothing more (so please fork
 # it, improve it).
 
 # Requires: Standard basic functionality incl. blkid, dd, losetup, mkfs, xz,
-# wget and the packages u-boot-tools, systemd-container (for systemd-nspawn)
-# (most of the requirments are checked at runtime below). ArchLinux wiki:
+# wget and the package systemd-container (for systemd-nspawn). ArchLinux wiki:
 # "systemd-nspawn is like the chroot command, but it is a chroot on steroids."
-# For "cross-scripting" (i.e. usage on another architecture than aarch64) you
-# need to install the package qemu-user-static (which recommends the package
-# binfmt-support) which provides the required binary qemu-aarch64-static
+# Most of the requirements are checked at runtime below. For "cross-scripting"
+# (i.e. use on another architecture than aarch64) you need to install the
+# package qemu-user-static (which recommends the package binfmt-support); this
+# provides the required binary qemu-aarch64-static
 
-# Typical usage: Edit the parameters below and run the script from a temp dir
-# (the image as well as all temporary files will be created in this dir).
+# Typical usage: Edit the parameters below and run the script from a temp dir.
+# (the image as well as all temporary files will be created in this dir.).
 
 # Inspiration taken from
 # https://github.com/ophub/amlogic-s9xxx-armbian/blob/main/rebuild
 # https://github.com/manjaro-arm/am6-plus-images/releases
 
 # Notes:
-# - The rootfs is installed in "minimized" state for many packages.
-#   Therefore, it is advisable to run the command unminimize (and reboot) to
-#   restore the system into normal state at the first boot.
-# - In general, the installed system is "bare-bones", so e.g. no swap is set up.
-# - On some boxes, when booting from USB using the boot scripts, only the image
-#   stick can be attached to the USB bus. When booting using a chainloader
-#   (u-boot.ext) it should not be a problem to have other non bootable USB
-#   sticks attached. When booting using grub.cfg (e.g. using a  bootdisk on SD)
-#   it is possible to have also other bootable USB sticks attached.
+# - The Ubuntu rootfs comes in a "minimized" state (see e.g. Ubuntu Wiki) for
+#   most packages and therefore it is advisable to run the command unminimize
+#   (and reboot) to restore the system into normal state at the first boot.
+# - More generally, the system is "bare-bones", so e.g. no swap is set up.
+# - On some boxes, when booting from USB using vendor u-boot and the boot
+#   scripts, only the image stick can be attached to the USB bus. When booting
+#   using a chainloader (u-boot.ext) it should not be a problem to have other
+#   (non bootable) USB sticks attached. When using grub booting (e.g. with a
+#   bootdisk on SD) having other USB sticks attached is not a problem.
 # - The uImage and uInitrd (u-boot tagged) versions of the kernel and initramfs
-#   that are on the fat partition are created "once and for all" by the mkimage
-#   command in the script below. Thus, when updating the kernel or initramfs
-#   then also uImage and uInitrd have to be recreated manually (unless you rely
-#   on grub booting e.g. via bootdisk, then only /boot/grub/grub.cfg on the
-#   rootfs partition has to be updated; see scripts in /usr/local/bin).
-# - Run time for the script is less than 10m on a modern computer with good
-#   network connectivity.
+#   that are on the fat partition are created by the mkbootlinux.bash script
+#   (see below). Therefore, when updating the kernel or initramfs then uImage
+#   uInitrd have to be recreated "manually" using this script (unless you rely
+#   on grub booting, then only grub.cfg on the rootfs partition has to be
+#   updated; see the scripts in /usr/local/bin).
+# - A simple working desktop can be installed by opening aptitude and choosing
+#   the task xubuntu-core (with e.g. lightdm, chosen at install time).
+# - On some boxes it is necessary to run (as user) the script g12_sound.sh
+#   to get sound working. (Afterwards, check for soundcards with e.g. aplay -L)
+# - The standard Ubuntu kernel linux-image-generic can also be installed (after
+#   first boot and unimimize) but it is compressed with zstd and therefore
+#   cannot be booted with vendor u-boot and boot scripts (but it will work with
+#   grub booting). It is then recommended to first install the dependency
+#   package linux-firmware (ca 900M) and then the package linux-image-generic.
+#   (This is to avoid problems with the package linux-firmware not being fullly
+#   configured which can apparently happen otherwise.) The installation scripts
+#   for linux-image-generic will automatically generate a new valid grub.cfg
+#   which will include also an entry for the ophub/flippy/unifreq kernel
+#   (albeit without the desired kernel command line parameters).
+# - Run time for this script is less than 10m on a modern computer with good
+#   network connectivity. (Try this to check: time ./ubuntu_mkimg.bash)
+# - Pro tip: Generate the image cheaply, say 1G rootfs (so that burn to SD/USB
+#   goes quickly). Then, (before first boot) enlarge the rootfs partition on
+#   SD/USB to desired size, e.g. with (100% here uses all of the SD/USB):
+#   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
 
 # ------------------------------- parameters ---------------------------------
 
@@ -66,20 +85,29 @@ distro_relstr=daily/current
 distro_buildfile=${distro_release}-base-arm64.tar.gz
 distro_buildurl=${distro_urlbase}/${distro_relstr}/${distro_buildfile}
 
-# Ophub repo w/ builds of Flippy/Unifreq kernels (incl. initramfs, thx. Ophub).
-kernel_release="5.19.9-flippy-76+" # Name string with special characters.
-kernel_urlboot="https://github.com/ophub/kernel/raw/main/pub/stable/5.19.9/boot-5.19.9-flippy-76%2B.tar.gz"
-kernel_urlmods="https://github.com/ophub/kernel/raw/main/pub/stable/5.19.9/modules-5.19.9-flippy-76%2B.tar.gz"
-kernel_urldtbs="https://github.com/ophub/kernel/raw/main/pub/stable/5.19.9/dtb-amlogic-5.19.9-flippy-76%2B.tar.gz"
+ophub_kvers="5.19.10" # Kernel version, e.g. 5.19.10
 
-# Ophub repo with u-boot.bin files (for use as chainloader u-boot.ext).
-uboot_repo="https://github.com/ophub/amlogic-s9xxx-armbian/blob/main/build-armbian/amlogic-u-boot/overload"
+# Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
+ophub_krel=${ophub_kvers}"-flippy-77+" # Name string plain.
+# For a list of encodings, see https://en.wikipedia.org/wiki/Percent-encoding
+ophub_krel_url=${ophub_kvers}"-flippy-77%2B" # Name string URL encoded.
+
+# Ophub repo w/ builds of Flippy/Unifreq kernels (incl. initramfs, thx. Ophub).
+ophub_repo_url="https://github.com/ophub"
+ophub_krepo_url=${ophub_repo_url}/kernel/raw/main/pub/stable
+ophub_kboot_url=${ophub_krepo_url}/${ophub_kvers}/boot-${ophub_krel_url}.tar.gz
+ophub_kmods_url=${ophub_krepo_url}/${ophub_kvers}/modules-${ophub_krel_url}.tar.gz
+ophub_kdtbs_url=${ophub_krepo_url}/${ophub_kvers}/dtb-amlogic-${ophub_krel_url}.tar.gz
+
+# Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
+ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/blob/main/build-armbian/amlogic-u-boot/overload"
 
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
+# Afterwards, check for detected sound cards with aplay -l or aplay -L
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
 
-# Edit the tag to your liking.
-img_tag=${kernel_release}_3pole-$(date +"%y%m%d")
+# Edit the image tag to your liking.
+img_tag=${ophub_krel}_3pole-$(date +"%y%m%d")
 imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
 
 # Host name for image.
@@ -98,7 +126,7 @@ dtbfile_name=meson-g12b-ugoos-am6.dtb
 # Note: The boot fs is only for u-boot formatted copies of kernel +initramfs.
 skip_MB=1
 boot_MB=150
-root_MB=3500
+root_MB=1000
 rootfs_type=ext4
 bootfs_label=UBNT_BOOT
 rootfs_label=UBNT_ROOT
@@ -114,10 +142,6 @@ tmpfile_dir=${imgfile_dir}/temp_files
 rootfs_mnt=${imgfile_dir}/rootfs_tmp
 bootfs_dir=/boot/aux
 bootfs_mnt=${rootfs_mnt}/${bootfs_dir}
-
-# These two are only (possibly) used on the installed image.
-name_server_1=192.168.0.1 # Set to your router's IP address.
-name_server_2=8.8.8.8     # Set to your backup DNS (8.8.8.8 is dns.google).
 
 # Do we want to clean up all temporary files and directories afterwards?
 docleanup_after=yes # {yes,no}
@@ -262,7 +286,7 @@ EOF
 # To add the generic (ARM64) kernel add: apt -y install linux-image-generic
 # (The double quotes around the limit string EOF prevents command substitution.)
 ubuntu_custom_extra=$(cat <<"EOF"
-apt-get -y install nano less aptitude
+apt-get -y install nano less aptitude usbutils
 EOF
 )
 
@@ -270,19 +294,28 @@ EOF
 # (If you want to add packages, edit the here-doc ubuntu_custom_extra above.)
 ubuntu_custom_inst=$(cat <<EOF
 apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get -y install man-db apt-utils kmod grub2-common network-manager ssh
+apt-get -y install apt-utils
+DEBIAN_FRONTEND=noninteractive apt-get -y install man-db kmod grub2-common network-manager ssh u-boot-tools
 DEBIAN_FRONTEND=noninteractive apt-get -y install dialog locales keyboard-configuration kbd
+DEBIAN_FRONTEND=noninteractive $ubuntu_custom_extra
 dpkg-reconfigure tzdata
 dpkg-reconfigure keyboard-configuration
 echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
-echo "Setting up grub.cfg"
+echo "Setting up boot (2 items):"
+PATH=${PATH}:/usr/local/bin
+echo "(1) Creating /boot/grub/grub.cfg"
 mkgrubcfg_simple.bash
-$ubuntu_custom_extra
+echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, Initrd)."
+mkbootlinux.bash ${ophub_krel} ${bootfs_dir} >/dev/null
 EOF
 )
 
 aml_autoscript=$(cat <<"EOF"
+# Standard aml_autoscript to set boot order: mmc/SD, USB, emmc
+# Search for *_autoscript on these device types and execute the first such script found.
+# Sourced from Manjaro ARM.
+# Recompile with mkimage -A arm -O linux -T script -C none -d aml_autoscript.txt aml_autoscript
 defenv
 setenv bootcmd 'run start_autoscript; run storeboot'
 setenv start_autoscript 'mmcinfo && run start_mmc_autoscript; usb start && run start_usb_autoscript; run start_emmc_autoscript'
@@ -298,8 +331,14 @@ EOF
 )
 
 s905_autoscript=$(cat <<"EOF"
+# Standard s905_autoscript to set boot execution steps (for mmc/SD and USB).
+# Sourced from Manjaro ARM.
+# Recompile with mkimage -A arm -O linux -T script -C none -d s905_autoscript.txt s905_autoscript
+# (1) Try chainloader u-boot.ext, typically with boot conf. in extlinux.conf
 if fatload mmc 0 0x1000000 u-boot.ext; then go 0x1000000; fi;
 if fatload usb 0 0x1000000 u-boot.ext; then go 0x1000000; fi;
+# (2) If no chainloader found, continue using vendor u-boot:
+# Search fat partitions (on mmc/SD and then USB) and look for uImage, uInitrd and boot conf. in uEnv.ini, and execute the first such combo found.
 setenv env_addr 0x1040000
 setenv initrd_addr 0x13000000
 setenv boot_start 'bootm ${loadaddr} ${initrd_addr} ${dtb_mem_addr}'
@@ -350,6 +389,11 @@ EOF
 mkgrubcfg=$(cat <<EOF
 #!/bin/bash
 
+# Wrapper around grub-mkconfig with /boot/grub as destination directory.
+# Tailored to (i.e. command line arguments) for ophub/flippy/unifreq kernels.
+# For other kernels, adapt the command line string below.
+# Usage: mkgrubcfg.bash
+
 GRUB_DISTRIBUTOR="$distro_name $distro_edition"
 GRUB_CMDLINE_LINUX="$kernel_cmdline_opts"
 
@@ -361,8 +405,12 @@ grub-mkconfig -o /boot/grub/grub.cfg
 EOF
 )
 
+# We split this file in two; one part with parameter substitution and one w/o.
 mkgrubcfg_simple_p1=$(cat <<EOF
 #!/bin/bash
+
+# Scans for vmlinuz-* in /boot and makes a simple grub.cfg in /boot/grub
+# Usage: mkgrubcfg.bash
 
 distro_name_=$distro_name
 distro_edition_=$distro_edition
@@ -375,6 +423,9 @@ EOF
 mkgrubcfg_simple_p2=$(cat <<"EOF1"
 
 cd /boot
+if [[ -f grub/grub.cfg ]]; then
+    mv grub/grub.cfg grub/grub.cfg.bak
+fi
 
 for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
     kernel_name=vmlinuz-${kernel_version}
@@ -382,7 +433,7 @@ for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
 
     kernel_path=/boot/$kernel_name
     initrd_path=/boot/$initrd_name
-    echo "Adding entry $distro_name_ $distro_edition_ (kernel $kernel_version)"
+    echo "Adding entry: $distro_name_ $distro_edition_ (kernel $kernel_version)"
     # Note: The leading tabs in the here-document below are important.
 	cat <<-EOF >> grub/grub.cfg
 	menuentry "$distro_name_ $distro_edition_ (kernel $kernel_version)" {
@@ -399,11 +450,39 @@ EOF1
 
 mkgrubcfg_simple="${mkgrubcfg_simple_p1}""${mkgrubcfg_simple_p2}"
 
+mkuimg=$(cat <<"EOF"
+#!/bin/bash
+
+# Takes an ARM64 kernel Image and produces a u-boot tagged uImage from it.
+# Usage: mkuimg /path/to/Image /path/to/uImage
+
+# Note: ARM64 vmlinuz kernels (e.g. flippy's) are often in fact in Image format.
+
+mkimage -n "uImage" -A arm64 -O linux -T kernel -C none \
+    -a 0x1080000 -e 0x1080000 -d $1 $2
+EOF
+)
+
+mkbootlinux=$(cat <<"EOF"
+#!/bin/bash
+
+# Produces an uImage and uInitrd on the fat boot partition from flippy's
+# kernel and initramfs.
+# Usage: mkbootlinux kernel_release /path/to/mounted_bootpart
+# where kernel_release is e.g. 5.19.9-flippy-76+
+# and /path/to/bootpart/mount is e.g. /boot/aux (and is mounted).
+
+mkuimg.bash /boot/vmlinuz-${1} ${2}/uImage
+cp /boot/uInitrd-${1} ${2}/uInitrd
+
+EOF
+)
+	      
 #----------------------------------- code -----------------------------------
 
 imgfile_loc=${imgfile_dir}/${imgfile_name}
 
-# This is a rough estimate: We do not take into account temp files etc.
+# This is a rough estimate: We do not take into account temporary files etc.
 imgfile_MB=$((skip_MB +boot_MB +root_MB))
 desired_MB=$((14*${imgfile_MB}/10)) # Approx. space for imgfile +imgfile.xz
 
@@ -491,9 +570,9 @@ fi
 echo " Done."
 
 echo -e ${i_msg}" Downloading the root (base) file system tarball..."
-cd $tmpfile_dir && wget_exticode=$(wget $distro_buildurl)
-if [[ $wget_exitcode -ne 0 ]]; then
-    echo -e ${i_msg}" Unable to download the rootfs tarball, exiting"
+cd $tmpfile_dir && wget -nv $distro_buildurl
+if [[ $? -ne 0 ]]; then
+    echo -e ${i_msg}" Unable to download the rootfs tarball, exiting."
     exit 1
 fi
 echo "Done."
@@ -523,25 +602,10 @@ echo -n -e ${i_msg}" Setting up local host mappings in /etc/hosts ..."
 echo -e "$hosts_file" >${rootfs_mnt}/etc/hosts
 echo " Done."
 
-# The interfaces and resolv.conf files are only needed if you choose to install
-# the package ifupdown instead of the default network manager package.
-#
-# # The network directory (0755) does not exist in the base tarball.
-# echo -n -e ${i_msg}" Setting up net interfaces in /etc/network/interfaces ..."
-# mkdir -p -m 0755 ${rootfs_mnt}/etc/network
-# echo -e "$interfaces_file" >${rootfs_mnt}/etc/network/interfaces
-# echo " Done."
-#
-# # The resolv.conf file (0644) in the base tarball is empty.
-# echo -n -e ${i_msg}" Setting up /etc/resolv.conf ..."
-# rm -f ${rootfs_mnt}/etc/resolv.conf
-# echo -e "$resolver_file" >${rootfs_mnt}/etc/resolv.conf
-# echo " Done."
-
 # To enable sound on some boxes, edit and run this script as local user.
 echo -e ${i_msg}" Installing script at /usr/local/bin/g12_sound.sh ..."
-cd $tmpfile_dir && wget_exticode=$(wget $g12_sound_url)
-if [[ $wget_exitcode -ne 0 ]]; then
+cd $tmpfile_dir && wget -nv $g12_sound_url
+if [[ $? -ne 0 ]]; then
     echo -e ${w_msg}" Unable to download the scrip g12_sound.sh"
 else
     cp g12_sound.sh ${rootfs_mnt}/usr/local/bin
@@ -563,33 +627,40 @@ echo -e "$mkgrubcfg_simple" >${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
 chmod 0755 ${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
 echo " Done."
 
+echo -e ${i_msg}" Installing scripts to create uImage and uInitrd on bootfs..."
+echo -e "$mkuimg" >${rootfs_mnt}/usr/local/bin/mkuimg.bash
+chmod 0755 ${rootfs_mnt}/usr/local/bin/mkuimg.bash
+echo -e "$mkbootlinux" >${rootfs_mnt}/usr/local/bin/mkbootlinux.bash
+chmod 0755 ${rootfs_mnt}/usr/local/bin/mkbootlinux.bash
+echo " Done."
+
 echo -e ${i_msg}" Downloading Ophub/Flippy/Unifreq kernel..."
-cd $tmpfile_dir && wget_exticode=$(wget $kernel_urlboot)
-if [[ $wget_exitcode -ne 0 ]]; then
-    echo -e ${i_msg}" Unable to download the kernel boot files, exiting"
+cd $tmpfile_dir && wget -nv $ophub_kboot_url
+if [[ $? -ne 0 ]]; then
+    echo -e ${i_msg}" Unable to download the kernel boot files, exiting."
     exit 1
 fi
-wget_exticode=$(wget $kernel_urlmods)
-if [[ $wget_exitcode -ne 0 ]]; then
-    echo -e ${i_msg}" Unable to download the kernel modules, exiting"
+wget -nv $ophub_kmods_url
+if [[ $? -ne 0 ]]; then
+    echo -e ${i_msg}" Unable to download the kernel modules, exiting."
     exit 1
 fi
-wget_exticode=$(wget $kernel_urldtbs)
-if [[ $wget_exitcode -ne 0 ]]; then
-    echo -e ${i_msg}" Unable to download the dtb files, exiting"
+wget -nv $ophub_kdtbs_url
+if [[ $? -ne 0 ]]; then
+    echo -e ${i_msg}" Unable to download the dtb files, exiting."
     exit 1
 fi
 echo " Done."
 
 echo -n -e ${i_msg}" Installing Ophub/Flippy/Unifreq kernel..."
 cd ${rootfs_mnt}/boot
-tar -xzf ${tmpfile_dir}/boot-${kernel_release}.tar.gz
+tar -xzf ${tmpfile_dir}/boot-${ophub_krel}.tar.gz
 mkdir -p -m 0744 ${rootfs_mnt}/lib/modules
 cd ${rootfs_mnt}/lib/modules
-tar -xzf ${tmpfile_dir}/modules-${kernel_release}.tar.gz
+tar -xzf ${tmpfile_dir}/modules-${ophub_krel}.tar.gz
 mkdir -p -m 0755 ${rootfs_mnt}/boot/dtbs/amlogic
 cd ${rootfs_mnt}/boot/dtbs/amlogic
-tar -xzf ${tmpfile_dir}/dtb-amlogic-${kernel_release}.tar.gz
+tar -xzf ${tmpfile_dir}/dtb-amlogic-${ophub_krel}.tar.gz
 echo " Done."
 
 # The flash-kernel package causes problems on systems w/o flash storage (when
@@ -611,15 +682,15 @@ if [[ $arch_str != "aarch64" ]]; then
     echo " Done."
 fi
 
-echo -e ${i_msg}" Entering chroot jail. Installing/upgrading some packages..."
+echo -e ${i_msg}" Entering chroot jail. Installing some pkgs., running some scripts..."
 systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
 	       /root/ubuntu_custom_inst.bash
 rm ${rootfs_mnt}/root/ubuntu_custom_inst.bash
-sleep 1 # Just to be able to read some of the messages.
+sleep 2 # Just to be able to read some of the messages.
 echo "Done."
 
 if [[ $arch_str != "aarch64" ]]; then
-    echo -e ${i_msg}" Removing local qemu-aarch64-static binary..."
+    echo -n -e ${i_msg}" Removing local qemu-aarch64-static binary..."
     rm ${rootfs_mnt}/usr/bin/qemu-aarch64-static
     echo " Done."
 fi
@@ -656,29 +727,13 @@ echo -e "$extlinux_conf" >extlinux/extlinux.conf.bak
 mkdir u-boot
 echo -e "$README_uboot" >u-boot/README_u-boot.txt
 for uboot_bin in ${uboot_list[*]}; do
-    uboot_bin_url=${uboot_repo}/${uboot_bin}
-    wget_exticode=$(wget -nv -P u-boot $uboot_bin_url)
-    if [[ $wget_exitcode -ne 0 ]]; then
+    uboot_bin_url=${ophub_uboot_url}/${uboot_bin}
+    wget -nv -P u-boot $uboot_bin_url
+    if [[ $? -ne 0 ]]; then
         echo -e ${w_msg}" Unable to download $uboot_bin"
     fi
 done
 echo "Done."
-
-# The vmlinuz kernels from ophub/flippy/unifreq are in fact in Image format.
-echo -n -e ${i_msg}" Converting vmlinuz to u-boot format and copy uInitrd..."
-mkimage -n "uImage" -A arm64 -O linux -T kernel -C none \
-        -a 0x1080000 -e 0x1080000 \
-        -d ${rootfs_mnt}/boot/vmlinuz-${kernel_release} \
-        ${bootfs_mnt}/uImage >/dev/null
-cp ${rootfs_mnt}/boot/uInitrd-${kernel_release} ${bootfs_mnt}/uInitrd
-echo " Done."
-
-# For Ubuntu kernel +initramfs:
-# echo -e ${i_msg}" Generating zImage and uInitrd on boot partition..."
-# cp ${rootfs_mnt}/boot/vmlinuz ${bootfs_mnt}/zImage
-# mkimage -n "ramdisk" -A arm64 -O linux -T ramdisk -C zstd \
-#       -d ${rootfs_mnt}/boot/initrd.img ${bootfs_mnt}/uInitrd 1>/dev/null
-# echo " Done."
 
 echo -n -e ${i_msg}" Unmounting the container file..."
 cd $imgfile_dir
