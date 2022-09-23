@@ -1,18 +1,18 @@
 #!/bin/bash
 
 # ubuntu_mkimg.bash (a.k.a. {opbuntu,flibuntu}_mkimg.bash)
-# 22-09-22: v0.15
+# 22-09-24: v0.16
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
 # (flippy/unifreq) for Amlogic TV-boxes/SBCs. The Ubuntu system is based on
-# daily builds of the rootfs of the latest LTS release (currently 22.04 Jammy).
+# daily builds of the rootfs of the latest LTS release 22.04 Jammy (or Focal).
 # The script must be executed (as root) on an Ubuntu/Debian type machine,
 # either natively on aarch64/ARM64 (e.g. Ubuntu Server Live booted via
 # bootdisk) or virtualized (using qemu-aarch64-static) on x86_64/amd64.
-# The generated image can be booted using resident/vendor u-boot (using the
-# boot scripts on the fat partition) or via bootdisk (using the grub.cfg file
-# on the rootfs partition). Another alternative is chainloader u-boot.ext
+# The generated image can be booted with resident/vendor u-boot (using the boot
+# scripts on the fat partition) or via bootdisk (using the grub.cfg file on the
+# rootfs partition). Another alternative is chainloader u-boot.ext (included).
 
 # Tested on: Ugoos AM6 plus (s922x, for booting and running) and on QEMU
 # (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
@@ -39,6 +39,9 @@
 #   most packages and therefore it is advisable to run the command unminimize
 #   (and reboot) to restore the system into normal state at the first boot.
 # - More generally, the system is "bare-bones", so e.g. no swap is set up.
+# - During installation, on some terminals the keyboard and console font
+#   configuration will be deferred and you will see a message about this.
+#   (You can always later manually do dpkg-reconfigure keyboard-configuration)
 # - On some boxes, when booting from USB using vendor u-boot and the boot
 #   scripts, only the image stick can be attached to the USB bus. When booting
 #   using a chainloader (u-boot.ext) it should not be a problem to have other
@@ -50,16 +53,14 @@
 #   uInitrd have to be recreated "manually" using this script (unless you rely
 #   on grub booting, then only grub.cfg on the rootfs partition has to be
 #   updated; see the scripts in /usr/local/bin).
-# - A simple working desktop can be installed by opening aptitude and choosing
-#   the task xubuntu-core (with e.g. lightdm, chosen at install time).
+# - A simple working desktop can be obtained by installing e.g. xubuntu-core
+#   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 # - On some boxes it is necessary to run (as user) the script g12_sound.sh
 #   to get sound working. (Afterwards, check for soundcards with e.g. aplay -L)
 # - The standard Ubuntu kernel linux-image-generic can also be installed (after
-#   first boot and unimimize) but it is compressed with zstd and therefore
-#   cannot be booted with vendor u-boot and boot scripts (but it will work with
-#   grub booting). It is then recommended to first install the dependency
+#   unminizing). It is then recommended to first install the dependency
 #   package linux-firmware (ca 900M) and then the package linux-image-generic.
-#   (This is to avoid problems with the package linux-firmware not being fullly
+#   (This is to avoid problems with the package linux-firmware not being fully
 #   configured which can apparently happen otherwise.) The installation scripts
 #   for linux-image-generic will automatically generate a new valid grub.cfg
 #   which will include also an entry for the ophub/flippy/unifreq kernel
@@ -73,9 +74,8 @@
 
 # ------------------------------- parameters ---------------------------------
 
-# Do not edit the next two, for now.
-distro_name=Ubuntu
-distro_edition=Jammy
+distro_name=Ubuntu   # Used for the image name and in grub.cfg
+distro_edition=Jammy # Tested with Jammy, Focal
 
 distro_release="$(tr [A-Z] [a-z] <<< "$distro_edition")" # To lowercase.
 
@@ -85,14 +85,15 @@ distro_relstr=daily/current
 distro_buildfile=${distro_release}-base-arm64.tar.gz
 distro_buildurl=${distro_urlbase}/${distro_relstr}/${distro_buildfile}
 
-ophub_kvers="5.19.10" # Kernel version, e.g. 5.19.10
+# Ophub kernel version, e.g. 5.19.10
+ophub_kvers="5.19.10"
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
-ophub_krel=${ophub_kvers}"-flippy-77+" # Name string plain.
+ophub_krel=${ophub_kvers}"-flippy-77+" # Kernel name/release string, plain text.
 # For a list of encodings, see https://en.wikipedia.org/wiki/Percent-encoding
 ophub_krel_url=${ophub_kvers}"-flippy-77%2B" # Name string URL encoded.
 
-# Ophub repo w/ builds of Flippy/Unifreq kernels (incl. initramfs, thx. Ophub).
+# Ophub repo w/ builds of flippy/unifreq kernels (incl. initramfs, thx. Ophub).
 ophub_repo_url="https://github.com/ophub"
 ophub_krepo_url=${ophub_repo_url}/kernel/raw/main/pub/stable
 ophub_kboot_url=${ophub_krepo_url}/${ophub_kvers}/boot-${ophub_krel_url}.tar.gz
@@ -103,7 +104,6 @@ ophub_kdtbs_url=${ophub_krepo_url}/${ophub_kvers}/dtb-amlogic-${ophub_krel_url}.
 ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/blob/main/build-armbian/amlogic-u-boot/overload"
 
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
-# Afterwards, check for detected sound cards with aplay -l or aplay -L
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
 
 # Edit the image tag to your liking.
@@ -114,10 +114,20 @@ imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
 host_name=opbu
 
 # The string root=UUID=${rootfs_UUID} will be prepended below once UUID exists.
-kernel_cmdline_opts="rootdelay=3 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1"
+kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1"
 
 # This is the dtb file name pointed to in uEnv.ini
 dtbfile_name=meson-g12b-ugoos-am6.dtb
+
+# The values for -a (load address) and -e (entry point) may need to be adapted.
+# For Amlogic s922x (e.g. GTK pro, AM6) std. values for for -a,-e are 0x1080000
+
+# These to parameters define the kernel memory load address and starting point,
+# respectively, for u-boot. They are used in the script mkuimg.bash below to
+# create uImage from Image. The values must be adapted to the box/SoC. For e.g
+# some Amlogic s922x SoC (GT King pro, Ugoos AM6) both values are 0x1080000
+k_load_addr=0x1080000
+k_entry_addr=0x1080000
 
 # File system sizes and types (unit MiB).
 # - The partition table type on the image is MBR.
@@ -147,8 +157,8 @@ bootfs_mnt=${rootfs_mnt}/${bootfs_dir}
 docleanup_after=yes # {yes,no}
 
 # Some (but not all) commands used below.
-reqd_cmdlist=("blkid" "dd" "losetup" "mkfs.vfat" "mkfs.ext4" "mkfs.btrfs"
-              "mkimage" "systemd-nspawn" "tar" "xz" "wget"
+reqd_cmdlist=("blkid" "dd" "losetup" "mkfs.vfat" "mkimage" "systemd-nspawn"
+              "tar" "xz" "wget"
 )
 
 reqd_cmdlist_virt=("qemu-aarch64-static")
@@ -179,6 +189,15 @@ fi
 arch_str=$(uname -m)
 if [[ "$arch_str" != "aarch64" && "$arch_str" != "x86_64" ]]; then
     echo ${e_msg}" The architecture is not one of x86_64 or aarch64, exiting."
+    exit 1
+fi
+
+if [[ "$rootfs_type" == "ext4" ]]; then
+    reqd_cmdlist=("${reqd_cmdlist[@]}" "mkfs.ext4")
+elif [[ "$rootfs_type" == "btrfs" ]]; then
+    reqd_cmdlist=("${reqd_cmdlist[@]}" "mkfs.btrfs")
+else
+    echo -e "The fstype for the rootfs must be one of ext4 or btrfs, exiting."
     exit 1
 fi
 
@@ -218,21 +237,6 @@ fstab_file=$(cat <<EOF
 UUID=$rootfs_UUID  /  $rootfs_type   errors=remount-ro  0  1
 EOF
 )
-
-# The interfaces and resolv.conf files are only needed if you choose to install
-# the package ifupdown instead of the default networkmanager package.
-# interfaces_file=$(cat <<EOF
-# allow-hotplug eth0
-# auto eth0
-# iface eth0 inet dhcp
-# EOF
-# )
-#
-# resolver_file=$(cat <<EOF
-# nameserver $name_server_1
-# nameserver $name_server_2
-# EOF
-# )
 
 # This conf file may need some tweaking, currently it provides only basic conn.
 eth0_nmconf_file=$(cat <<EOF
@@ -303,11 +307,10 @@ dpkg-reconfigure keyboard-configuration
 echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
 echo "Setting up boot (2 items):"
-PATH=${PATH}:/usr/local/bin
 echo "(1) Creating /boot/grub/grub.cfg"
-mkgrubcfg_simple.bash
+/usr/local/bin/mkgrubcfg_simple.bash
 echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, Initrd)."
-mkbootlinux.bash ${ophub_krel} ${bootfs_dir} >/dev/null
+/usr/local/bin/mkbootlinux.bash ${ophub_krel} ${bootfs_dir} >/dev/null
 EOF
 )
 
@@ -392,7 +395,7 @@ mkgrubcfg=$(cat <<EOF
 # Wrapper around grub-mkconfig with /boot/grub as destination directory.
 # Tailored to (i.e. command line arguments) for ophub/flippy/unifreq kernels.
 # For other kernels, adapt the command line string below.
-# Usage: mkgrubcfg.bash
+# Usage: /usr/local/bin/mkgrubcfg.bash
 
 GRUB_DISTRIBUTOR="$distro_name $distro_edition"
 GRUB_CMDLINE_LINUX="$kernel_cmdline_opts"
@@ -410,7 +413,7 @@ mkgrubcfg_simple_p1=$(cat <<EOF
 #!/bin/bash
 
 # Scans for vmlinuz-* in /boot and makes a simple grub.cfg in /boot/grub
-# Usage: mkgrubcfg.bash
+# Usage: /usr/local/bin/mkgrubcfg_simple.bash
 
 distro_name_=$distro_name
 distro_edition_=$distro_edition
@@ -450,31 +453,65 @@ EOF1
 
 mkgrubcfg_simple="${mkgrubcfg_simple_p1}""${mkgrubcfg_simple_p2}"
 
-mkuimg=$(cat <<"EOF"
+mkuimg_p1=$(cat <<EOF
 #!/bin/bash
 
 # Takes an ARM64 kernel Image and produces a u-boot tagged uImage from it.
-# Usage: mkuimg /path/to/Image /path/to/uImage
+# Usage: /usr/local/bin/mkuimg /path/to/Image /path/to/uImage
 
 # Note: ARM64 vmlinuz kernels (e.g. flippy's) are often in fact in Image format.
 
-mkimage -n "uImage" -A arm64 -O linux -T kernel -C none \
-    -a 0x1080000 -e 0x1080000 -d $1 $2
+# The values for -a (load address) and -e (entry point) may need to be adapted.
+# For some s922x (e.g. GTK pro, AM6) std. values for for -a,-e are 0x1080000
+
+k_load_addr_=$k_load_addr
+k_entry_addr_=$k_entry_addr
+
 EOF
 )
+
+mkuimg_p2=$(cat <<"EOF"
+
+mkimage -n "uImage" -A arm64 -O linux -T kernel -C none \
+    -a $k_load_addr_ -e $k_entry_addr_ -d $1 $2
+EOF
+)
+
+mkuimg="${mkuimg_p1}""${mkuimg_p2}"
 
 mkbootlinux=$(cat <<"EOF"
 #!/bin/bash
 
 # Produces an uImage and uInitrd on the fat boot partition from flippy's
 # kernel and initramfs.
-# Usage: mkbootlinux kernel_release /path/to/mounted_bootpart
+# Usage: /usr/local/bin/mkbootlinux kernel_release /path/to/mounted_bootpart
 # where kernel_release is e.g. 5.19.9-flippy-76+
 # and /path/to/bootpart/mount is e.g. /boot/aux (and is mounted).
 
-mkuimg.bash /boot/vmlinuz-${1} ${2}/uImage
+/usr/local/bin/mkuimg.bash /boot/vmlinuz-${1} ${2}/uImage
 cp /boot/uInitrd-${1} ${2}/uInitrd
 
+EOF
+)
+
+README_auxbootldr=$(cat <<EOF
+It is easy to install Petitboot or u-root on this bootfs. With any of these two
+bootloaders/bootmanagers you can boot "generic" UEFI+grub (and more generally
+images with a valid grub config). If this image is installed on SD (so that it
+is first in the boot chain, as defined by aml_autoscript), the bootloader will
+start and scan the SD and other attached USB devices for bootable configurations
+which can be conveniently selected and booted via a test based UI. For more
+info on such "bootdisk" booting, see https://gitlab.com/tripole-inc/bootdisk
+
+To install e.g. Petitboot on this bootfs (same for u-root), do the following:
+
+(1) Download the latest tarball with Petitboot in the non chainloaded version,
+    e.g. petit-bootdisk-nc_0v22-2.tgz
+(2) Unpack the tarball in some temporary directory.
+(3) Copy the existing Image and uInitrd on the bootfs to some backup location.
+(3) Copy the Image (or zImage; it is an Image) from the tarball to Image on the
+    bootfs and copy the uInitrd from the tarball to uInitrd on the bootfs.
+(4) Reboot into Petitboot.
 EOF
 )
 	      
@@ -734,6 +771,11 @@ for uboot_bin in ${uboot_list[*]}; do
     fi
 done
 echo "Done."
+
+# A small sales pitch for the bootdisk.
+echo -n -e ${i_msg}" Writing instructions for installing Petitboot/u-root..."
+echo -e "$README_auxbootldr" >README_auxbootldr.txt
+echo " Done."
 
 echo -n -e ${i_msg}" Unmounting the container file..."
 cd $imgfile_dir
