@@ -14,8 +14,8 @@
 # scripts on the fat partition) or via bootdisk (using the grub.cfg file on the
 # rootfs partition). Another alternative is chainloader u-boot.ext (included).
 
-# Tested on: Ugoos AM6 plus (s922x, for booting and running) and on QEMU
-# (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
+# Tested on: Ugoos AM6 plus (s922x, for executing, booting and running) and on
+# QEMU (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
 # Tested kernels: 5.15.70-flippy-77+, 5.19.10-flippy-77+, 5.15.0-48-generic
 # This script is a template or proof-of-concept, nothing more (so please fork
 # it, improve it).
@@ -80,13 +80,11 @@
 distro_name=Ubuntu   # Used for the image name and in grub.cfg
 distro_edition=Jammy # Tested with Jammy, Focal
 
-distro_release="$(tr [A-Z] [a-z] <<< "$distro_edition")" # To lowercase.
+# Host name for image.
+host_name=opbu
 
-# Official Ubuntu rootfs tarball.
-distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"/${distro_release}
-distro_relstr=daily/current
-distro_buildfile=${distro_release}-base-arm64.tar.gz
-distro_buildurl=${distro_urlbase}/${distro_relstr}/${distro_buildfile}
+# Compression (xz) takes some extra time.
+compressed_img=no # {yes,no}
 
 # Ophub kernel version (number), e.g. 5.19.10
 ophub_kvers="5.19.10"
@@ -95,6 +93,10 @@ ophub_kvers="5.19.10"
 ophub_krel=${ophub_kvers}"-flippy-77+" # Kernel name/release string, plain text.
 # For a list of encodings, see https://en.wikipedia.org/wiki/Percent-encoding
 ophub_krel_url=${ophub_kvers}"-flippy-77%2B" # Name string URL encoded.
+
+# Edit the image tag to your liking.
+img_tag=${ophub_krel}_3pole-$(date +"%y%m%d")
+imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
 
 # Ophub repo w/ builds of flippy/unifreq kernels (incl. initramfs, thx. Ophub).
 ophub_repo_url="https://github.com/ophub"
@@ -106,31 +108,31 @@ ophub_kdtbs_url=${ophub_krepo_url}/${ophub_kvers}/dtb-amlogic-${ophub_krel_url}.
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
 ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/blob/main/build-armbian/amlogic-u-boot/overload"
 
+# u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
+uboot_list=("u-boot-e900v22c.bin" "u-boot-gtking.bin"
+    "u-boot-gtkingpro-rev-a.bin" "u-boot-gtkingpro.bin" "u-boot-n1.bin"
+    "u-boot-odroid-n2.bin" "u-boot-p201.bin" "u-boot-p212.bin"
+    "u-boot-s905.bin" "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin"
+    "u-boot-sei510.bin" "u-boot-sei610.bin" "u-boot-tx3-bz.bin"
+    "u-boot-tx3-qz.bin" "u-boot-u200.bin" "u-boot-ugoos-x3.bin"
+    "u-boot-x96max.bin" "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
+)
+
+# Official Ubuntu rootfs tarball.
+distro_release="$(tr [A-Z] [a-z] <<< "$distro_edition")" # To lowercase.
+distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"/${distro_release}
+distro_relstr=daily/current
+distro_buildfile=${distro_release}-base-arm64.tar.gz
+distro_buildurl=${distro_urlbase}/${distro_relstr}/${distro_buildfile}
+
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
-
-# Edit the image tag to your liking.
-img_tag=${ophub_krel}_3pole-$(date +"%y%m%d")
-imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
-
-# Host name for image.
-host_name=opbu
 
 # The string root=UUID=${rootfs_UUID} will be prepended below once UUID exists.
 kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1"
 
 # This is the dtb file name pointed to in uEnv.ini
 dtbfile_name=meson-g12b-ugoos-am6.dtb
-
-# The values for -a (load address) and -e (entry point) may need to be adapted.
-# For Amlogic s922x (e.g. GTK pro, AM6) std. values for for -a,-e are 0x1080000
-
-# These to parameters define the kernel memory load address and starting point,
-# respectively, for u-boot. They are used in the script mkuimg.bash below to
-# create uImage from Image. The values must be adapted to the box/SoC. For e.g
-# some Amlogic s922x SoC (GT King pro, Ugoos AM6) both values are 0x1080000
-k_load_addr=0x1080000
-k_entry_addr=0x1080000
 
 # File system sizes and types (unit MiB).
 # - The partition table type on the image is MBR.
@@ -144,8 +146,12 @@ rootfs_type=ext4
 bootfs_label=UBNT_BOOT
 rootfs_label=UBNT_ROOT
 
-# Compression (xz) takes some extra time.
-compressed_img=no # {yes,no}
+# These to parameters define the kernel memory load address and starting point,
+# respectively, for u-boot. They are used in the script mkuimg.bash below to
+# create uImage from Image. The values must be adapted to the box/SoC. For e.g
+# some Amlogic s922x SoC (GT King pro, Ugoos AM6) both values are 0x1080000
+k_load_addr=0x1080000
+k_entry_addr=0x1080000
 
 # Location (dir) of disk image container during install (for size, see below).
 imgfile_dir=$PWD
@@ -159,22 +165,12 @@ bootfs_mnt=${rootfs_mnt}/${bootfs_dir}
 # Do we want to clean up all temporary files and directories afterwards?
 docleanup_after=yes # {yes,no}
 
-# Some (but not all) commands used below.
+# Some (but not all) commands used below to create the image.
 reqd_cmdlist=("blkid" "dd" "losetup" "mkfs.vfat" "mkimage" "systemd-nspawn"
               "tar" "xz" "wget"
 )
 
 reqd_cmdlist_virt=("qemu-aarch64-static")
-
-# u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
-uboot_list=("u-boot-e900v22c.bin" "u-boot-gtking.bin"
-    "u-boot-gtkingpro-rev-a.bin" "u-boot-gtkingpro.bin" "u-boot-n1.bin"
-    "u-boot-odroid-n2.bin" "u-boot-p201.bin" "u-boot-p212.bin"
-    "u-boot-s905.bin" "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin"
-    "u-boot-sei510.bin" "u-boot-sei610.bin" "u-boot-tx3-bz.bin"
-    "u-boot-tx3-qz.bin" "u-boot-u200.bin" "u-boot-ugoos-x3.bin"
-    "u-boot-x96max.bin" "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
-)
 
 # Bling? Yes, we like.
 i_msg="[\033[94m Info \033[0m]"
