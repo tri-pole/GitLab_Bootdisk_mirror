@@ -16,6 +16,7 @@
 
 # Tested on: Ugoos AM6 plus (s922x, for booting and running) and on QEMU
 # (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
+# Tested kernels: 5.15.70-flippy-77+, 5.19.10-flippy-77+, 5.15.0-48-generic
 # This script is a template or proof-of-concept, nothing more (so please fork
 # it, improve it).
 
@@ -38,7 +39,7 @@
 # - The Ubuntu rootfs comes in a "minimized" state (see e.g. Ubuntu Wiki) for
 #   most packages and therefore it is advisable to run the command unminimize
 #   (and reboot) to restore the system into normal state at the first boot.
-# - More generally, the system is "bare-bones", so e.g. no swap is set up.
+#   More generally, the system is "bare-bones", so e.g. no swap is set up.
 # - During installation, on some terminals the keyboard and console font
 #   configuration will be deferred and you will see a message about this.
 #   (You can always later manually do dpkg-reconfigure keyboard-configuration)
@@ -52,9 +53,11 @@
 #   (see below). Therefore, when updating the kernel or initramfs then uImage
 #   uInitrd have to be recreated "manually" using this script (unless you rely
 #   on grub booting, then only grub.cfg on the rootfs partition has to be
-#   updated; see the scripts in /usr/local/bin).
+#   updated; see the scripts in /usr/local/bin). (The boot partition is not
+#   mounted by default in /etc/fstab but it can be by uncommenting one line.)
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
+#   Another alternative is kubuntu-desktop.
 # - On some boxes it is necessary to run (as user) the script g12_sound.sh
 #   to get sound working. (Afterwards, check for soundcards with e.g. aplay -L)
 # - The standard Ubuntu kernel linux-image-generic can also be installed (after
@@ -85,7 +88,7 @@ distro_relstr=daily/current
 distro_buildfile=${distro_release}-base-arm64.tar.gz
 distro_buildurl=${distro_urlbase}/${distro_relstr}/${distro_buildfile}
 
-# Ophub kernel version, e.g. 5.19.10
+# Ophub kernel version (number), e.g. 5.19.10
 ophub_kvers="5.19.10"
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
@@ -364,7 +367,7 @@ EOF
 extlinux_conf=$(cat <<EOF
 # This file is only to be used if resident/vendor u-boot cannot boot via boot
 # scripts (aml_autoscript, s905_autoscript and uEnv.ini) and you still want
-# to use u-boot foor booting (rather than e.g. bootdisk +grub.cfg). Usage:
+# to use u-boot for booting (rather than e.g. bootdisk +grub.cfg). Usage:
 # (1) Rename the file to extlinux.conf
 # (2) Edit the text below (if needed) to match your box and add a chainloader
 #     as u-boot.ext (see e.g. https://github.com/ophub/amlogic-s9xxx-armbian).
@@ -500,7 +503,7 @@ bootloaders/bootmanagers you can boot "generic" UEFI+grub (and more generally
 images with a valid grub config). If this image is installed on SD (so that it
 is first in the boot chain, as defined by aml_autoscript), the bootloader will
 start and scan the SD and other attached USB devices for bootable configurations
-which can be conveniently selected and booted via a test based UI. For more
+which can be conveniently selected and booted via a text based UI. For more
 info on such "bootdisk" booting, see https://gitlab.com/tripole-inc/bootdisk
 
 To install e.g. Petitboot on this bootfs (same for u-root), do the following:
@@ -509,9 +512,9 @@ To install e.g. Petitboot on this bootfs (same for u-root), do the following:
     e.g. petit-bootdisk-nc_0v22-2.tgz
 (2) Unpack the tarball in some temporary directory.
 (3) Copy the existing Image and uInitrd on the bootfs to some backup location.
-(3) Copy the Image (or zImage; it is an Image) from the tarball to Image on the
+(4) Copy the Image (or zImage; it is an Image) from the tarball to Image on the
     bootfs and copy the uInitrd from the tarball to uInitrd on the bootfs.
-(4) Reboot into Petitboot.
+(5) Reboot into Petitboot.
 EOF
 )
 	      
