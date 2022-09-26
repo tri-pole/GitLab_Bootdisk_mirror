@@ -70,6 +70,8 @@
 #   (albeit without the desired kernel command line parameters).
 # - Run time for this script is less than 10m on a modern computer with good
 #   network connectivity. (Try this to check: time ./ubuntu_mkimg.bash)
+# - You will be asked to configure three things at runtime (near the end): time
+#   zone, keyboard and root password.
 # - Pro tip: Generate the image cheaply, say 1G rootfs (so that burn to SD/USB
 #   goes quickly). Then, (before first boot) enlarge the rootfs partition on
 #   SD/USB to desired size, e.g. with (100% here uses all of the SD/USB):
@@ -90,7 +92,7 @@ compressed_img=no # {yes,no}
 ophub_kvers="5.19.10"
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
-ophub_krel=${ophub_kvers}"-flippy-77+" # Kernel name/release string, plain text.
+ophub_krel=${ophub_kvers}"-flippy-77+" # Kernel name/release str., plain text.
 # For a list of encodings, see https://en.wikipedia.org/wiki/Percent-encoding
 ophub_krel_url=${ophub_kvers}"-flippy-77%2B" # Name string URL encoded.
 
@@ -513,7 +515,19 @@ To install e.g. Petitboot on this bootfs (same for u-root), do the following:
 (5) Reboot into Petitboot.
 EOF
 )
-	      
+
+README_altbootscr=$(cat <<EOF
+The boot scripts on the bootfs (aml_autoscript, s905_autoscript and uEnv.ini)
+are sourced from Manjaro ARM but this is certainly not the only setup possible.
+Another setup (with aml_autoscript, s905_autoscript, boot.scr), with somewhat
+different logic, can be found (along with some comments and explanations) at
+https://github.com/FauthD/amlogic-u-boot-scripts
+Yet another setup (which is probably more versatile but may require bootloader
+u-boot.bin flashed to the boot sector and gap before first partition) is the
+scripts used on Ophub's images https://github.com/ophub/amlogic-s9xxx-armbian
+EOF
+)
+
 #----------------------------------- code -----------------------------------
 
 imgfile_loc=${imgfile_dir}/${imgfile_name}
@@ -774,6 +788,11 @@ echo "Done."
 # A small sales pitch for the bootdisk.
 echo -n -e ${i_msg}" Writing instructions for installing Petitboot/u-root..."
 echo -e "$README_auxbootldr" >README_auxbootldr.txt
+echo " Done."
+
+# Some info about alternate boot scripts.
+echo -n -e ${i_msg}" Writing instructions for alternate boot scripts..."
+echo -e "$README_altbootscr" >README_altbootscr.txt
 echo " Done."
 
 echo -n -e ${i_msg}" Unmounting the container file..."
