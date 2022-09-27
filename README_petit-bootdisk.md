@@ -57,6 +57,8 @@ md5sums of latest release(s):
 
 `petit-bootdisk-nc_0v22-2.tgz   570706bfa08e45c11a4116221832a39f`
 
+`petit-bootdisk-nc_0v23.tgz     4ab9475a7def4a1852cb371f0017a3af`
+
 `bootdisk_skel.img.gz           1fde903482f2b99f9ee9fec41d02609d`
 
 The version of `Petitboot` on the `petit-bootdisk`(s) above is v1.13.
