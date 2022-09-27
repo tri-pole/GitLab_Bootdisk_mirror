@@ -49,6 +49,11 @@ petit-bootdisk-nc
 
 # petit-bootdisk:
 
+## [v0.23] - 22-09-27
+
+### Added
+ - Some e2fstools (badblocks,dumpe2fs,e2fsck,mke2fs,resize2fs,tune2fs).
+
 ## [v0.22-1] - 22-09-30
 
 ### Changed
@@ -76,7 +81,8 @@ petit-bootdisk-nc
 
 ## [v0.23] - 22-09-27
 
-### Added some e2fstools (badblocks,dumpe2fs,e2fsck,mke2fs,resize2fs,tune2fs).
+### Added
+ - Some e2fstools (badblocks,dumpe2fs,e2fsck,mke2fs,resize2fs,tune2fs).
 
 ## [v0.22-2] - 22-09-14
 
