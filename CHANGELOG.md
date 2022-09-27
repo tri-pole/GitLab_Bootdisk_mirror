@@ -54,6 +54,9 @@ petit-bootdisk-nc
 ### Added
  - Some e2fstools (badblocks,dumpe2fs,e2fsck,mke2fs,resize2fs,tune2fs).
 
+### Changed
+ - The disk contents is moved over to a tarball.
+
 ## [v0.22-1] - 22-09-30
 
 ### Changed
