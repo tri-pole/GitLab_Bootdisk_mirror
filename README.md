@@ -35,8 +35,8 @@ a simple conversion procedure starting with a Raspberry Pi image, see
 README_ubuntu_frompi.md.
 
 The most recent addition to these files/scripts is `ubuntu_mkimg.bash` which
-is a script to produce an Ubuntu Jammy (or Focal) CLI image with ophub/flippy
-kernel (the Ubuntu kernel can be installed after first boot).
+is a script to produce an Ubuntu Jammy (or Focal, Kinetic) CLI image with
+ophub/flippy kernel (the Ubuntu kernel can be installed after first boot).
 Unlike the other files/scripts above this one can be run non natively on an
 x86_64 Ubuntu machine (using qemu-aarch64-static) to generate an ARM64 image.
 

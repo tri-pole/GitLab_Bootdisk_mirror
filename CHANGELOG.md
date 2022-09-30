@@ -123,6 +123,11 @@ petit-bootdisk-nc
 
 # ubuntu_mkimg.bash
 
+## [v0.17] 22-09-30
+
+### Added
+ - Can now also generate image for Kinetic (and Jammy, Focal).
+
 ## [v0.16] 22-09-24
 
 ### Changed

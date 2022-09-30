@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # ubuntu_mkimg.bash (a.k.a. {opbuntu,flibuntu}_mkimg.bash)
-# 22-09-24: v0.16
+# 22-09-30: v0.17
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
-# (flippy/unifreq) for Amlogic TV-boxes/SBCs. The Ubuntu system is based on
-# daily builds of the rootfs of the latest LTS release 22.04 Jammy (or Focal).
+# (flippy/unifreq) for Amlogic TV-boxes/SBCs. The Ubuntu base system is from
+# daily builds of the rootfs of the releases Jammy, Focal, or pre-rel. Kinetic.
 # The script must be executed (as root) on an Ubuntu/Debian type machine,
 # either natively on aarch64/ARM64 (e.g. Ubuntu Server Live booted via
 # bootdisk) or virtualized (using qemu-aarch64-static) on x86_64/amd64.
@@ -16,7 +16,8 @@
 
 # Tested on: Ugoos AM6 plus (s922x, for executing, booting and running) and on
 # QEMU (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
-# Tested kernels: 5.15.70-flippy-77+, 5.19.10-flippy-77+, 5.15.0-48-generic
+# Tested kernels:
+# 5.15.70-flippy-77+, 5.19.{10,12}-flippy-77+, 5.15.0-48-generic
 # This script is a template or proof-of-concept, nothing more (so please fork
 # it, improve it).
 
@@ -39,7 +40,7 @@
 # - The Ubuntu rootfs comes in a "minimized" state (see e.g. Ubuntu Wiki) for
 #   most packages and therefore it is advisable to run the command unminimize
 #   (and reboot) to restore the system into normal state at the first boot.
-#   More generally, the system is "bare-bones", so e.g. no swap is set up.
+#   More generally, the system is "bare-bones"; e.g. no swap is set (only zram).
 # - During installation, on some terminals the keyboard and console font
 #   configuration will be deferred and you will see a message about this.
 #   (You can always later manually do dpkg-reconfigure keyboard-configuration)
@@ -58,29 +59,38 @@
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 #   Another alternative is kubuntu-desktop.
-# - On some boxes it is necessary to run (as user) the script g12_sound.sh
-#   to get sound working. (Afterwards, check for soundcards with e.g. aplay -L)
+# - On some boxes it is necessary to run (as user) the script g12_sound.sh to
+#   get sound working. (Afterwards, check for soundcards with e.g. aplay -L)
 # - The standard Ubuntu kernel linux-image-generic can also be installed (after
-#   unminizing). It is then recommended to first install the dependency
-#   package linux-firmware (ca 900M) and then the package linux-image-generic.
+#   unminizing). It is then recommended to first install the dependency package
+#   linux-firmware (ca 900M) and then the package linux-image-generic.
 #   (This is to avoid problems with the package linux-firmware not being fully
 #   configured which can apparently happen otherwise.) The installation scripts
 #   for linux-image-generic will automatically generate a new valid grub.cfg
 #   which will include also an entry for the ophub/flippy/unifreq kernel
 #   (albeit without the desired kernel command line parameters).
-# - Run time for this script is less than 10m on a modern computer with good
-#   network connectivity. (Try this to check: time ./ubuntu_mkimg.bash)
-# - You will be asked to configure three things at runtime (near the end): time
-#   zone, keyboard and root password.
-# - Pro tip: Generate the image cheaply, say 1G rootfs (so that burn to SD/USB
+# - Run time for this script is less than 10m (on a modern computer with good
+#   network connectivity). Try this to check: time ./ubuntu_mkimg.bash
+# - You will be asked to configure three things at runtime (near the end):
+#   time zone, keyboard and root password.
+# - Basic configuration: You might want to configure zram (and optionally set
+#   up swap), see e.g. /etc/default/zramswap and https://wiki.debian.org/ZRam
+#   Also, you can remove/disable unnecessary packages/functionality, e.g.
+#   # systemctl disable spice-vdagent.service --now
+#   # apt remove snapd && apt autoremove
+# - Pro tip: Generate the image cheaply, say 1.5G rootfs (so that burn to SD/USB
 #   goes quickly). Then, (before first boot) enlarge the rootfs partition on
 #   SD/USB to desired size, e.g. with (100% here uses all of the SD/USB):
 #   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
 
 # ------------------------------- parameters ---------------------------------
 
+# Q: Which parameters do I need to edit? 
+# A: Look trough all of them. The ones less likely to need editing are the
+#    (base parts of the) paths/URLs to the repos for kernel, rootfs and utils.
+
 distro_name=Ubuntu   # Used for the image name and in grub.cfg
-distro_edition=Jammy # Tested with Jammy, Focal
+distro_edition=Jammy # Tested with Focal, Jammy, Kinetic
 
 # Host name for image.
 host_name=opbu
@@ -89,7 +99,7 @@ host_name=opbu
 compressed_img=no # {yes,no}
 
 # Ophub kernel version (number), e.g. 5.19.10
-ophub_kvers="5.19.10"
+ophub_kvers="5.19.12"
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
 ophub_krel=${ophub_kvers}"-flippy-77+" # Kernel name/release str., plain text.
@@ -122,10 +132,15 @@ uboot_list=("u-boot-e900v22c.bin" "u-boot-gtking.bin"
 
 # Official Ubuntu rootfs tarball.
 distro_release="$(tr [A-Z] [a-z] <<< "$distro_edition")" # To lowercase.
-distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"/${distro_release}
-distro_relstr=daily/current
+distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
+# Note: When Kinetic is officially released (October 2022), the $distro_urlbase
+# string must probably have a trailing ${distro_release} str. also for Kinetic.
+# (Thus, the "if" and "fi" statements below should then be commented out.)
+if [[ "$distro_release" != "kinetic" ]]; then
+    distro_urlbase=$distro_urlbase/${distro_release}
+fi
 distro_buildfile=${distro_release}-base-arm64.tar.gz
-distro_buildurl=${distro_urlbase}/${distro_relstr}/${distro_buildfile}
+distro_buildurl=${distro_urlbase}/daily/current/${distro_buildfile}
 
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
@@ -133,7 +148,7 @@ g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-pos
 # The string root=UUID=${rootfs_UUID} will be prepended below once UUID exists.
 kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1"
 
-# This is the dtb file name pointed to in uEnv.ini
+# The dtb file name used in uEnv.ini (dtb must be in Ophub's boot-*.tar.gz pkg).
 dtbfile_name=meson-g12b-ugoos-am6.dtb
 
 # File system sizes and types (unit MiB).
@@ -143,7 +158,7 @@ dtbfile_name=meson-g12b-ugoos-am6.dtb
 # Note: The boot fs is only for u-boot formatted copies of kernel +initramfs.
 skip_MB=1
 boot_MB=150
-root_MB=1000
+root_MB=1500
 rootfs_type=ext4
 bootfs_label=UBNT_BOOT
 rootfs_label=UBNT_ROOT
@@ -234,8 +249,10 @@ kernel_cmdline="root=UUID=${rootfs_UUID} "${kernel_cmdline_opts}
 # ------------------------------- here-docs ----------------------------------
 
 # Below we add also a line for the vfat boot partition.
+# (For swap we only add a stub, see https://help.ubuntu.com/community/SwapFaq)
 fstab_file=$(cat <<EOF
 UUID=$rootfs_UUID  /  $rootfs_type   errors=remount-ro  0  1
+#/swapfile        none  swap        defaults  0  0
 EOF
 )
 
@@ -291,7 +308,7 @@ EOF
 # To add the generic (ARM64) kernel add: apt -y install linux-image-generic
 # (The double quotes around the limit string EOF prevents command substitution.)
 ubuntu_custom_extra=$(cat <<"EOF"
-apt-get -y install nano less aptitude usbutils
+apt-get -y install nano less aptitude usbutils zram-tools
 EOF
 )
 
