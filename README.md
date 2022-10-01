@@ -23,6 +23,8 @@ that can be installed and booted with the bootdisks.
 Instructions for recreating/adapting the bootdisks can be found in the file
 README_diy-bootdisk.md
 
+### Making ARM64 Linux images
+
 There is also a script `debuntu_inst.bash` that can be used to automate the
 procedure of installing Ubuntu or Debian for ARM64 to a USB or SD by using
 debootstrap from e.g. a running Ubuntu Server live iso image. Alternatively,
