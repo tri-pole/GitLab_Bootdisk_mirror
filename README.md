@@ -39,6 +39,8 @@ is a script to produce an Ubuntu Jammy (or Focal, Kinetic) CLI image with
 ophub/flippy kernel (the Ubuntu kernel can be installed after first boot).
 Unlike the other files/scripts above this one can be run non natively on an
 x86_64 Ubuntu machine (using qemu-aarch64-static) to generate an ARM64 image.
+The resulting image can be booted using any of the bootdisks but also using
+`u-boot`.
 Pre built images using this script can be found [here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
 
 ## Screenshots
