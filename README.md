@@ -35,6 +35,7 @@ these devices.
 A working Ubuntu desktop image for a TV-box can also easily be obtained by
 a simple conversion procedure starting with a Raspberry Pi image, see
 README_ubuntu_frompi.md.
+(All these ARM64 images can be booted with the bootdisks.)
 
 The most recent addition to these files/scripts is `ubuntu_mkimg.bash` which
 is a script to produce an Ubuntu Jammy (or Focal, Kinetic) CLI image with
@@ -43,7 +44,7 @@ Unlike the other files/scripts above this one can be run non natively on an
 x86_64 Ubuntu machine (using qemu-aarch64-static) to generate an ARM64 image.
 The generated image can be booted using any of the bootdisks but also using
 `u-boot`.
-Pre built images using this script can be found [here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
+Images built using this script can be found [here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
 
 ## Screenshots
 
