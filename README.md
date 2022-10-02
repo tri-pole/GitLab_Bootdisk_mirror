@@ -14,8 +14,9 @@ All the bootdisks employ a chainloading mechanism based on the Linux
 disks based on the `u-root` boot loader and another pair based on the
 `Petitboot` boot loader. The disks are named after the chainloader.
 
-General info about the bootdisks `u-root-bootdisk` and `petit-bootdisk` can
-can be found in the README files with associated names.
+General info about the bootdisks `u-root-bootdisk` and `petit-bootdisk`
+(including download links) can can be found in the README files with associated
+names.
 The other README files contain information specific to different install
 methods or distributions.
 In README_working_distros.md there is a an annotated list of distributions
