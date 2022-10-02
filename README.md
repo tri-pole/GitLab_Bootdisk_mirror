@@ -15,26 +15,26 @@ disks based on the `u-root` boot loader and another pair based on the
 `Petitboot` boot loader. The disks are named after the chainloader.
 
 General info about the bootdisks `u-root-bootdisk` and `petit-bootdisk`
-(including download links) can can be found in the README files with associated
+(incl. download links) can can be found in the README files with associated
 names.
 The other README files contain information specific to different install
 methods or distributions.
 In README_working_distros.md there is a an annotated list of distributions
 that can be installed and booted with the bootdisks.
-Instructions for recreating/adapting the bootdisks can be found in the file
+Instructions for recreating or adapting the bootdisks can be found in the file
 README_diy-bootdisk.md
 
 ### Making ARM64 Linux images
 
 There is also a script `debuntu_inst.bash` that can be used to automate the
-procedure of installing Ubuntu or Debian for ARM64 to a USB or SD by using
-debootstrap from e.g. a running Ubuntu Server live iso image. Alternatively,
-the script can produce a compressed image file. The workaround with a script
-is needed for many TV-boxes/SBSc since both the Ubuntu and Debian installers
-for ARM64 currently have bugs which prevent them from working correctly on
-these devices.
-A working Ubuntu desktop image for a TV-box can also easily be obtained by
-a simple conversion procedure starting with a Raspberry Pi image, see
+procedure of installing Ubuntu or Debian for ARM64 to a USB or SD (or just
+produce an image) by using debootstrap from e.g. a running Ubuntu Server live
+iso image.
+The workaround with a script is needed for many TV-boxes/SBSc since both the
+Ubuntu and Debian installers for ARM64 currently have bugs which prevent them
+from working correctly on these devices.
+A working Ubuntu desktop image for a TV-box can also easily be obtained by a
+simple conversion procedure starting with a Raspberry Pi image, see
 README_ubuntu_frompi.md.
 (All these ARM64 images can be booted with the bootdisks.)
 
