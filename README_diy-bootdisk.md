@@ -271,8 +271,9 @@ and for a non chainloaded (`-nc`) disk it could look like this
   [iproute2](https://github.com/shemminger/iproute2), the `udevadm` daemon
   from [systemd](https://github.com/systemd/systemd), the package
   [kexec](https://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git),
-  and the package [busybox](https://github.com/mirror/busybox) (minus the `ip`
-  command).
+  the package [busybox](https://github.com/mirror/busybox) (minus the `ip`
+  command) and some of the commands from
+  [e2fsprogs](http://e2fsprogs.sourceforge.net).
 
   (Note: For some of these packages it can be convenient to use
   [buildroot](https://buildroot.org/)

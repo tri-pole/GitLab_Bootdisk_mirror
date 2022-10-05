@@ -158,7 +158,7 @@ dtbfile_name=meson-g12b-ugoos-am6.dtb
 # Note: The boot fs is only for u-boot formatted copies of kernel +initramfs.
 skip_MB=1
 boot_MB=150
-root_MB=1500
+root_MB=5000
 rootfs_type=ext4
 bootfs_label=UBNT_BOOT
 rootfs_label=UBNT_ROOT
@@ -315,6 +315,8 @@ EOF
 # This is the basic (default) set of packages installed on top of the rootfs.
 # (If you want to add packages, edit the here-doc ubuntu_custom_extra above.)
 ubuntu_custom_inst=$(cat <<EOF
+#!/bin/bash
+
 apt-get update
 apt-get -y install apt-utils
 DEBIAN_FRONTEND=noninteractive apt-get -y install man-db kmod grub2-common network-manager ssh u-boot-tools
@@ -566,7 +568,8 @@ else
     required_MB=$desired_MB
 fi
 
-echo -e "\nMake sure that you have enough space: ~${required_MB} MB +some.\n"
+# The actual used space is smaller, but I don't know how to estimate that.
+echo -e "\nMake sure that you have enough space: up to ~${required_MB} MB +some.\n"
 echo "This is what you have:"
 df -h
 echo -n -e "\nIs this enough? [N,y] "
