@@ -83,7 +83,7 @@
 # - Include some more script input/argument checks.
 # - Enable optional wrapping by qemu-aarch64-static for cross debootstrapping.
 
-# ------------------------------- parameters ---------------------------------
+# ------------------------ User editable parameters. --------------------------
 
 # Edit these to your liking.
 # distro_name is just a descriptive tag used by us.
@@ -120,58 +120,12 @@ imgfile_name=${distro_name}_${distro_release}.img
 imgfile_dir=$(pwd)
 
 # Mount point for the debootstrap process.
-rootfs_mnt=/mnt
+mnt_dir=/mnt
 
-# Some (but not all) commands used below to create the image.
-reqd_cmdlist=("blkid" "dd" "debootstrap" "losetup" "mkfs.vfat" "mkimage" 
-              "tar" "xz" "wget"
-)
-
-reqd_cmdlist_virt=("qemu-aarch64-static")
-
-# Bling? Yes, we like.
-i_msg="[\033[94m Info \033[0m]"
-w_msg="[\033[93m Warning \033[0m]"
-e_msg="[\033[91m Error \033[0m]"
-k_msg="[\033[92m OK \033[0m]"
-
-# --------------------------- preparations/checks ----------------------------
+#----------------------------------- code -----------------------------------
 
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root, exiting."
-    exit 1
-fi
-
-arch_str=$(uname -m)
-if [[ "$arch_str" != "aarch64" && "$arch_str" != "x86_64" ]]; then
-    echo ${e_msg}" The architecture is not one of x86_64 or aarch64, exiting."
-    exit 1
-fi
-
-if [[ "$rootfs_type" == "ext4" ]]; then
-    reqd_cmdlist=("${reqd_cmdlist[@]}" "mkfs.ext4")
-elif [[ "$rootfs_type" == "btrfs" ]]; then
-    reqd_cmdlist=("${reqd_cmdlist[@]}" "mkfs.btrfs")
-else
-    echo -e "The fstype for the rootfs must be one of ext4 or btrfs, exiting."
-    exit 1
-fi
-
-have_all_cmds=yes
-if [[ "$arch_str" == "aarch64" ]]; then
-  chk_cmdlist=${reqd_cmdlist[*]}
-else
-  chk_cmdlist=(${reqd_cmdlist[*]} ${reqd_cmdlist_virt[*]})
-fi
-for chk_cmd in ${chk_cmdlist[*]}; do
-    cmd_loc=$(which $chk_cmd)
-    if [[ -z $cmd_loc ]]; then
-        echo -e "The required command $chk_cmd is \033[91mmissing \033[0m"
-	have_all_cmds=no
-    fi
-done
-if [[ "$have_all_cmds" == "no" ]]; then
-    echo -e ${e_msg}" Some required commands are missing, exiting."
     exit 1
 fi
 
@@ -185,7 +139,91 @@ imgfile_sizeMB=3500
 # For disk image install: Root partition label.
 root_label=DBNT_ROOT
 
-# ------------------------------- here-docs ----------------------------------
+echo -e "\n-- You have selected to install $distro_name ($distro_release). --\n"
+
+if [[ $# -eq 2 ]] ; then
+    root_part_dev=${2}3
+    boot_part_dev=${2}1
+    swap_part_dev=${2}2
+
+    uuid_boot_part=$(blkid -s UUID -o value $boot_part_dev)
+    uuid_root_part=$(blkid -s UUID -o value $root_part_dev)
+    uuid_swap_part=$(blkid -s UUID -o value $swap_part_dev)
+
+    echo -e "The target device for the install is\n"
+    echo -e "${2}\n"
+    echo -e "with the following partition assignments\n"
+
+    echo "$boot_part_dev  UUID=$uuid_boot_part  boot partition (/boot)"
+    echo "$root_part_dev  UUID=$uuid_root_part  root partition (/)"
+    echo -e "$swap_part_dev  UUID=$uuid_swap_part  swap partition\n"
+
+    echo -n "Is this correct? [N,y] "
+    read is_part_correct
+
+    if [ "$is_part_correct" == "y" ]; then
+        echo "OK, good, continuing."
+    else
+        echo "OK, exiting."
+        exit 1
+    fi
+else
+    install_to_imgfile=1
+    imgfile_loc=$imgfile_dir/$imgfile_name
+    echo "The finished install will be in the file ${imgfile_loc}.xz"
+    # If we assume that the compressed disk image is 40% of the original:
+    reqd_spaceMB=$((14*${imgfile_sizeMB}/10)) # space for output img +img.xz
+    echo "Make sure that you have enough space (~${reqd_spaceMB}MB +some)."
+    echo "This is what you have:"
+    df -h
+    echo -n "Is this enough? [N,y] "
+    read is_space_enough
+    if [[ "$is_space_enough" == "y" ]] ; then
+        echo "OK, good, continuing."
+    else
+        echo "OK, exiting."
+        exit 1
+    fi
+fi
+
+echo -e "\nGive a hostname for the new machine:"
+echo -n ">"
+read host_name
+
+# Yes, we force setting up a local user.
+echo "Enter the user name of a local user (will be in adm,sudo groups):"
+echo -n ">"
+read user_name
+
+echo -e "\nStarting the installation..."
+
+echo "Installing the debootstrap package."
+apt install -y debootstrap
+
+if [[ $install_to_imgfile -eq 1 ]] ; then
+    echo "Creating ${imgfile_sizeMB}MB disk image container $imgfile_loc ... "
+    dd if=/dev/zero of=$imgfile_loc bs=1M count=$imgfile_sizeMB status=progress
+    echo "Done"
+    echo "Setting up a loop device for the disk image container."
+    losetup -f $imgfile_loc
+    loop_dev=$(losetup -a | grep $imgfile_loc | cut -d ":" -f 1)
+    num_cyls=$((1000*1000*$imgfile_sizeMB/512))
+    echo -n "Creating an MBR (one part. $num_cyls cyls/sectors) "
+    echo "inside disk image container."
+    echo ",$num_cyls,83" | sfdisk $loop_dev
+    partprobe $loop_dev
+    root_part_dev=${loop_dev}p1
+    echo "Formatting the disk image root partition with ext4... "
+    mkfs.ext4 -F $root_part_dev
+    echo "Done"
+    echo "Setting disk image root partition label to $root_label"
+    e2label $root_part_dev $root_label
+    uuid_root_part=$(blkid -s UUID -o value $root_part_dev)
+    echo "The disk image container (root part.) will be the install target."
+    echo "It has UUID=$uuid_root_part"
+fi
+
+echo "Constructing templates for configuration files."
 
 interfaces_file=$(cat <<EOF
 allow-hotplug eth0
@@ -273,209 +311,113 @@ usermod -a -G adm,sudo ${user_name}
 EOF
 )
 
-# ---------------------------------- code ------------------------------------
-
-echo -e "\n-- You have selected to install $distro_name ($distro_release). --\n"
-
-if [[ $# -eq 2 ]] ; then
-    root_part_dev=${2}3
-    boot_part_dev=${2}1
-    swap_part_dev=${2}2
-
-    uuid_boot_part=$(blkid -s UUID -o value $boot_part_dev)
-    uuid_root_part=$(blkid -s UUID -o value $root_part_dev)
-    uuid_swap_part=$(blkid -s UUID -o value $swap_part_dev)
-
-    echo -e "The target device for the install is\n"
-    echo -e "${2}\n"
-    echo -e "with the following partition assignments\n"
-
-    echo "$boot_part_dev  UUID=$uuid_boot_part  boot partition (/boot)"
-    echo "$root_part_dev  UUID=$uuid_root_part  root partition (/)"
-    echo -e "$swap_part_dev  UUID=$uuid_swap_part  swap partition\n"
-
-    echo -n "Is this correct? [N,y] "
-    read is_part_correct
-
-    if [ "$is_part_correct" == "y" ]; then
-        echo "OK, good, continuing."
-    else
-        echo "OK, exiting."
-        exit 1
-    fi
-else
-    install_to_imgfile=1
-    imgfile_loc=$imgfile_dir/$imgfile_name
-    echo "The finished install will be in the file ${imgfile_loc}.xz"
-    # If we assume that the compressed disk image is 40% of the original:
-    reqd_spaceMB=$((14*${imgfile_sizeMB}/10)) # space for output img +img.xz
-    echo "Make sure that you have enough space (~${reqd_spaceMB}MB +some)."
-    echo "This is what you have:"
-    df -h
-    echo -n "Is this enough? [N,y] "
-    read is_space_enough
-    if [[ "$is_space_enough" == "y" ]] ; then
-        echo "OK, good, continuing."
-    else
-        echo "OK, exiting."
-        exit 1
-    fi
-fi
-
-echo -e "\nGive a hostname for the new machine:"
-echo -n ">"
-read host_name
-
-# Yes, we force setting up a local user.
-echo "Enter the user name of a local user (will be in adm,sudo groups):"
-echo -n ">"
-read user_name
-
-echo -e "\nStarting the installation..."
-
-if [[ $install_to_imgfile -eq 1 ]] ; then
-    echo "Creating ${imgfile_sizeMB}MB disk image container $imgfile_loc ... "
-    dd if=/dev/zero of=$imgfile_loc bs=1M count=$imgfile_sizeMB status=progress
-    echo "Done"
-    echo "Setting up a loop device for the disk image container."
-    losetup -f $imgfile_loc
-    loop_dev=$(losetup -a | grep $imgfile_loc | cut -d ":" -f 1)
-    num_cyls=$((1000*1000*$imgfile_sizeMB/512))
-    echo -n "Creating an MBR (one part. $num_cyls cyls/sectors) "
-    echo "inside disk image container."
-    echo ",$num_cyls,83" | sfdisk $loop_dev
-    partprobe $loop_dev
-    root_part_dev=${loop_dev}p1
-    echo "Formatting the disk image root partition with ext4... "
-    mkfs.ext4 -F $root_part_dev
-    echo "Done"
-    echo "Setting disk image root partition label to $root_label"
-    e2label $root_part_dev $root_label
-    uuid_root_part=$(blkid -s UUID -o value $root_part_dev)
-    echo "The disk image container (root part.) will be the install target."
-    echo "It has UUID=$uuid_root_part"
-fi
-
-echo -n "Mounting the install target root partition under ${rootfs_mnt}..."
-mount $root_part_dev $rootfs_mnt
+echo -n "Mounting the install target root partition under ${mnt_dir}..."
+mount $root_part_dev $mnt_dir
 echo " Done"
 
 case $1 in
 "ubuntu")
-    echo "Performing debootstrapping of Ubuntu system to ${rootfs_mnt}."
+    echo "Performing debootstrapping of Ubuntu system to ${mnt_dir}."
     debootstrap --arch arm64 \
     --keyring /usr/share/keyrings/ubuntu-archive-keyring.gpg \
-    $distro_release $rootfs_mnt $distro_repourl
+    $distro_release $mnt_dir $distro_repourl
 
     if [[ $install_to_imgfile -eq 0 ]] ; then
-        echo "Mounting install target boot partition to ${rootfs_mnt}/boot."
-        mount $boot_part_dev ${rootfs_mnt}/boot
+        echo "Mounting install target boot partition to ${mnt_dir}/boot."
+        mount $boot_part_dev ${mnt_dir}/boot
 	echo "Setting up /etc/fstab."
-	echo -e "$fstab_file_part" >${rootfs_mnt}/etc/fstab
+	echo -e "$fstab_file_part" >${mnt_dir}/etc/fstab
     else
         echo "Setting up /etc/fstab."
-	echo -e "$fstab_file_simple" >${rootfs_mnt}/etc/fstab
+	echo -e "$fstab_file_simple" >${mnt_dir}/etc/fstab
     fi
 
     echo "Setting the hostname in /etc/hostname."
-    echo -e "$host_name" >${rootfs_mnt}/etc/hostname
+    echo -e "$host_name" >${mnt_dir}/etc/hostname
     echo "Setting up /etc/hosts."
-    rm -f ${rootfs_mnt}/etc/hosts
-    echo -e "$ubuntu_hosts_file" >${rootfs_mnt}/etc/hosts
+    rm -f ${mnt_dir}/etc/hosts
+    echo -e "$ubuntu_hosts_file" >${mnt_dir}/etc/hosts
     
     echo "Setting up /etc/network/interfaces."
-    mkdir -p ${rootfs_mnt}/etc/network
-    echo -e "$interfaces_file" >${rootfs_mnt}/etc/network/interfaces
+    mkdir -p ${mnt_dir}/etc/network
+    echo -e "$interfaces_file" >${mnt_dir}/etc/network/interfaces
 
     # This is a hack needed during install.
     echo "Setting up /etc/resolv.conf"
-    rm -f ${rootfs_mnt}/etc/resolv.conf
-    echo -e "$resolver_file" >${rootfs_mnt}/etc/resolv.conf
+    rm -f ${mnt_dir}/etc/resolv.conf
+    echo -e "$resolver_file" >${mnt_dir}/etc/resolv.conf
 
     echo "Preventing apt from installing flash-kernel."
     echo -e "$flashk_block_file" >\
-	 ${rootfs_mnt}/etc/apt/preferences.d/no-flash-kernel
+	 ${mnt_dir}/etc/apt/preferences.d/no-flash-kernel
 
     echo "Set up a more complete /etc/apt/sources.list"
-    rm -f ${rootfs_mnt}/etc/apt/sources.list
-    echo -e "$ubuntu_repo_list" >${rootfs_mnt}/etc/apt/sources.list
+    rm -f ${mnt_dir}/etc/apt/sources.list
+    echo -e "$ubuntu_repo_list" >${mnt_dir}/etc/apt/sources.list
 
-    echo "Setting up the /sys /proc /dev/ mounts for chroot jail at $rootfs_mnt."
-    for fs in /sys /proc /dev ; do mount --rbind $fs ${rootfs_mnt}/${fs} ; done
+    echo "Setting up the /sys /proc /dev/ mounts for chroot jail at $mnt_dir."
+    for fs in /sys /proc /dev ; do mount --rbind $fs ${mnt_dir}/${fs} ; done
 
     echo "Preparing for chroot jail."
-    echo -e "$ubuntu_custom_inst" >${rootfs_mnt}/root/ubuntu_custom_inst.bash
-    chmod +x ${rootfs_mnt}/root/ubuntu_custom_inst.bash
+    echo -e "$ubuntu_custom_inst" >${mnt_dir}/root/ubuntu_custom_inst.bash
+    chmod +x ${mnt_dir}/root/ubuntu_custom_inst.bash
 
-    if [[ $arch_str != "aarch64" ]]; then
-        echo -n -e ${i_msg}" Installing local qemu-aarch64-static binary..."
-        qemu_binary_loc=$(which qemu-aarch64-static)
-        cp $qemu_binary_loc ${rootfs_mnt}/usr/bin
-        echo " Done."
-    fi
-    
     echo "Entering chroot jail and installing kernel and some extra packages."
-    chroot $rootfs_mnt /root/ubuntu_custom_inst.bash
+    chroot $mnt_dir /root/ubuntu_custom_inst.bash
 
-    if [[ $arch_str != "aarch64" ]]; then
-        echo -n -e ${i_msg}" Removing local qemu-aarch64-static binary..."
-        rm ${rootfs_mnt}/usr/bin/qemu-aarch64-static
-        echo " Done."
-    fi
-    
     echo "Cleaning up after chroot jail."
-    rm ${rootfs_mnt}/root/ubuntu_custom_inst.bash
-    mount --make-rprivate $rootfs_mnt
-    for fs in /sys /proc /dev ; do umount -R ${rootfs_mnt}/${fs} ; done
+    rm ${mnt_dir}/root/ubuntu_custom_inst.bash
+    mount --make-rprivate $mnt_dir
+    for fs in /sys /proc /dev ; do umount -R ${mnt_dir}/${fs} ; done
     ;;
 "debian")
     echo "Installing keyring for Debian."
     apt -y install debian-archive-keyring
 
-    echo "Performing debootstrapping of Debian system to $rootfs_mnt."
+    echo "Performing debootstrapping of Debian system to $mnt_dir."
     debootstrap --arch arm64 \
         --keyring /usr/share/keyrings/debian-archive-keyring.gpg \
-    $distro_release $rootfs_mnt $distro_repourl
+    $distro_release $mnt_dir $distro_repourl
 
     if [[ $install_to_imgfile -eq 0 ]] ; then
-	echo "Mounting install target boot partition to ${rootfs_mnt}/boot."
-        mount $boot_part_dev ${rootfs_mnt}/boot
+	echo "Mounting install target boot partition to ${mnt_dir}/boot."
+        mount $boot_part_dev ${mnt_dir}/boot
 	echo "Setting up /etc/fstab."
-	echo -e "$fstab_file_part" >${rootfs_mnt}/etc/fstab
+	echo -e "$fstab_file_part" >${mnt_dir}/etc/fstab
     else
 	echo "Setting up /etc/fstab."
-	echo -e "$fstab_file_simple" >${rootfs_mnt}/etc/fstab
+	echo -e "$fstab_file_simple" >${mnt_dir}/etc/fstab
     fi
 
     echo "Setting the hostname in /etc/hostname."
-    echo -e "$host_name" >${rootfs_mnt}/etc/hostname
+    echo -e "$host_name" >${mnt_dir}/etc/hostname
     
     echo "Setting up /etc/network/interfaces."
-    mkdir -p ${rootfs_mnt}/etc/network
-    echo -e "$interfaces_file" >${rootfs_mnt}/etc/network/interfaces
+    mkdir -p ${mnt_dir}/etc/network
+    echo -e "$interfaces_file" >${mnt_dir}/etc/network/interfaces
 
-    echo "Setting up the /sys /proc /dev/ mounts for chroot jail at $rootfs_mnt."
-    for fs in /sys /proc /dev ; do mount --rbind $fs ${rootfs_mnt}/${fs} ; done
+    echo "Setting up the /sys /proc /dev/ mounts for chroot jail at $mnt_dir."
+    for fs in /sys /proc /dev ; do mount --rbind $fs ${mnt_dir}/${fs} ; done
 
     echo "Preparing for chroot jail."
-    echo -e "$debian_custom_inst" >${rootfs_mnt}/root/debian_custom_inst.bash
-    chmod +x ${rootfs_mnt}/root/debian_custom_inst.bash
+    echo -e "$debian_custom_inst" >${mnt_dir}/root/debian_custom_inst.bash
+    chmod +x ${mnt_dir}/root/debian_custom_inst.bash
 
     echo "Entering chroot jail and installing kernel and some extra packages."
-    chroot $rootfs_mnt /root/debian_custom_inst.bash
+    chroot $mnt_dir /root/debian_custom_inst.bash
 
     echo "Cleaning up after chroot jail."
-    rm ${rootfs_mnt}/root/debian_custom_inst.bash
-    mount --make-rprivate $rootfs_mnt
-    for fs in /sys /proc /dev ; do umount -R ${rootfs_mnt}/${fs} ; done
+    rm ${mnt_dir}/root/debian_custom_inst.bash
+    mount --make-rprivate $mnt_dir
+    for fs in /sys /proc /dev ; do umount -R ${mnt_dir}/${fs} ; done
 
     echo "Adding the security updates repo to /etc/apt/sources.list"
     echo "deb http://security.debian.org/ bullseye-security main" >>\
-         ${rootfs_mnt}/etc/apt/sources.list
+         ${mnt_dir}/etc/apt/sources.list
     ;;
 esac
 
-cd ${rootfs_mnt}/boot
+cd ${mnt_dir}/boot
 mkdir -p grub
 
 # We loop here in case an update during install will add another kernel.
@@ -504,7 +446,7 @@ EOF
 done
 
 echo -e "This is the contents of the grub.cfg file:\n"
-cat ${rootfs_mnt}/boot/grub/grub.cfg
+cat ${mnt_dir}/boot/grub/grub.cfg
 
 echo -e "\nUnmounting install target's partitions."
 cd /root
