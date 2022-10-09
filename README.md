@@ -24,7 +24,8 @@ README_diy-bootdisk.md
 
 ### Making ARM64 Linux images
 
-This repo also contains scripts and info on how to create ARM64 Linux images.
+This repo also contains scripts and information on how to create ARM64 Linux
+images.
 
 #### The easy way (with scripts)
 
@@ -39,7 +40,7 @@ non natively on an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static)
 to generate an ARM64 image.
 The generated image can be booted using any of the bootdisks but also using
 `u-boot`.
-Images built using this script can be [downloaded form here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
+Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
 
 (2) "Pure" Debian (Bullseye) and Ubuntu (Jammy) images CLI/server can be
 produced with the script `debuntu_dbstrap.bash` which uses the debootstrap
@@ -51,7 +52,7 @@ The generated image can be booted using any of the bootdisks but also using
 `u-boot`.
 Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgSd5w5tnP9COEgeZ?e=zxF2uB).
 
-(3) The script `debuntu_inst.bash` is an older (deprecated) script for image
+The script `debuntu_inst.bash` is an older (deprecated) script for image
 creation using debootstrap.
 
 #### The somewhat harder way (with bare hands)
@@ -59,7 +60,10 @@ creation using debootstrap.
 A working Ubuntu desktop image for a TV-box can also easily be obtained by a
 simple conversion procedure starting with a Raspberry Pi image, see
 README_ubuntu_frompi.md.
-Also this image can be booted with the bootdisks.
+A completely manual approach to install Ubuntu and Debian on a SD/USB is
+described in README_ubuntu_inst.md and README_debian_inst.md, respectively
+(the latter also covers Devuan).
+All the images created can be booted with the bootdisks.
 
 ## Screenshots
 
