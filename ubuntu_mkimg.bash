@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ubuntu_mkimg.bash (a.k.a. {opbuntu,flibuntu}_mkimg.bash)
-# 22-09-30: v0.17
+# 22-10-09: v0.18
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
@@ -17,7 +17,7 @@
 # Tested on: Ugoos AM6 plus (s922x, for executing, booting and running) and on
 # QEMU (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
 # Tested kernels:
-# 5.15.70-flippy-77+, 5.19.{10,12}-flippy-77+, 5.15.0-48-generic
+# 5.15.70-flippy-77+, 5.19.{10,12,14}-flippy-77+, 5.15.0-48-generic
 # This script is a template or proof-of-concept, nothing more (so please fork
 # it, improve it).
 
@@ -96,10 +96,10 @@ distro_edition=Jammy # Tested with Focal, Jammy, Kinetic
 host_name=opbu
 
 # Compression (xz) takes some extra time.
-compressed_img=no # {yes,no}
+compressed_img=yes # {yes,no}
 
 # Ophub kernel version (number), e.g. 5.19.10
-ophub_kvers="5.19.12"
+ophub_kvers="5.19.14"
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
 ophub_krel=${ophub_kvers}"-flippy-77+" # Kernel name/release str., plain text.
@@ -118,7 +118,7 @@ ophub_kmods_url=${ophub_krepo_url}/${ophub_kvers}/modules-${ophub_krel_url}.tar.
 ophub_kdtbs_url=${ophub_krepo_url}/${ophub_kvers}/dtb-amlogic-${ophub_krel_url}.tar.gz
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
-ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/blob/main/build-armbian/amlogic-u-boot/overload"
+ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/amlogic-u-boot/overload"
 
 # u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
 uboot_list=("u-boot-e900v22c.bin" "u-boot-gtking.bin"
@@ -148,8 +148,9 @@ g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-pos
 # The string root=UUID=${rootfs_UUID} will be prepended below once UUID exists.
 kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1"
 
-# The dtb file name used in uEnv.ini (dtb must be in Ophub's boot-*.tar.gz pkg).
-dtbfile_name=meson-g12b-ugoos-am6.dtb
+# dtb name in uEnv.ini/extlinux.conf (dtb must be in Ophub's boot-*.tar.gz pkg).
+#dtbfile_name=meson-g12b-ugoos-am6.dtb
+dtbfile_name=meson-g12b-gtking-pro.dtb
 
 # File system sizes and types (unit MiB).
 # - The partition table type on the image is MBR.
@@ -308,7 +309,7 @@ EOF
 # To add the generic (ARM64) kernel add: apt -y install linux-image-generic
 # (The double quotes around the limit string EOF prevents command substitution.)
 ubuntu_custom_extra=$(cat <<"EOF"
-apt-get -y install nano less aptitude usbutils zram-tools
+apt-get -y install nano less aptitude usbutils zram-tools sudo linux-firmware
 EOF
 )
 
@@ -391,6 +392,7 @@ extlinux_conf=$(cat <<EOF
 
 MENU TITLE <UBUNTU-BOOT>
 DEFAULT <UBNT_DEFAULT>
+TIMEOUT 5
 
 LABEL UBNT_DEFAULT
   LINUX  /uImage
@@ -510,7 +512,6 @@ mkbootlinux=$(cat <<"EOF"
 
 /usr/local/bin/mkuimg.bash /boot/vmlinuz-${1} ${2}/uImage
 cp /boot/uInitrd-${1} ${2}/uInitrd
-
 EOF
 )
 
@@ -622,7 +623,8 @@ else
 fi
 echo " Done."
 
-echo -n -e ${i_msg}" Mounting the root partition inside the container file..."
+rootp_msg="\033[94mroot\033[0m"
+echo -n -e ${i_msg}" Mounting the $rootp_msg partition inside the container file..."
 mkdir -p $rootfs_mnt
 if ! mount ${loop_dev}p2 $rootfs_mnt ; then
     echo -e ${e_msg}" The command mount ${loop_dev}p2 failed, exiting."
@@ -631,7 +633,8 @@ fi
 sync
 echo " Done."
 
-echo -n -e ${i_msg}" Mounting the boot partition inside the container file..."
+bootp_msg="\033[94mboot\033[0m"
+echo -n -e ${i_msg}" Mounting the $bootp_msg partition inside the container file..."
 mkdir -p $bootfs_mnt
 if ! mount ${loop_dev}p1 $bootfs_mnt ; then
     echo -e ${e_msg}" The command mount ${loop_dev}p1 failed, exiting."
@@ -657,8 +660,7 @@ echo -n -e ${i_msg}" Setting up the fstab file..."
 echo -e "$fstab_file" >${rootfs_mnt}/etc/fstab
 # There is no UUID on a fat partition but in fstab the serial number works.
 bootfs_UUID=$(blkid -s UUID -o value ${loop_dev}p1)
-# Until we have figured out why this line in fstab stalls booting we comment it.
-fstab_lastline="#UUID=${bootfs_UUID}  $bootfs_dir  vfat   defaults  0  2"
+fstab_lastline="UUID=${bootfs_UUID}  $bootfs_dir  vfat   defaults  0  2"
 echo -e "$fstab_lastline" >>${rootfs_mnt}/etc/fstab
 echo " Done."
 

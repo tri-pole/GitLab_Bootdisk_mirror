@@ -123,6 +123,14 @@ petit-bootdisk-nc
 
 # ubuntu_mkimg.bash
 
+## [v0.18] 22-10-09
+
+### Added
+ - Now installs pkg. linux-firmware and cmd. sudo per default.
+
+### Changed
+ - Bugfix (downloaded u-boot.bins).
+
 ## [v0.17] 22-09-30
 
 ### Added
