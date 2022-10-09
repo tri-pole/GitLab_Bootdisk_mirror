@@ -17,8 +17,6 @@ disks based on the `u-root` boot loader and another pair based on the
 General info about the bootdisks `u-root-bootdisk` and `petit-bootdisk`
 (incl. download links) can can be found in the README files with associated
 names.
-The other README files contain information specific to different install
-methods or distributions.
 In README_working_distros.md there is a an annotated list of distributions
 that can be installed and booted with the bootdisks.
 Instructions for recreating or adapting the bootdisks can be found in the file
@@ -26,26 +24,42 @@ README_diy-bootdisk.md
 
 ### Making ARM64 Linux images
 
-There is also a script `debuntu_inst.bash` that can be used to automate the
-procedure of installing Ubuntu or Debian for ARM64 to a USB or SD (or just
-produce an image) by using debootstrap from e.g. a running Ubuntu Server live
-iso image.
-The workaround with a script is needed for many TV-boxes/SBSc since both the
-Ubuntu and Debian installers for ARM64 currently have bugs which prevent them
-from working correctly on these devices.
+This repo also contains scripts and info on how to create ARM64 Linux images.
+
+#### The easy way (with scripts)
+
+There are two scripts available to generate images.
+
+(1) With the script `ubuntu_mkimg.bash` it is easy to produce an Ubuntu
+CLI/server image (Focal, Jammy or Kinetic) with ophub/flippy kernel (an
+Ubuntu kernel can be installed after first boot).
+The script uses a daily official build of the Ubuntu rootfs as a base.
+This script can be run natively on an ARM64 Ubuntu/Debian machine but also
+non natively on an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static)
+to generate an ARM64 image.
+The generated image can be booted using any of the bootdisks but also using
+`u-boot`.
+Images built using this script can be [downloaded form here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
+
+(2) "Pure" Debian (Bullseye) and Ubuntu (Jammy) images CLI/server can be
+produced with the script `debuntu_dbstrap.bash` which uses the debootstrap
+mechanism to create the base system.
+Also this script can be run natively on an ARM64 Ubuntu/Debian machine but also
+non natively on an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static)
+to generate an ARM64 image.
+The generated image can be booted using any of the bootdisks but also using
+`u-boot`.
+Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgSd5w5tnP9COEgeZ?e=zxF2uB).
+
+(3) The script `debuntu_inst.bash` is an older (deprecated) script for image
+creation using debootstrap.
+
+#### The somewhat harder way (with bare hands)
+
 A working Ubuntu desktop image for a TV-box can also easily be obtained by a
 simple conversion procedure starting with a Raspberry Pi image, see
 README_ubuntu_frompi.md.
-(All these ARM64 images can be booted with the bootdisks.)
-
-The most recent addition to these files/scripts is `ubuntu_mkimg.bash` which
-is a script to produce an Ubuntu Jammy (or Focal, Kinetic) CLI image with
-ophub/flippy kernel (the Ubuntu kernel can be installed after first boot).
-Unlike the other files/scripts above this one can be run non natively on an
-x86_64 Ubuntu machine (using qemu-aarch64-static) to generate an ARM64 image.
-The generated image can be booted using any of the bootdisks but also using
-`u-boot`.
-Images built using this script can be found [here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
+Also this image can be booted with the bootdisks.
 
 ## Screenshots
 

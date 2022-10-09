@@ -530,9 +530,16 @@ To install e.g. Petitboot on this bootfs (same for u-root), do the following:
     e.g. petit-bootdisk-nc_0v22-2.tgz
 (2) Unpack the tarball in some temporary directory.
 (3) Copy the existing Image and uInitrd on the bootfs to some backup location.
+    Copy also the existing boot scripts aml_autoscript*, s905_autoscript* and
+    uEnv.ini to some backup location.
 (4) Copy the Image (or zImage; it is an Image) from the tarball to Image on the
     bootfs and copy the uInitrd from the tarball to uInitrd on the bootfs.
+    Copy also the boot scripts aml_autoscript*, s905_autoscript, uEnv.txt and
+    boot.scr from the tarball to the bootfs. Rename uEnv.txt to uEnv.ini
 (5) Reboot into Petitboot.
+
+(The procedure is similar when starting Petitboot via chainloader u-boot.ext
+check the scripts and structure in e.g. petit-bootdisk-0v23.tgz)
 EOF
 )
 

@@ -80,7 +80,7 @@ petit-bootdisk-nc
 ## [v0.15] - 22-07-26
  - First upload.
 
-# petit-bootdisk-nc
+# petit-bootdisk-nc:
 
 ## [v0.23] - 22-09-27
 
@@ -106,6 +106,13 @@ petit-bootdisk-nc
 ## [v0.15] - 22-07-26
  - First upload (of initramfs only).
 
+# debuntu_dbstrap.bash:
+
+## [v0.1] 22-10-09
+
+### Added
+ - First commit.
+
 # debuntu_inst.bash:
 
 ## [v0.12] - 22-07-18
@@ -121,7 +128,7 @@ petit-bootdisk-nc
 ### Added
  - First commit.
 
-# ubuntu_mkimg.bash
+# ubuntu_mkimg.bash:
 
 ## [v0.18] 22-10-09
 
