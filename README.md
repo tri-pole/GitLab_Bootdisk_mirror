@@ -32,8 +32,10 @@ images.
 There are two scripts available to generate images.
 
 (1) With the script `ubuntu_mkimg.bash` it is easy to produce an Ubuntu
-CLI/server image (Focal, Jammy or Kinetic) with ophub/flippy kernel (an
-Ubuntu kernel can be installed after first boot).
+CLI/server image (Focal, Jammy or Kinetic) with ophub/flippy kernel which is
+adapted specifically for Amlogic TV-boxes (but has support also for Rockchip
+and Allwinner).
+(An Ubuntu kernel can be installed after first boot.)
 The script uses a daily official build of the Ubuntu rootfs as a base.
 This script can be run natively on an ARM64 Ubuntu/Debian machine but also
 non natively on an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static)
@@ -42,9 +44,9 @@ The generated image can be booted using any of the bootdisks but also using
 `u-boot`.
 Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
 
-(2) "Pure" Debian (Bullseye) and Ubuntu (Jammy) images CLI/server can be
-produced with the script `debuntu_dbstrap.bash` which uses the debootstrap
-mechanism to create the base system.
+(2) "Pure" Debian (Bullseye) and Ubuntu (Jammy) CLI/server images (with Ubuntu
+kernel) can be produced with the script `debuntu_dbstrap.bash` which uses the
+debootstrap mechanism to create the base system.
 Also this script can be run natively on an ARM64 Ubuntu/Debian machine but also
 non natively on an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static)
 to generate an ARM64 image.
@@ -63,7 +65,7 @@ README_ubuntu_frompi.md.
 A completely manual approach to install Ubuntu and Debian on a SD/USB is
 described in README_ubuntu_inst.md and README_debian_inst.md, respectively
 (the latter also covers Devuan).
-All the images created can be booted with the bootdisks.
+All the images so created can be booted with the bootdisks.
 
 ## Screenshots
 
