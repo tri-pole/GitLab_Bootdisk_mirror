@@ -3,7 +3,7 @@
 This repo contains information relating to
 [bootdisks](https://en.wikipedia.org/wiki/Boot_disk)
 for TV-boxes/SBCs based on the ARM64 architecture.
-With these bootdisks you can e.g. boot many ("generic") ARM64 Linux images with
+With these bootdisks you can boot e.g. many ("generic") ARM64 Linux images with
 UEFI+grub from major distributions such as Fedora 36, Ubuntu (e.g. Jammy),
 Debian (e.g. Bullseye) and openSuse (Leap 15.4 and Tumbleweed).
 A good use case for TV-boxes is to have the bootdisk installed on SD and have
@@ -32,9 +32,9 @@ images.
 There are two scripts available to generate images.
 
 (1) With the script `ubuntu_mkimg.bash` it is easy to produce an Ubuntu
-CLI/server image (Focal, Jammy or Kinetic) with ophub/flippy kernel which is
-adapted specifically for Amlogic TV-boxes (but has support also for Rockchip
-and Allwinner).
+CLI/server image (Focal, Jammy or Kinetic) with Ophub/Flippy kernel.
+This kernel is adapted specifically for Amlogic TV-boxes (but has support also
+for Rockchip and Allwinner).
 (An Ubuntu kernel can be installed after first boot.)
 The script uses a daily official build of the Ubuntu rootfs as a base.
 This script can be run natively on an ARM64 Ubuntu/Debian machine but also
@@ -44,12 +44,11 @@ The generated image can be booted using any of the bootdisks but also using
 `u-boot`.
 Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
 
-(2) "Pure" Debian (Bullseye) and Ubuntu (Jammy) CLI/server images (with Ubuntu
-kernel) can be produced with the script `debuntu_dbstrap.bash` which uses the
-debootstrap mechanism to create the base system.
-Also this script can be run natively on an ARM64 Ubuntu/Debian machine but also
-non natively on an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static)
-to generate an ARM64 image.
+(2) "Pure" Debian (Bullseye) and Ubuntu (Jammy) CLI/server images (with
+Debian/Ubuntu kernel) can be produced with the script `debuntu_dbstrap.bash`
+which uses the debootstrap mechanism to create the base system.
+Also this script can be run natively on an ARM64 Ubuntu/Debian machine and also
+non natively on an x86_64 Ubuntu/Debian machine to generate an ARM64 image.
 The generated image can be booted using any of the bootdisks but also using
 `u-boot`.
 Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgSd5w5tnP9COEgeZ?e=zxF2uB).
