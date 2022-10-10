@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # debuntu_dbstrap.bash
-# 22-10-09: v0.1
+# 22-10-10: v0.11
 # Author: Tripole
 
 # - Introduction -
@@ -382,16 +382,20 @@ EOF
 # The leading blank line is important.
 ubuntu_custom_inst_p2=$(cat <<"EOF"
 
-# echo "Setting up boot (2 items):"
 echo "Creating /boot/grub/grub.cfg"
 /usr/local/bin/mkgrubcfg_simple.bash
-# echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, Initrd)."
-# kernel_version=$(ls /boot | grep -E "vmlinuz-" | cut -b 9-)
-# /usr/local/bin/mkbootlinux.bash $kernel_version $bootfs_dir_ >/dev/null
 EOF
 )
 
 ubuntu_custom_inst="${ubuntu_custom_inst_p1}""${ubuntu_custom_inst_p2}"
+
+debian_repo_list=$(cat <<EOF
+deb http://deb.debian.org/debian bullseye main contrib non-free
+deb http://deb.debian.org/debian bullseye-updates main contrib non-free
+deb http://deb.debian.org/debian bullseye-backports main contrib non-free
+deb http://security.debian.org/debian-security/ bullseye-security main contrib non-free
+EOF
+)
 
 debian_custom_extra=$(cat <<EOF
 apt-get -y install aptitude usbutils zram-tools
@@ -416,12 +420,8 @@ EOF
 # The leading blank line is important.
 debian_custom_inst_p2=$(cat <<"EOF"
 
-# echo "Setting up boot (2 items):"
 echo "Creating /boot/grub/grub.cfg"
 /usr/local/bin/mkgrubcfg_simple.bash
-# echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, Initrd)."
-# kernel_version=$(ls /boot | grep -E "vmlinuz-" | cut -b 9-)
-# /usr/local/bin/mkbootlinux.bash $kernel_version $bootfs_dir_ >/dev/null
 EOF
 )
 
@@ -709,7 +709,7 @@ if ! mount ${loop_dev}p1 $bootfs_mnt ; then
 fi
 echo " Done."
 
-echo -e ${i_msg}" Debootstrapping "${distro_name}" system to ${rootfs_mnt}."
+echo -e ${i_msg}" Debootstrapping "${distro_name}" system to ${rootfs_mnt}"
 debootstrap --arch arm64 --keyring $keyring_file \
 $distro_release $rootfs_mnt $distro_repourl
 
@@ -839,9 +839,9 @@ case $1 in
     echo -e "$debian_interfaces_file" >${rootfs_mnt}/etc/network/interfaces
     echo " Done."
 
-    echo -n -e ${i_msg}" Adding the security updates repo to /etc/apt/sources.list ..."
-    echo "deb http://security.debian.org/ bullseye-security main" >>\
-         ${rootfs_mnt}/etc/apt/sources.list
+    echo -n -e ${i_msg}" Setting up /etc/apt/sources.list ..."
+    rm -f ${rootfs_mnt}/etc/apt/sources.list
+    echo -e "$debian_repo_list" >${rootfs_mnt}/etc/apt/sources.list
     echo " Done."
 
     echo -n -e ${i_msg}" Preparing for chroot jail..."
@@ -967,6 +967,7 @@ echo " Done."
 if [[ "$compressed_img" == "yes" ]]; then
     echo -e ${i_msg}" Compressing the image using xz compression..."
     xz -v $imgfile_loc_full
+    sleep 1
     echo "Done."
 fi
 

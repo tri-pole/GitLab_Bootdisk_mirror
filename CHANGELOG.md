@@ -108,6 +108,11 @@ petit-bootdisk-nc
 
 # debuntu_dbstrap.bash:
 
+## [v0.11] 22-10-10
+
+### Changed
+ - Better sources.list for Debian.
+
 ## [v0.1] 22-10-09
 
 ### Added
