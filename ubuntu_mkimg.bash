@@ -49,13 +49,17 @@
 #   using a chainloader (u-boot.ext) it should not be a problem to have other
 #   (non bootable) USB sticks attached. When using grub booting (e.g. with a
 #   bootdisk on SD) having other USB sticks attached is not a problem.
+# - The dtb file is only used when booting via u-boot (not when booting via
+#   grub, currently). Moreover, only the dtb files for Amlogic are installed
+#   to /boot and are selectable as options in the script below. However, the
+#   dtb files also for Allwinner and Rockchip can be found along with the other
+#   Ophub kernel files saved in /var/cache/ophub
 # - The uImage and uInitrd (u-boot tagged) versions of the kernel and initramfs
 #   that are on the fat partition are created by the mkbootlinux.bash script
 #   (see below). Therefore, when updating the kernel or initramfs then uImage
 #   uInitrd have to be recreated "manually" using this script (unless you rely
 #   on grub booting, then only grub.cfg on the rootfs partition has to be
-#   updated; see the scripts in /usr/local/bin). (The boot partition is not
-#   mounted by default in /etc/fstab but it can be by uncommenting one line.)
+#   updated; see the scripts in /usr/local/bin).
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 #   Another alternative is kubuntu-desktop.
@@ -115,7 +119,10 @@ ophub_repo_url="https://github.com/ophub"
 ophub_krepo_url=${ophub_repo_url}/kernel/raw/main/pub/stable
 ophub_kboot_url=${ophub_krepo_url}/${ophub_kvers}/boot-${ophub_krel_url}.tar.gz
 ophub_kmods_url=${ophub_krepo_url}/${ophub_kvers}/modules-${ophub_krel_url}.tar.gz
-ophub_kdtbs_url=${ophub_krepo_url}/${ophub_kvers}/dtb-amlogic-${ophub_krel_url}.tar.gz
+ophub_kdtbs_am_url=${ophub_krepo_url}/${ophub_kvers}/dtb-amlogic-${ophub_krel_url}.tar.gz
+ophub_kdtbs_aw_url=${ophub_krepo_url}/${ophub_kvers}/dtb-allwinner-${ophub_krel_url}.tar.gz
+ophub_kdtbs_rk_url=${ophub_krepo_url}/${ophub_kvers}/dtb-rockchip-${ophub_krel_url}.tar.gz
+ophub_khdr_url=${ophub_krepo_url}/${ophub_kvers}/header-${ophub_krel_url}.tar.gz
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
 ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/amlogic-u-boot/overload"
@@ -483,6 +490,10 @@ mkuimg_p1=$(cat <<EOF
 
 # Note: ARM64 vmlinuz kernels (e.g. flippy's) are often in fact in Image format.
 
+# To make also a uInitrd from a initrd.img do like so
+# mkimage -A arm64 -O linux -T ramdisk -C gzip -d initrd.img uInitrd
+# (assuming that initrd.img is gzip compressed).
+
 # The values for -a (load address) and -e (entry point) may need to be adapted.
 # For some s922x (e.g. GTK pro, AM6) std. values for for -a,-e are 0x1080000
 
@@ -713,7 +724,7 @@ echo -e "$mkbootlinux" >${rootfs_mnt}/usr/local/bin/mkbootlinux.bash
 chmod 0755 ${rootfs_mnt}/usr/local/bin/mkbootlinux.bash
 echo " Done."
 
-echo -e ${i_msg}" Downloading Ophub/Flippy/Unifreq kernel..."
+echo -e ${i_msg}" Downloading Ophub/Flippy/Unifreq kernel files..."
 cd $tmpfile_dir && wget -nv $ophub_kboot_url
 if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the kernel boot files, exiting."
@@ -724,14 +735,40 @@ if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the kernel modules, exiting."
     exit 1
 fi
-wget -nv $ophub_kdtbs_url
+wget -nv $ophub_kdtbs_am_url
 if [[ $? -ne 0 ]]; then
-    echo -e ${i_msg}" Unable to download the dtb files, exiting."
+    echo -e ${i_msg}" Unable to download the Amlogic dtb files, exiting."
+    exit 1
+fi
+wget -nv $ophub_kdtbs_aw_url
+if [[ $? -ne 0 ]]; then
+    echo -e ${i_msg}" Unable to download the Allwinner dtb files, exiting."
+    exit 1
+fi
+wget -nv $ophub_kdtbs_rk_url
+if [[ $? -ne 0 ]]; then
+    echo -e ${i_msg}" Unable to download the Rockchip dtb files, exiting."
+    exit 1
+fi
+wget -nv $ophub_khdr_url
+if [[ $? -ne 0 ]]; then
+    echo -e ${i_msg}" Unable to download the kernel header files, exiting."
     exit 1
 fi
 echo " Done."
 
-echo -n -e ${i_msg}" Installing Ophub/Flippy/Unifreq kernel..."
+echo -n -e ${i_msg}" Saving Ophub kernel files to /var/cache/ophub ..."
+opsave_dir=${rootfs_mnt}/var/cache/ophub
+mkdir $opsave_dir
+cp ${tmpfile_dir}/boot-${ophub_krel}.tar.gz $opsave_dir
+cp ${tmpfile_dir}/modules-${ophub_krel}.tar.gz $opsave_dir
+cp ${tmpfile_dir}/dtb-amlogic-${ophub_krel}.tar.gz $opsave_dir
+cp ${tmpfile_dir}/dtb-allwinner-${ophub_krel}.tar.gz $opsave_dir
+cp ${tmpfile_dir}/dtb-rockchip-${ophub_krel}.tar.gz $opsave_dir
+cp ${tmpfile_dir}/header-${ophub_krel}.tar.gz $opsave_dir
+echo " Done."
+
+echo -n -e ${i_msg}" Installing Ophub kernel files..."
 cd ${rootfs_mnt}/boot
 tar -xzf ${tmpfile_dir}/boot-${ophub_krel}.tar.gz
 mkdir -p -m 0744 ${rootfs_mnt}/lib/modules
@@ -839,6 +876,7 @@ echo " Done."
 if [[ "$compressed_img" == "yes" ]]; then
     echo -e ${i_msg}" Compressing the image using xz compression..."
     xz -v $imgfile_loc
+    sleep 1
     echo "Done."
 fi
 
