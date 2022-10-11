@@ -9,12 +9,15 @@ Debian (e.g. Bullseye) and openSuse (Leap 15.4 and Tumbleweed).
 A good use case for TV-boxes is to have the bootdisk installed on SD and have
 several Linux distros installed on USBs to choose from.
 
-All the bootdisks employ a chainloading mechanism based on the Linux
-`kexec()` system call and the bootdisks come in two variants; one pair of
-disks based on the `u-root` boot loader and another pair based on the
-`Petitboot` boot loader. The disks are named after the chainloader.
+All the bootdisks employ a chainloading mechanism based on the Linux `kexec()`
+system call and the bootdisks come in two variants; one pair of disks based on
+the `Petitboot` boot loader and another pair based on the `u-root` boot loader.
+The disks are named after the chainloader.
+The `Petitboot` boot loader provides a somewhat nicer UI and can boot grub
+configurations (as defined in grub.cfg) whereas the `u-root` boot loader can
+boot grub as well as syslinux configurations (as defined in extlinux.conf).
 
-General info about the bootdisks `u-root-bootdisk` and `petit-bootdisk`
+General info about the bootdisks `petit-bootdisk` and `u-root-bootdisk`
 (incl. download links) can can be found in the README files with associated
 names.
 In README_working_distros.md there is a an annotated list of distributions
@@ -70,6 +73,11 @@ All the images so created can be booted with the bootdisks.
 
 Some (low resolution) screenshots of some of the bootdisk screens.
 
+### petit-bootdisk and petit-bootdisk-nc
+
+![Boot menu in Petitboot](/images/petitboot-bootscreen.png "petitboot")*The
+boot menu screen encountered after boot with a Petitboot bootdisk.*
+
 ### u-root-bootdisk and u-root-bootdisk-nc
 
 ![Prompt in u-root](/images/u-root-shellscreen.png "u-root shell")*The screen
@@ -80,8 +88,3 @@ attached devices is started.*
 ![Boot menu in u-root](/images/u-root-bootmenu.png "u-root boot")*The menu
 of bootable images displayed after u-root has scanned the attached devices
 (here three USB sticks attached via a USB hub).*
-
-### petit-bootdisk and petit-bootdisk-nc
-
-![Boot menu in Petitboot](/images/petitboot-bootscreen.png "petitboot")*The
-boot menu screen encountered after boot with a Petitboot bootdisk.*
