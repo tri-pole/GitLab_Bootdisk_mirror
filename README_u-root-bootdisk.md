@@ -72,8 +72,7 @@ md5sums of latest release:
 
 `bootdisk_skel.img.gz            1fde903482f2b99f9ee9fec41d02609d`
 
-The most recent version of `u-root` on the `u-root-bootdisk`(s) listed above is
-v0.9.0 (found on the v0.28 disks).
+The version of `u-root` on the `u-root-bootdisk`(s) listed above is v0.9.0.
 
 Starting with v0.28-2 the bootdisks will only be released as tarballs (since
 no special disk is needed, only a single FAT partition large enough to hold
