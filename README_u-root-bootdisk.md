@@ -66,7 +66,7 @@ material):
 
 md5sums of latest release:
 
-`u-root-bootdisk-nc_0v30.tgz     0f5de5359793f58806b8422ccca91e6b`
+`u-root-bootdisk-0v30.tgz        9924ae4fb88ffac5c142c60b6ff2ebbc`
 
 `u-root-bootdisk-nc_0v30.tgz     0f5de5359793f58806b8422ccca91e6b`
 
