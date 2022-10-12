@@ -70,11 +70,11 @@ md5sums of latest release:
 
 `u-root-bootdisk-0v28.img.gz     082d7804e3a81eb214b5151f7ff1662d`
 
-`u-root-bootdisk-nc_0v26.img.gz  6c46aeb9ef82c0f46492f4c7bd878f57`
-
 `u-root-bootdisk-nc_0v28.img.gz  b153326f3691dcbed31a03a5a7760d80`
 
 `u-root-bootdisk-nc_0v28-2.tgz   d014ba75d7858d10f796ba3e86b93c2a`
+
+`u-root-bootdisk-nc_0v30.tgz     0f5de5359793f58806b8422ccca91e6b`
 
 `bootdisk_skel.img.gz            1fde903482f2b99f9ee9fec41d02609d`
 

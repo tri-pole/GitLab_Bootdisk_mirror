@@ -25,6 +25,11 @@ petit-bootdisk-nc
 
 # u-root-bootdisk-nc:
 
+## [v0.30] - 22-10-12
+
+### Added
+ - Autostart of boot menu (after 3s delay from kernel boot).
+
 ## [v0.28-2] - 22-09-14
 
 ### Changed
