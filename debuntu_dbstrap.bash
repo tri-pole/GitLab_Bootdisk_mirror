@@ -74,6 +74,8 @@
 #   SD/USB to desired size, e.g. with (100% here uses all of the SD/USB):
 #   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
 
+# ToDo: Check Debian network setup (in particular the resolver setup).
+
 # ------------------------------- parameters ---------------------------------
 
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
@@ -112,7 +114,7 @@ uboot_list=("u-boot-e900v22c.bin" "u-boot-gtking.bin"
     "u-boot-x96max.bin" "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
 )
 
-# This is a link are to the u-boot/aml-220809 directory at Onedrive where the
+# This is a link to the u-boot/aml-220809 directory at Onedrive where the
 # binary u-boot.bin-gtkp-pb (for uboot.ext) can be found (for description, see
 # README_u-boot-aml below). If u-boot.bin-gtkp-pb exists in $imgfile_dir (see
 # below) then it will be installed as the default u-boot.ext
@@ -276,7 +278,7 @@ UUID=$rootfs_UUID  /  $rootfs_type   errors=remount-ro  0  1
 EOF
 )
 
-debian_interfaces_file=$(cat <<EOF
+debian_interfaces_file=$(cat <<"EOF"
 allow-hotplug eth0
 auto eth0
 iface eth0 inet dhcp
@@ -323,13 +325,13 @@ EOF
 )
 
 # This may be useful, see https://jbit.net/NetworkManager_Strictly_Unmanaged
-alloweth_nmconf_file=$(cat <<EOF
+alloweth_nmconf_file=$(cat <<"EOF"
 [keyfile]
 unmanaged-devices=*,except:type:wifi,except:type:gsm,except:type:cdma,except:type:ethernet
 EOF
 )
 
-ubuntu_repo_list=$(cat <<EOF
+ubuntu_repo_list=$(cat <<"EOF"
 deb http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
 deb http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted
 
@@ -347,7 +349,7 @@ deb http://ports.ubuntu.com/ubuntu-ports/ jammy-security multiverse
 EOF
 )
 
-flashk_block_file=$(cat <<EOF
+flashk_block_file=$(cat <<"EOF"
 Package: flash-kernel
 Pin: release *
 Pin-Priority: -1
@@ -389,7 +391,7 @@ EOF
 
 ubuntu_custom_inst="${ubuntu_custom_inst_p1}""${ubuntu_custom_inst_p2}"
 
-debian_repo_list=$(cat <<EOF
+debian_repo_list=$(cat <<"EOF"
 deb http://deb.debian.org/debian bullseye main contrib non-free
 deb http://deb.debian.org/debian bullseye-updates main contrib non-free
 deb http://deb.debian.org/debian bullseye-backports main contrib non-free
@@ -397,7 +399,7 @@ deb http://security.debian.org/debian-security/ bullseye-security main contrib n
 EOF
 )
 
-debian_custom_extra=$(cat <<EOF
+debian_custom_extra=$(cat <<"EOF"
 apt-get -y install aptitude usbutils zram-tools
 EOF
 )
@@ -492,7 +494,7 @@ LABEL DEBNT_DEFAULT
 EOF
 )
 
-README_uboot-ophub=$(cat <<EOF
+README_uboot_ophub=$(cat <<"EOF"
 The files in this directory are from $ophub_uboot_url
 They are intended to be used as chainloader (u-boot.ext) when booting via this
 method.
@@ -504,11 +506,28 @@ Note that some chainloaders can not boot newer kernels/initrfamfs.
 EOF
 )
 
-README_u-boot-aml=$(cat <<EOF
+README_uboot_aml=$(cat <<"EOF"
 The file u-boot.bin-gtkp-pb is compiled from source using
 https://source.denx.de/u-boot/custodians/u-boot-amlogic
 (tag u-boot-amlogic-20220809) with gtk pro defconf and usb_start added as
 preboot command.
+EOF
+)
+
+README_kernels=$(cat <<"EOF"
+The scripts in /usr/local/bin can be used to assist in kernel handling.
+
+For booting via grub (e.g. via bootdisk) the script mkgrubcfg_simple.bash can
+be used to generate simple grub entries for vmlinuz- kernels and accompanying
+initramfs.img- files in /boot (see instructions inside the script).
+
+Alternate kernels that work with TV-boxes and are packaged as deb files can be
+found via https://apt.armbian.com
+One mirror is https://mirrors.netix.net/armbian/apt/pool/main/l
+The meson64 and arm64 (generic) kernels work well with s922x SOC.
+
+Ophub's kernels can be installed manually and come with pre built initramfs
+https://github.com/ophub/amlogic-s9xxx-armbian
 EOF
 )
 
@@ -576,7 +595,7 @@ EOF1
 
 mkgrubcfg_simple="${mkgrubcfg_simple_p1}""${mkgrubcfg_simple_p2}"
 
-README_auxbootldr=$(cat <<EOF
+README_auxbootldr=$(cat <<"EOF"
 It is easy to install Petitboot or u-root on this bootfs. With any of these two
 bootloaders/bootmanagers you can boot "generic" UEFI+grub (and more generally
 images with a valid grub config). If this image is installed on SD (so that it
@@ -603,7 +622,7 @@ check the scripts and structure in e.g. petit-bootdisk-0v23.tgz)
 EOF
 )
 
-README_altbootscr=$(cat <<EOF
+README_altbootscr=$(cat <<"EOF"
 The boot scripts on the bootfs (aml_autoscript, s905_autoscript and uEnv.ini)
 are sourced from Manjaro ARM but this is certainly not the only setup possible.
 Another setup (with aml_autoscript, s905_autoscript, boot.scr), with somewhat
@@ -631,7 +650,7 @@ echo $imgfile_loc
 if [[ "$compressed_img" == "no" ]]; then
     required_MB=$imgfile_MB
 else
-    echo -e "\nThe finished (compressed) image file will be at:"
+    echo -e "\nThe finished (compressed) image file will be at (w/ kernel version inserted):"
     echo ${imgfile_loc}.xz
     required_MB=$desired_MB
 fi
@@ -738,6 +757,10 @@ echo "Done."
 
 echo -n -e ${i_msg}" Setting up directory /boot/grub ..."
 mkdir -p -m 0755 ${rootfs_mnt}/boot/grub
+echo " Done."
+
+echo -n -e ${i_msg}" Writing info about grub.cfg and alternate kernels..."
+echo -e "$README_kernels" >${rootfs_mnt}/boot/README_kernels.txt
 echo " Done."
 
 echo -n -e ${i_msg}" Installing grub scripts in /usr/local/bin ..."
@@ -869,7 +892,7 @@ case $1 in
         echo " Done."
     fi
 
-    echo -e ${i_msg}" Installing the selected dtb file to bootfs..."
+    echo -n -e ${i_msg}" Installing kernel, initramfs and (chosen) dtb file to bootfs..."
     debian_kern_vers=$(ls ${rootfs_mnt}/boot | grep vmlinuz- | cut -d '-' -f 2- )
     cp ${rootfs_mnt}/boot/vmlinuz-${debian_kern_vers} $bootfs_mnt/vmlinuz
     cp ${rootfs_mnt}/boot/initrd.img-${debian_kern_vers} $bootfs_mnt/initrd.img
@@ -900,7 +923,7 @@ mkdir extlinux
 echo -e "$extlinux_conf" >extlinux/extlinux.conf
 
 mkdir u-boot-ophub
-echo -e "$README_uboot-ophub" >u-boot-ophub/README_u-boot-ophub.txt
+echo -e "$README_uboot_ophub" >u-boot-ophub/README_u-boot-ophub.txt
 for uboot_bin in ${uboot_list[*]}; do
     uboot_bin_url=${ophub_uboot_url}/${uboot_bin}
     wget -nv -P u-boot-ophub $uboot_bin_url
@@ -912,7 +935,7 @@ done
 if [[ -f ${imgfile_dir}/u-boot.bin-gtkp-pb ]]; then
     echo -n -e ${i_msg}" Found u-boot.bin-gtkp-pb, installing it as default u-boot.ext ..."
     mkdir u-boot-3pole
-    echo -e "$README_u-boot-aml" >u-boot-3pole/README_u-boot-aml.txt
+    echo -e "$README_uboot_aml" >u-boot-3pole/README_u-boot-aml.txt
     cp ${imgfile_dir}/u-boot.bin-gtkp-pb u-boot-3pole
     cp ${imgfile_dir}/u-boot.bin-gtkp-pb u-boot.ext
 fi

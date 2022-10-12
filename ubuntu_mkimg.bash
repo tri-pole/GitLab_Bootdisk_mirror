@@ -286,7 +286,7 @@ EOF
 )
 
 # This may be useful, see https://jbit.net/NetworkManager_Strictly_Unmanaged
-alloweth_nmconf_file=$(cat <<EOF
+alloweth_nmconf_file=$(cat <<"EOF"
 [keyfile]
 unmanaged-devices=*,except:type:wifi,except:type:gsm,except:type:cdma,except:type:ethernet
 EOF
@@ -305,7 +305,7 @@ EOF
 )
 
 # In case we later want to install e.g. linux-image-generic (see comment below).
-flashk_block_file=$(cat <<EOF
+flashk_block_file=$(cat <<"EOF"
 Package: flash-kernel
 Pin: release *
 Pin-Priority: -1
@@ -409,7 +409,7 @@ LABEL UBNT_DEFAULT
 EOF
 )
 
-README_uboot=$(cat <<EOF
+README_uboot=$(cat <<"EOF"
 The files in this directory are intended to be used as chainloader when booting
 via this method. (The default boot methods are grub.cfg and boot script.)
 Usage: Find a binary here (u-boot-*) which matches your box and copy it to the
@@ -526,7 +526,7 @@ cp /boot/uInitrd-${1} ${2}/uInitrd
 EOF
 )
 
-README_auxbootldr=$(cat <<EOF
+README_auxbootldr=$(cat <<"EOF"
 It is easy to install Petitboot or u-root on this bootfs. With any of these two
 bootloaders/bootmanagers you can boot "generic" UEFI+grub (and more generally
 images with a valid grub config). If this image is installed on SD (so that it
@@ -554,7 +554,7 @@ check the scripts and structure in e.g. petit-bootdisk-0v23.tgz)
 EOF
 )
 
-README_altbootscr=$(cat <<EOF
+README_altbootscr=$(cat <<"EOF"
 The boot scripts on the bootfs (aml_autoscript, s905_autoscript and uEnv.ini)
 are sourced from Manjaro ARM but this is certainly not the only setup possible.
 Another setup (with aml_autoscript, s905_autoscript, boot.scr), with somewhat
@@ -717,7 +717,7 @@ echo -e "$mkgrubcfg_simple" >${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
 chmod 0755 ${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
 echo " Done."
 
-echo -e ${i_msg}" Installing scripts to create uImage and uInitrd on bootfs..."
+echo -n -e ${i_msg}" Installing scripts to create uImage and uInitrd on bootfs..."
 echo -e "$mkuimg" >${rootfs_mnt}/usr/local/bin/mkuimg.bash
 chmod 0755 ${rootfs_mnt}/usr/local/bin/mkuimg.bash
 echo -e "$mkbootlinux" >${rootfs_mnt}/usr/local/bin/mkbootlinux.bash
@@ -755,7 +755,7 @@ if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the kernel header files, exiting."
     exit 1
 fi
-echo " Done."
+echo "Done."
 
 echo -n -e ${i_msg}" Saving Ophub kernel files to /var/cache/ophub ..."
 opsave_dir=${rootfs_mnt}/var/cache/ophub
