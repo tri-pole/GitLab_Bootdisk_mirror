@@ -68,9 +68,10 @@ creation using debootstrap.
 
 A working Ubuntu desktop image for a TV-box can also easily be obtained by a
 simple conversion procedure starting with a Raspberry Pi image, see
-README_ubuntu_frompi.md.
+[`README_ubuntu_frompi.md`](README_ubuntu_frompi.md).
 A completely manual approach to install Ubuntu and Debian on a SD/USB is
-described in README_ubuntu_inst.md and README_debian_inst.md, respectively
+described in [`README_ubuntu_inst.md`](README_ubuntu_inst.md) and
+[`README_debian_inst.md`](README_debian_inst.md), respectively
 (the latter also covers Devuan).
 All the images so created can be booted with the bootdisks.
 
