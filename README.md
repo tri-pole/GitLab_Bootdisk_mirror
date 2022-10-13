@@ -18,12 +18,14 @@ configurations (as defined in grub.cfg) whereas the `u-root` boot loader can
 boot grub as well as syslinux configurations (as defined in extlinux.conf).
 
 General info about the bootdisks `petit-bootdisk` and `u-root-bootdisk`
-(incl. download links) can can be found in the README files with associated
-names.
-In README_working_distros.md there is a an annotated list of distributions
-that can be installed and booted with the bootdisks.
+(incl. download links) can can be found in the files
+[`README_petit-bootdisk.md`](README_petit-bootdisk.md) and
+[`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), respectively.
+In [`README_working_distros.md`](README_working_distros.md) there is a an
+annotated list of distributions that can be installed and booted with the
+bootdisks.
 Instructions for recreating or adapting the bootdisks can be found in the file
-README_diy-bootdisk.md
+[`README_diy-bootdisk.md`](README_diy-bootdisk.md)
 
 ### Making ARM64 Linux images
 
@@ -34,8 +36,9 @@ images.
 
 There are two scripts available to generate images.
 
-(1) With the script `ubuntu_mkimg.bash` it is easy to produce an Ubuntu
-CLI/server image (Focal, Jammy or Kinetic) with Ophub/Flippy kernel.
+(1) With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is easy to
+produce an Ubuntu CLI/server image (Focal, Jammy or Kinetic) with Ophub/Flippy
+kernel.
 This kernel is adapted specifically for Amlogic TV-boxes (but has support also
 for Rockchip and Allwinner).
 (An Ubuntu kernel can be installed after first boot.)
@@ -45,11 +48,13 @@ non natively on an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static)
 to generate an ARM64 image.
 The generated image can be booted using any of the bootdisks but also using
 `u-boot`.
-Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
+Images built using this script can be
+[downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
 
 (2) "Pure" Debian (Bullseye) and Ubuntu (Jammy) CLI/server images (with
-Debian/Ubuntu kernel) can be produced with the script `debuntu_dbstrap.bash`
-which uses the debootstrap mechanism to create the base system.
+Debian/Ubuntu kernel) can be produced with the script
+[`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which uses the debootstrap
+mechanism to create the base system.
 Also this script can be run natively on an ARM64 Ubuntu/Debian machine and also
 non natively on an x86_64 Ubuntu/Debian machine to generate an ARM64 image.
 The generated image can be booted using any of the bootdisks but also using
@@ -79,11 +84,6 @@ Some (low resolution) screenshots of some of the bootdisk screens.
 boot menu screen encountered after boot with a Petitboot bootdisk.*
 
 ### u-root-bootdisk and u-root-bootdisk-nc
-
-![Prompt in u-root](/images/u-root-shellscreen.png "u-root shell")*The screen
-encountered after boot with a u-root bootdisk. If the command "boot" is entered
-at the prompt (lower left corner) a scan for bootable configurations over the
-attached devices is started.*
 
 ![Boot menu in u-root](/images/u-root-bootmenu.png "u-root boot")*The menu
 of bootable images displayed after u-root has scanned the attached devices
