@@ -9,13 +9,19 @@ Debian (e.g. Bullseye) and openSuse (Leap 15.4 and Tumbleweed).
 A good use case for TV-boxes is to have the bootdisk installed on SD and have
 several Linux distros installed on USBs to choose from.
 
-All the bootdisks employ a chainloading mechanism based on the Linux `kexec()`
-system call and the bootdisks come in two variants; one pair of disks based on
-the `Petitboot` boot loader and another pair based on the `u-root` boot loader.
+All the bootdisks employ a chainloading mechanism based on the Linux
+[`kexec`](https://en.wikipedia.org/wiki/Kexec)
+[system call](https://wiki.archlinux.org/title/Kexec) and the bootdisks come in
+two variants; one pair of disks based on the
+[`Petitboot`](https://open-power.github.io/petitboot/) boot loader and another
+pair based on the [`u-root`](https://u-root.org/) boot loader.
 The disks are named after the chainloader.
-The `Petitboot` boot loader provides a somewhat nicer UI and can boot grub
-configurations (as defined in grub.cfg) whereas the `u-root` boot loader can
-boot grub as well as syslinux configurations (as defined in extlinux.conf).
+The `Petitboot` boot loader provides a somewhat nicer UI and can boot
+[grub](https://wiki.archlinux.org/title/GRUB) configurations (as defined in
+grub.cfg) whereas the `u-root` boot loader can boot grub as well as
+[syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
+configurations (as defined in
+[extlinux.conf](https://wiki.syslinux.org/wiki/index.php?title=EXTLINUX)).
 
 General info about the bootdisks `petit-bootdisk` and `u-root-bootdisk`
 (incl. download links) can can be found in the files
@@ -46,7 +52,7 @@ It can be run natively on an ARM64 Ubuntu/Debian machine but also non natively
 on an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static) to generate an
 ARM64 image.
 The generated image can be booted using any of the bootdisks but also using
-`u-boot`.
+[`u-boot`](https://en.wikipedia.org/wiki/Das_U-Boot).
 Images built using this script can be
 [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
 
