@@ -482,9 +482,15 @@ extlinux_conf=$(cat <<EOF
 # after the menu items below are presented on screen (you have to be fast) and
 # you can then enter the number of the boot entry you wish to boot.
 
+# For more info about this file see (and the links therein)
+# https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX
+# (Note: u-boot's parsing of this file may be slightly different/incomplete.)
+
 MENU TITLE <DEBUNTU-BOOT>
 DEFAULT <DEBNT_DEFAULT>
-TIMEOUT 5
+
+# Timeout is in units of 0.1s (to wait before boot of default entry below).
+TIMEOUT 10
 
 LABEL DEBNT_DEFAULT
   LINUX  /vmlinuz

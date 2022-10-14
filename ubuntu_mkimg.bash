@@ -62,7 +62,7 @@
 #   updated; see the scripts in /usr/local/bin).
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
-#   Another alternative is kubuntu-desktop.
+#   Another alternative is kubuntu-desktop (nice and polished but larger).
 # - On some boxes it is necessary to run (as user) the script g12_sound.sh to
 #   get sound working. (Afterwards, check for soundcards with e.g. aplay -L)
 # - The standard Ubuntu kernel linux-image-generic can also be installed (after
@@ -103,12 +103,12 @@ host_name=opbu
 compressed_img=yes # {yes,no}
 
 # Ophub kernel version (number), e.g. 5.19.10
-ophub_kvers="5.19.14"
+ophub_kvers="5.15.73"
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
-ophub_krel=${ophub_kvers}"-flippy-77+" # Kernel name/release str., plain text.
+ophub_krel=${ophub_kvers}"-flippy-78+o" # Kernel name/release str., plain text.
 # For a list of encodings, see https://en.wikipedia.org/wiki/Percent-encoding
-ophub_krel_url=${ophub_kvers}"-flippy-77%2B" # Name string URL encoded.
+ophub_krel_url=${ophub_kvers}"-flippy-78%2Bo" # Name string URL encoded.
 
 # Edit the image tag to your liking.
 img_tag=${ophub_krel}_3pole-$(date +"%y%m%d")
@@ -397,9 +397,15 @@ extlinux_conf=$(cat <<EOF
 # (2) Edit the text below (if needed) to match your box and add a chainloader
 #     as u-boot.ext (see e.g. https://github.com/ophub/amlogic-s9xxx-armbian).
 
+# For more info about this file see (and the links therein)
+# https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX
+# (Note: u-boot's parsing of this file may be slightly different/incomplete.)
+
 MENU TITLE <UBUNTU-BOOT>
 DEFAULT <UBNT_DEFAULT>
-TIMEOUT 5
+
+# Timeout is in units of 0.1s (to wait before boot of default entry below).
+TIMEOUT 10
 
 LABEL UBNT_DEFAULT
   LINUX  /uImage
