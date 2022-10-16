@@ -235,7 +235,7 @@ for chk_cmd in ${chk_cmdlist[*]}; do
     cmd_loc=$(which $chk_cmd)
     if [[ -z $cmd_loc ]]; then
         echo -e "The required command $chk_cmd is \033[91mmissing \033[0m"
-	have_all_cmds=no
+        have_all_cmds=no
     fi
 done
 if [[ "$have_all_cmds" == "no" ]]; then
@@ -402,7 +402,7 @@ extlinux_conf=$(cat <<EOF
 # (Note: u-boot's parsing of this file may be slightly different/incomplete.)
 
 MENU TITLE <UBUNTU-BOOT>
-DEFAULT <UBNT_DEFAULT>
+DEFAULT UBNT_DEFAULT
 
 # Timeout is in units of 0.1s (to wait before boot of default entry below).
 TIMEOUT 10
@@ -523,7 +523,7 @@ mkbootlinux=$(cat <<"EOF"
 
 # Produces an uImage and uInitrd on the fat boot partition from flippy's
 # kernel and initramfs.
-# Usage: /usr/local/bin/mkbootlinux kernel_release /path/to/mounted_bootpart
+# Usage: /usr/local/bin/mkbootlinux kernel_release /path/to/bootpart/mount
 # where kernel_release is e.g. 5.19.9-flippy-76+
 # and /path/to/bootpart/mount is e.g. /boot/aux (and is mounted).
 
@@ -544,7 +544,7 @@ info on such "bootdisk" booting, see https://gitlab.com/tripole-inc/bootdisk
 To install e.g. Petitboot on this bootfs (same for u-root), do the following:
 
 (1) Download the latest tarball with Petitboot in the non chainloaded version,
-    e.g. petit-bootdisk-nc_0v22-2.tgz
+    e.g. petit-bootdisk-nc_0v24.tgz
 (2) Unpack the tarball in some temporary directory.
 (3) Copy the existing Image and uInitrd on the bootfs to some backup location.
     Copy also the existing boot scripts aml_autoscript*, s905_autoscript* and
@@ -556,7 +556,7 @@ To install e.g. Petitboot on this bootfs (same for u-root), do the following:
 (5) Reboot into Petitboot.
 
 (The procedure is similar when starting Petitboot via chainloader u-boot.ext
-check the scripts and structure in e.g. petit-bootdisk-0v23.tgz)
+check the scripts and structure in e.g. petit-bootdisk-0v24.tgz)
 EOF
 )
 
@@ -572,7 +572,24 @@ scripts used on Ophub's images https://github.com/ophub/amlogic-s9xxx-armbian
 EOF
 )
 
+README_initramfs=$(cat <<"EOF"
+We have not imlemented any mechanism for automatic rebuilding of the initramfs
+when the kernel is updated. (However, the ordinary triggers for rebuilding of
+the initramfs when certain packages are updates is in place and should work as
+usual.) The initramfs is simple to rebuild manually, however. For example, to
+rebuild the initramfs to the running kernel do (as root):
+
+update-initramfs -c -k $(uname -r)
+
+If you also want to update uInitrd (and uImage) on the bootfs do (as root):
+
+mkbootlinux.bash $(uname -r) /boot/aux
+EOF
+)
+
 #----------------------------------- code -----------------------------------
+
+cd $imgfile_dir
 
 imgfile_loc=${imgfile_dir}/${imgfile_name}
 
@@ -667,7 +684,7 @@ fi
 echo " Done."
 
 echo -e ${i_msg}" Downloading the root (base) file system tarball..."
-cd $tmpfile_dir && wget -nv $distro_buildurl
+wget -P $tmpfile_dir -nv $distro_buildurl
 if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the rootfs tarball, exiting."
     exit 1
@@ -675,7 +692,7 @@ fi
 echo "Done."
 
 echo -n -e ${i_msg}" Unpacking the root (base) file system tarball..."
-cd $rootfs_mnt && tar -xf ${tmpfile_dir}/${distro_buildfile}
+tar -xf ${tmpfile_dir}/${distro_buildfile} -C $rootfs_mnt
 sync
 echo " Done."
 
@@ -700,11 +717,11 @@ echo " Done."
 
 # To enable sound on some boxes, edit and run this script as local user.
 echo -e ${i_msg}" Installing script at /usr/local/bin/g12_sound.sh ..."
-cd $tmpfile_dir && wget -nv $g12_sound_url
+wget -P $tmpfile_dir -nv $g12_sound_url
 if [[ $? -ne 0 ]]; then
     echo -e ${w_msg}" Unable to download the scrip g12_sound.sh"
 else
-    cp g12_sound.sh ${rootfs_mnt}/usr/local/bin
+    cp ${tmpfile_dir}/g12_sound.sh ${rootfs_mnt}/usr/local/bin
     chmod 0755 ${rootfs_mnt}/usr/local/bin/g12_sound.sh
 fi
 echo "Done."
@@ -731,32 +748,32 @@ chmod 0755 ${rootfs_mnt}/usr/local/bin/mkbootlinux.bash
 echo " Done."
 
 echo -e ${i_msg}" Downloading Ophub/Flippy/Unifreq kernel files..."
-cd $tmpfile_dir && wget -nv $ophub_kboot_url
+wget -P $tmpfile_dir -nv $ophub_kboot_url
 if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the kernel boot files, exiting."
     exit 1
 fi
-wget -nv $ophub_kmods_url
+wget -P $tmpfile_dir -nv $ophub_kmods_url
 if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the kernel modules, exiting."
     exit 1
 fi
-wget -nv $ophub_kdtbs_am_url
+wget -P $tmpfile_dir -nv $ophub_kdtbs_am_url
 if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the Amlogic dtb files, exiting."
     exit 1
 fi
-wget -nv $ophub_kdtbs_aw_url
+wget -P $tmpfile_dir -nv $ophub_kdtbs_aw_url
 if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the Allwinner dtb files, exiting."
     exit 1
 fi
-wget -nv $ophub_kdtbs_rk_url
+wget -P $tmpfile_dir -nv $ophub_kdtbs_rk_url
 if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the Rockchip dtb files, exiting."
     exit 1
 fi
-wget -nv $ophub_khdr_url
+wget -P $tmpfile_dir -nv $ophub_khdr_url
 if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the kernel header files, exiting."
     exit 1
@@ -775,21 +792,17 @@ cp ${tmpfile_dir}/header-${ophub_krel}.tar.gz $opsave_dir
 echo " Done."
 
 echo -n -e ${i_msg}" Installing Ophub kernel files..."
-cd ${rootfs_mnt}/boot
-tar -xzf ${tmpfile_dir}/boot-${ophub_krel}.tar.gz
+tar -xzf ${tmpfile_dir}/boot-${ophub_krel}.tar.gz -C ${rootfs_mnt}/boot
 mkdir -p -m 0744 ${rootfs_mnt}/lib/modules
-cd ${rootfs_mnt}/lib/modules
-tar -xzf ${tmpfile_dir}/modules-${ophub_krel}.tar.gz
+tar -xzf ${tmpfile_dir}/modules-${ophub_krel}.tar.gz -C ${rootfs_mnt}/lib/modules
 mkdir -p -m 0755 ${rootfs_mnt}/boot/dtbs/amlogic
-cd ${rootfs_mnt}/boot/dtbs/amlogic
-tar -xzf ${tmpfile_dir}/dtb-amlogic-${ophub_krel}.tar.gz
+tar -xzf ${tmpfile_dir}/dtb-amlogic-${ophub_krel}.tar.gz -C ${rootfs_mnt}/boot/dtbs/amlogic
 echo " Done."
 
 # The flash-kernel package causes problems on systems w/o flash storage (when
 # installing Ubuntu kernels) so it is good to block to aviod future problems.
 echo -n -e ${i_msg}" Preventing apt from installing the package flash-kernel..."
-echo -e "$flashk_block_file" >\
-	 ${rootfs_mnt}/etc/apt/preferences.d/no-flash-kernel
+echo -e "$flashk_block_file" >${rootfs_mnt}/etc/apt/preferences.d/no-flash-kernel
 echo " Done."
 
 echo -n -e ${i_msg}" Preparing for chroot jail..."
@@ -806,7 +819,7 @@ fi
 
 echo -e ${i_msg}" Entering chroot jail. Installing some pkgs., running some scripts..."
 systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
-	       /root/ubuntu_custom_inst.bash
+               /root/ubuntu_custom_inst.bash
 rm ${rootfs_mnt}/root/ubuntu_custom_inst.bash
 sleep 2 # Just to be able to read some of the messages.
 echo "Done."
@@ -829,8 +842,9 @@ echo -e "$alloweth_nmconf_file" >$alloweth_nmconf_loc
 chmod 0644 $alloweth_nmconf_loc
 echo " Done."
 
-echo -n -e ${i_msg}" Setting up script files and dtb on boot partition..."
 cd ${bootfs_mnt}
+
+echo -n -e ${i_msg}" Setting up script files and dtb on boot partition..."
 touch aml_autoscript.zip
 echo -e "$aml_autoscript" >aml_autoscript.txt
 echo -e "$s905_autoscript" >s905_autoscript.txt
@@ -867,8 +881,14 @@ echo -n -e ${i_msg}" Writing instructions for alternate boot scripts..."
 echo -e "$README_altbootscr" >README_altbootscr.txt
 echo " Done."
 
-echo -n -e ${i_msg}" Unmounting the container file..."
+# Some info about how to rebuild initramfs.
+echo -n -e ${i_msg}" Writing instructions for rebuilding initramfs..."
+echo -e "$README_initramfs" >README_initramfs.txt
+echo " Done."
+
 cd $imgfile_dir
+
+echo -n -e ${i_msg}" Unmounting the container file..."
 umount -f ${loop_dev}p1
 sync && sleep 2
 umount -f ${loop_dev}p2

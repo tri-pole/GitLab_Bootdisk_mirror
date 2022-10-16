@@ -181,3 +181,10 @@ petit-bootdisk-nc
 
 ### Added
  - First commit.
+
+# archlnx_mkimg.bash:
+
+## [v0.1] 22-10-16
+
+### Added
+ - First commit.

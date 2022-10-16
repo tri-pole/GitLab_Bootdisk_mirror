@@ -487,7 +487,7 @@ extlinux_conf=$(cat <<EOF
 # (Note: u-boot's parsing of this file may be slightly different/incomplete.)
 
 MENU TITLE <DEBUNTU-BOOT>
-DEFAULT <DEBNT_DEFAULT>
+DEFAULT DEBNT_DEFAULT
 
 # Timeout is in units of 0.1s (to wait before boot of default entry below).
 TIMEOUT 10
@@ -541,7 +541,7 @@ mkgrubcfg=$(cat <<EOF
 #!/bin/bash
 
 # Wrapper around grub-mkconfig with /boot/grub as destination directory.
-# Tailored to (i.e. command line arguments) for ophub/flippy/unifreq kernels.
+# Tailored to (i.e. command line arguments) for Debian/Ubuntu kernels.
 # For other kernels, adapt the command line string below.
 # Usage: /usr/local/bin/mkgrubcfg.bash
 
@@ -613,7 +613,7 @@ info on such "bootdisk" booting, see https://gitlab.com/tripole-inc/bootdisk
 To install e.g. Petitboot on this bootfs (same for u-root), do the following:
 
 (1) Download the latest tarball with Petitboot in the non chainloaded version,
-    e.g. petit-bootdisk-nc_0v22-2.tgz
+    e.g. petit-bootdisk-nc_0v24.tgz
 (2) Unpack the tarball in some temporary directory.
 (3) Copy the existing boot scripts aml_autoscript*, s905_autoscript* and
     uEnv.ini to some backup location.
@@ -624,7 +624,7 @@ To install e.g. Petitboot on this bootfs (same for u-root), do the following:
 (5) Reboot into Petitboot.
 
 (The procedure is similar when starting Petitboot via chainloader u-boot.ext
-check the scripts and structure in e.g. petit-bootdisk-0v23.tgz)
+check the scripts and structure in e.g. petit-bootdisk-0v24.tgz)
 EOF
 )
 
@@ -641,6 +641,8 @@ EOF
 )
 
 # ---------------------------------- code ------------------------------------
+
+cd $imgfile_dir
 
 imgfile_loc=${imgfile_dir}/${imgfile_name}
 
@@ -752,11 +754,11 @@ echo " Done."
 
 # To enable sound on some boxes, edit and run this script as local user.
 echo -e ${i_msg}" Installing script at /usr/local/bin/g12_sound.sh ..."
-cd $tmpfile_dir && wget -nv $g12_sound_url
+wget -P $tmpfile_dir -nv $g12_sound_url
 if [[ $? -ne 0 ]]; then
     echo -e ${w_msg}" Unable to download the scrip g12_sound.sh"
 else
-    cp g12_sound.sh ${rootfs_mnt}/usr/local/bin
+    cp ${$tmpfile_dir}/g12_sound.sh ${rootfs_mnt}/usr/local/bin
     chmod 0755 ${rootfs_mnt}/usr/local/bin/g12_sound.sh
 fi
 echo "Done."
@@ -971,11 +973,12 @@ echo -n -e ${i_msg}" Writing instructions for alternate boot scripts..."
 echo -e "$README_altbootscr" >README_altbootscr.txt
 echo " Done."
 
-# Pick up the kernel version before we leave.
+# Pick up the kernel version before we leave /boot.
 kernel_version=$(ls ${rootfs_mnt}/boot | grep -E "vmlinuz-" | cut -b 9-)
 
-echo -n -e ${i_msg}" Unmounting the container file..."
 cd $imgfile_dir
+
+echo -n -e ${i_msg}" Unmounting the container file..."
 umount -f ${loop_dev}p1
 sync && sleep 2
 umount -f ${loop_dev}p2
@@ -986,9 +989,8 @@ echo -n -e ${i_msg}" Disconnecting and removing the loop devices..."
 losetup -d $loop_dev 2>/dev/null 
 echo " Done."
 
-echo -n -e ${i_msg}" Renaming image file to "
 imgfile_name_full=${distro_name}_${distro_edition}_${kernel_version}_${img_tag}.img
-echo -n "$imgfile_name_full "
+echo -n -e ${i_msg}" Renaming image file to $imgfile_name_full"
 imgfile_loc_full=${imgfile_dir}/${imgfile_name_full}
 mv $imgfile_loc $imgfile_loc_full
 echo " Done."
