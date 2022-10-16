@@ -77,6 +77,9 @@ The generated image can be booted using any of the bootdisks but also using
 Images built using this script can be
 [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgUmwtYSHQ2O5Al1T?e=wdBIPh)
 
+It is easy to add a graphical desktop to any of these images; typically it can
+be installed with a single command (see the comments inside the scripts).
+
 The script `debuntu_inst.bash` is an older (deprecated) script for image
 creation using debootstrap.
 
