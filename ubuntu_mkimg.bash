@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# ubuntu_mkimg.bash (a.k.a. {opbuntu,flibuntu}_mkimg.bash)
+# ubuntu_mkimg.bash (a.k.a. opbuntu_mkimg.bash)
 # 22-10-09: v0.18
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
-# (flippy/unifreq) for Amlogic TV-boxes/SBCs. The Ubuntu base system is from
-# daily builds of the rootfs of the releases Jammy, Focal, or pre-rel. Kinetic.
+# (ophub/flippy/unifreq) for Amlogic TV-boxes/SBCs. The Ubuntu base system is
+# from daily builds of the rootfs of the Jammy, Focal, or Kinetic releases.
 # The script must be executed (as root) on an Ubuntu/Debian type machine,
 # either natively on aarch64/ARM64 (e.g. Ubuntu Server Live booted via
 # bootdisk) or virtualized (using qemu-aarch64-static) on x86_64/amd64.
@@ -14,10 +14,13 @@
 # scripts on the fat partition) or via bootdisk (using the grub.cfg file on the
 # rootfs partition). Another alternative is chainloader u-boot.ext (included).
 
+# Usage: ./ubuntu_mkimg.bash
+#        (i.e. not arguments, but check the parameters/options below)
+
 # Tested on: Ugoos AM6 plus (s922x, for executing, booting and running) and on
 # QEMU (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
 # Tested kernels:
-# 5.15.70-flippy-77+, 5.19.{10,12,14}-flippy-77+, 5.15.0-48-generic
+# 5.15.y-flippy-77+, 5.19.y-flippy-77+, 5.15.0-48-generic
 # This script is a template or proof-of-concept, nothing more (so please fork
 # it, improve it).
 
@@ -55,11 +58,13 @@
 #   dtb files also for Allwinner and Rockchip can be found along with the other
 #   Ophub kernel files saved in /var/cache/ophub
 # - The uImage and uInitrd (u-boot tagged) versions of the kernel and initramfs
-#   that are on the fat partition are created by the mkbootlinux.bash script
-#   (see below). Therefore, when updating the kernel or initramfs then uImage
-#   uInitrd have to be recreated "manually" using this script (unless you rely
-#   on grub booting, then only grub.cfg on the rootfs partition has to be
-#   updated; see the scripts in /usr/local/bin).
+#   that are on the fat partition (for booting via vendor u-boot) are created
+#   by the mkbootlinux.bash script (see below). Therefore, when updating the
+#   kernel or initramfs then uImage uInitrd have to be recreated "manually"
+#   using this script (unless you rely on grub booting, then only grub.cfg on
+#   the rootfs partition has to be updated; see the scripts in /usr/local/bin).
+# - Some kernel versions may not boot using vendor u-boot and the installed
+#   boot scripts (this seems to be the case for text offset patched kernels).
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 #   Another alternative is kubuntu-desktop (nice and polished but larger).
@@ -103,12 +108,12 @@ host_name=opbu
 compressed_img=yes # {yes,no}
 
 # Ophub kernel version (number), e.g. 5.19.10
-ophub_kvers="5.15.73"
+ophub_kvers="5.19.16"
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
-ophub_krel=${ophub_kvers}"-flippy-78+o" # Kernel name/release str., plain text.
+ophub_krel=${ophub_kvers}"-ophub" # Kernel name/release str., plain text.
 # For a list of encodings, see https://en.wikipedia.org/wiki/Percent-encoding
-ophub_krel_url=${ophub_kvers}"-flippy-78%2Bo" # Name string URL encoded.
+ophub_krel_url=${ophub_kvers}"-ophub" # Name string URL encoded.
 
 # Edit the image tag to your liking.
 img_tag=${ophub_krel}_3pole-$(date +"%y%m%d")
@@ -337,7 +342,7 @@ until passwd; do echo "Try again."; done
 echo "Setting up boot (2 items):"
 echo "(1) Creating /boot/grub/grub.cfg"
 /usr/local/bin/mkgrubcfg_simple.bash
-echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, Initrd)."
+echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, uInitrd)."
 /usr/local/bin/mkbootlinux.bash ${ophub_krel} ${bootfs_dir} >/dev/null
 EOF
 )

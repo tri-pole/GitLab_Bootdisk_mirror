@@ -13,6 +13,9 @@
 # scripts on the fat partition) or via bootdisk (using the grub.cfg file on the
 # rootfs partition). Another alternative is chainloader u-boot.ext (included).
 
+# Usage: ./archlnx_mkimg.bash
+#        (i.e. not arguments, but check the parameters/options below)
+
 # Tested on: Ugoos AM6 plus (s922x, for executing, booting and running) and on
 # QEMU (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
 
