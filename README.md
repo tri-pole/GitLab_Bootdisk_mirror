@@ -57,7 +57,7 @@ The generated image can be booted using any of the bootdisks but also using
 Images built using this script can be
 [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
 
-(2) __"Debuntu:"__" Debian (Bullseye) and Ubuntu (Jammy) CLI/server images of
+(2) __"Debuntu:"__ Debian (Bullseye) and Ubuntu (Jammy) CLI/server images of
 "standard" type (with Debian/Ubuntu kernel) can be produced with the script
 [`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which employs the debootstrap
 mechanism to create the base system.
@@ -67,7 +67,7 @@ The generated image can be booted using any of the bootdisks but also using
 `u-boot`.
 Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgSd5w5tnP9COEgeZ?e=zxF2uB).
 
-(3) __Arch Linux__ A CLI/server image of Arch Linux ARM64 can be produced
+(3) __Arch Linux:__ A CLI/server image of Arch Linux ARM64 can be produced
 with the script [`archlnx_mkimg.bash`](archlnx_mkimg.bash) which uses the
 official Arch Linux rootfs tarball (with kernel) as a basis.
 Also this script can be run natively on an ARM64 Ubuntu/Debian machine as well
