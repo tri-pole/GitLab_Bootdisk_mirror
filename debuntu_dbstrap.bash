@@ -82,9 +82,9 @@
 # ------------------------------- parameters ---------------------------------
 
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
-ubuntu_edition=Jammy    # Only tested with "Jammy"
+ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic
 debian_name=Debian      # Used for the image name and in grub.cfg
-debian_edition=Bullseye # Only tested with "Bullseye"
+debian_edition=Bullseye # Only tested with Bullseye
 
 # Host name for image.
 host_name=debnt
@@ -761,7 +761,7 @@ wget -P $tmpfile_dir -nv $g12_sound_url
 if [[ $? -ne 0 ]]; then
     echo -e ${w_msg}" Unable to download the scrip g12_sound.sh"
 else
-    cp ${$tmpfile_dir}/g12_sound.sh ${rootfs_mnt}/usr/local/bin
+    cp ${tmpfile_dir}/g12_sound.sh ${rootfs_mnt}/usr/local/bin
     chmod 0755 ${rootfs_mnt}/usr/local/bin/g12_sound.sh
 fi
 echo "Done."

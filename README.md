@@ -58,9 +58,9 @@ The generated image can be booted using any of the bootdisks but also using
 Images built using this script can be
 [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
 
-__Debuntu:__ Debian (Bullseye) and Ubuntu (Jammy) CLI/server images of
-"standard" type (with Debian/Ubuntu kernel) can be produced with the script
-[`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which employs the
+__Debuntu:__ Debian (Bullseye) and Ubuntu (Focal, Jammy, Kinetic) CLI/server
+images of "standard" type (with Debian/Ubuntu kernel) can be produced with the
+script [`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which employs the
 [debootstrap](https://wiki.debian.org/Debootstrap) mechanism to create the base
 system.
 Also this script can be run natively on an ARM64 Ubuntu/Debian machine as well
@@ -88,8 +88,8 @@ creation using debootstrap.
 
 #### The harder way (with bare hands)
 
-A working Ubuntu desktop image for a TV-box can also easily be obtained by a
-simple conversion procedure starting with a Raspberry Pi image, see
+A working Ubuntu desktop image for a TV-box can also be obtained by a
+straightforward conversion procedure starting with a Raspberry Pi image, see
 [`README_ubuntu_frompi.md`](README_ubuntu_frompi.md).
 A completely manual approach to installing Ubuntu and Debian on a SD/USB is
 described in [`README_ubuntu_inst.md`](README_ubuntu_inst.md) and
