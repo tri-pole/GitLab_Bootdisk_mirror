@@ -43,8 +43,8 @@ images.
 There are three scripts available to generate images (as well as downloads of
 the images).
 
-(1) With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is easy to
-produce an Ubuntu CLI/server image (Focal, Jammy or Kinetic) with
+(1) __"Opbuntu:"__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it
+is easy to produce an Ubuntu CLI/server image (Focal, Jammy or Kinetic) with
 [Ophub/Flippy kernel.](https://github.com/ophub/kernel/tree/main/pub/stable)
 This kernel is adapted specifically for Amlogic TV-boxes (but has support also
 for Rockchip and Allwinner).
@@ -57,8 +57,8 @@ The generated image can be booted using any of the bootdisks but also using
 Images built using this script can be
 [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
 
-(2) "Standard" Debian (Bullseye) and Ubuntu (Jammy) CLI/server images (with
-Debian/Ubuntu kernel) can be produced with the script
+(2) __"Debuntu:"__" Standard" Debian (Bullseye) and Ubuntu (Jammy) CLI/server
+images (with Debian/Ubuntu kernel) can be produced with the script
 [`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which employs the debootstrap
 mechanism to create the base system.
 Also this script can be run natively on an ARM64 Ubuntu/Debian machine as well
@@ -67,9 +67,9 @@ The generated image can be booted using any of the bootdisks but also using
 `u-boot`.
 Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgSd5w5tnP9COEgeZ?e=zxF2uB).
 
-(3) A CLI/server image of Arch Linux ARM64 can be produced with the script
-[`archlnx_mkimg.bash`](archlnx_mkimg.bash) which uses the official Arch Linux
-rootfs tarball (with kernel) as a basis.
+(3) __"Arch Linux"__ A CLI/server image of Arch Linux ARM64 can be produced
+with the script [`archlnx_mkimg.bash`](archlnx_mkimg.bash) which uses the
+official Arch Linux rootfs tarball (with kernel) as a basis.
 Also this script can be run natively on an ARM64 Ubuntu/Debian machine as well
 as non natively on an x86_64 Ubuntu/Debian machine to generate an ARM64 image.
 The generated image can be booted using any of the bootdisks but also using
