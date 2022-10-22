@@ -252,7 +252,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   (We have cross compiled `u-root` using the instructions posted there.)
   Our version contains all the packages in the `u-root `collections `core` and
   `boot`. It has been compiled from a `u-root` release (tag) as indicated in
-  the initramfs name, the current version is v0.9.0.
+  the initramfs name, the current version is v0.10.0.
   
   The initramfs for `Petitboot` has been compiled and assembled according by
   following, largely, the instructions posted at

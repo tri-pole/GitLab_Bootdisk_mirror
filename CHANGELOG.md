@@ -5,6 +5,19 @@ petit-bootdisk-nc
 
 # u-root-bootdisk:
 
+## [v0.32] - 22-10-22
+
+### Changed
+ - Updated u-root to v0.10.0
+
+## [v0.30] - 22-10-12
+
+### Added
+ - Autostart of boot menu.
+
+### Changed
+ - Raplaced 5.17 kernel with 5.4 kernel.
+
 ## [v0.28] - 22-08-29
 
 ### Added
@@ -24,6 +37,11 @@ petit-bootdisk-nc
  - Three u-boot.ext files.
 
 # u-root-bootdisk-nc:
+
+## [v0.32] - 22-10-22
+
+### Changed
+ - Updated u-root to v0.10.0
 
 ## [v0.30] - 22-10-12
 

@@ -68,11 +68,16 @@ md5sums of latest release:
 
 `u-root-bootdisk-0v30.tgz        9924ae4fb88ffac5c142c60b6ff2ebbc`
 
+`u-root-bootdisk-0v32.tgz        f0a2838c986b6000d1771e75022fcabe`
+
 `u-root-bootdisk-nc_0v30.tgz     0f5de5359793f58806b8422ccca91e6b`
+
+`u-root-bootdisk-nc_0v32.tgz     3d5ca8c81798c274810a1de95a55cb1f`
 
 `bootdisk_skel.img.gz            1fde903482f2b99f9ee9fec41d02609d`
 
-The version of `u-root` on the `u-root-bootdisk`(s) listed above is v0.9.0.
+The version of `u-root` on the latest `u-root-bootdisk`(s) listed above is
+v0.10.0.
 
 Starting with v0.28-2 the bootdisks will only be released as tarballs (since
 no special disk is needed, only a single FAT partition large enough to hold

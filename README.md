@@ -18,10 +18,11 @@ pair based on the [`u-root`](https://u-root.org/) boot loader.
 The disks are named after the chainloader.
 The `Petitboot` boot loader provides a somewhat nicer UI and can boot
 [grub](https://wiki.archlinux.org/title/GRUB) configurations (as defined in
-grub.cfg) whereas the `u-root` boot loader can boot grub as well as
+grub.cfg) whereas the `u-root` boot loader can boot grub as well as a subset of
 [syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
-configurations (as defined in
-[extlinux.conf](https://wiki.syslinux.org/wiki/index.php?title=EXTLINUX)).
+configurations
+[including](https://github.com/u-root/u-root/blob/main/pkg/boot/syslinux/syslinux.go)
+the most often used ones by `u-boot` with extlinux.conf.
 
 General info about the bootdisks `petit-bootdisk` and `u-root-bootdisk`
 (incl. download links) can can be found in the files
@@ -77,7 +78,7 @@ Also this script can be run natively on an ARM64 Ubuntu/Debian machine as well
 as non natively on an x86_64 Ubuntu/Debian machine to generate an ARM64 image.
 The generated image can be booted using any of the bootdisks but also using
 `u-boot`.
-Images built using this script can be
+An image built using this script can be
 [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgUmwtYSHQ2O5Al1T?e=wdBIPh).
 
 It is easy to add a graphical desktop to these images; typically it can be
