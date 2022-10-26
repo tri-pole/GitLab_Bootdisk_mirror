@@ -62,7 +62,7 @@
 
   Sectors 0-4095: MBR (sector 0) and gap (sector 1-4095).
 
-  Sectors 4095-S: Partition 1, type 'c' in fdisk, formatted with vfat.
+  Sectors 4096-S: Partition 1, type 'c' in fdisk, formatted with vfat.
 
   (The reason why we recommend a 2M gap is that the gap can be good to have if
   we later decide to install a "hidden" bootloader. Such a bootloader is not
