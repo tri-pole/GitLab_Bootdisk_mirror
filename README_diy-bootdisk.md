@@ -60,9 +60,14 @@
   It is possible to use one and the same (simple) disk geometry both for a
   chainloading disk and for a non chainloading disk (512B sectors):
 
-  Sectors 0-2047: MBR and gap.
+  Sectors 0-4095: MBR (sector 0) and gap (sector 1-4095).
 
-  Sectors 2048-S: Partition 1, type 'c' in fdisk, formatted with vfat.
+  Sectors 4095-S: Partition 1, type 'c' in fdisk, formatted with vfat.
+
+  (The reason why we recommend a 2M gap is that the gap can be good to have if
+  we later decide to install a "hidden" bootloader. Such a bootloader is not
+  required for the normal use of the bootdisks but is useful if you later want
+  to convert the bootdisk into a rescue disk, see below.)
 
   The value of S in the line above above is mostly dependent on how many
   kernels are needed (e.g. for experimentation); a value of S which corresponds
@@ -131,7 +136,9 @@ and for a non chainloaded (`-nc`) disk it could look like this
   The three files `aml_autoscript, boot.scr, s905_autoscript` can be copied
   either from `u-root-bootdisk` or `petit-bootdisk` (i.e. chainloader version)
   or downloaded directly from
-  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts).
+  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts)
+  (see also the script `armbian-install` in
+  [Ophub's repo](https://github.com/ophub/amlogic-s9xxx-armbian)).
   (These files are basically text files but with Amlogic signatures in the
   headers, produced by the `mkimage` command from the `u-boot-tools` package.)
 
@@ -156,8 +163,6 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   The `uEnv.txt` file is a small text file where the kernel, initramfs and
   dtb file is defined.
-  (The kernel and initramfs must be in u-boot format on a non chainloaded
-  disk, see below.)
   It can for instance look like this
 
 ```
@@ -284,3 +289,34 @@ and for a non chainloaded (`-nc`) disk it could look like this
   In the `init` script/file a few additions/changes have been made in order to
   enable a smooth boot up and turning off of network connections etc.
   It is easy to introduce further customizations like this.
+
+
+  #### Adding a ("hidden") bootloader
+
+  The code in the boot ROM on Amlogic SoCs looks for bootloaders on all
+  bootable devices, according to a
+  [predefined search order](https://u-boot.readthedocs.io/en/latest/board/amlogic/boot-flow.html),
+  and boots the first working such that it finds.
+  This means that even if the resident/vendor (on eMMC) version of u-boot is
+  non functional (for some reason) the code in the boot ROM will scan e.g. SD
+  for a bootloader and if there is one, it will be used.
+  Thus, it is easy to set up a "rescue" bootdisk by adding a "hidden" u-boot
+  bootloader to the gap on a bootdisk which will then do the same job as the
+  resident/vendor u-boot would otherwise do so that the bootdisk will always
+  boot.
+
+  It is easy to add a u-boot bootloader to an SD, provided there is at least a
+  2M gap before the first partition.
+  The version of u-boot.bin that should then be used is "the bigger one"
+  (about 1.5M, typically) with all the
+  [FIP blobs](https://github.com/LibreELEC/amlogic-boot-fip)
+  added, which is used for
+  ["cold booting"](https://github.com/ARM-software/arm-trusted-firmware/blob/master/docs/design/firmware-design.rst).
+  (The smaller u-boot.bin, about 800k, is typically used for chainloading
+  in the form of u-boot.ext, which is a form of "warm booting".)
+  Instructions on how to copy the bootloader onto the SD can be found in many
+  places.
+  The operation is typically done in two passes with the `dd` command; first
+  the bootloader signature code in the beginning of sector 0 (MBR) and then
+  the body of the bootloader code in sector 1 and onward in the gap before
+  first partition.

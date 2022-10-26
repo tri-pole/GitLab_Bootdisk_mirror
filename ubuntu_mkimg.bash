@@ -108,6 +108,9 @@ host_name=opbu
 compressed_img=yes # {yes,no}
 
 # Ophub kernel version (number), e.g. 5.19.10
+# For a list of currently available kernel version numbers, see
+# https://github.com/ophub/kernel/tree/main/pub/stable
+# (but note that the download path on Github is slightly different, see below).
 ophub_kvers="5.19.16"
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
@@ -523,6 +526,17 @@ EOF
 
 mkuimg="${mkuimg_p1}""${mkuimg_p2}"
 
+mkuird=$(cat <<"EOF"
+#!/bin/bash
+
+# Takes an ARM64 initrd.img and produces a u-boot tagged uImage from it.
+# Usage: /usr/local/bin/mkuimg /path/to/initrd.img /path/to/uImage
+
+mkimage -n "uInitrd" -A arm64 -O linux -T ramdisk -C gzip -d ${1} ${2}
+
+EOF
+)
+
 mkbootlinux=$(cat <<"EOF"
 #!/bin/bash
 
@@ -748,6 +762,9 @@ echo " Done."
 echo -n -e ${i_msg}" Installing scripts to create uImage and uInitrd on bootfs..."
 echo -e "$mkuimg" >${rootfs_mnt}/usr/local/bin/mkuimg.bash
 chmod 0755 ${rootfs_mnt}/usr/local/bin/mkuimg.bash
+# mkuird.bash is not used on a standard Opbuntu install but good to have.
+echo -e "$mkuird" >${rootfs_mnt}/usr/local/bin/mkuird.bash
+chmod 0755 ${rootfs_mnt}/usr/local/bin/mkuird.bash
 echo -e "$mkbootlinux" >${rootfs_mnt}/usr/local/bin/mkbootlinux.bash
 chmod 0755 ${rootfs_mnt}/usr/local/bin/mkbootlinux.bash
 echo " Done."

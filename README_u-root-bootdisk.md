@@ -74,7 +74,7 @@ md5sums of latest release:
 
 `u-root-bootdisk-nc_0v32.tgz     3d5ca8c81798c274810a1de95a55cb1f`
 
-`bootdisk_skel.img.gz            1fde903482f2b99f9ee9fec41d02609d`
+`bootdisk_skel.img.gz            6c8db71655b02a0aec70135a81a9c74c`
 
 The version of `u-root` on the latest `u-root-bootdisk`(s) listed above is
 v0.10.0.
