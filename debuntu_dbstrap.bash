@@ -139,9 +139,9 @@ dtbfile_name=meson-g12b-gtking-pro.dtb
 # - The min skip (gap) size (before 1st part) is 1MB (2048 sectors, 512B each).
 # - The boot fs type is vfat/fat32 and the root fs type is one of {ext4,btrfs}.
 # Note: The boot fs is only for u-boot formatted copies of kernel +initramfs.
-skip_MB=1
-boot_MB=300
-root_MB=6000
+gap_MiB=2
+boot_MiB=300
+root_MiB=6000
 rootfs_type=ext4
 
 # Location (dir) of disk image container during install (for size, see below).
@@ -618,16 +618,21 @@ To install e.g. Petitboot on this bootfs (same for u-root), do the following:
 (1) Download the latest tarball with Petitboot in the non chainloaded version,
     e.g. petit-bootdisk-nc_0v24.tgz
 (2) Unpack the tarball in some temporary directory.
-(3) Copy the existing boot scripts aml_autoscript*, s905_autoscript* and
-    uEnv.ini to some backup location.
+(3) Copy the existing Image and uInitrd on the bootfs to some backup location.
 (4) Copy the Image (or zImage; it is an Image) from the tarball to Image on the
     bootfs and copy the uInitrd from the tarball to uInitrd on the bootfs.
-    Copy also the boot scripts aml_autoscript*, s905_autoscript, uEnv.txt and
-    boot.scr from the tarball to the bootfs. Rename uEnv.txt to uEnv.ini
-(5) Reboot into Petitboot.
+(5) Make a uImage from Image/zImage using the script /usr/local/bin/mkuimg.bash
+(6) Reboot into Petitboot.
 
 (The procedure is similar when starting Petitboot via chainloader u-boot.ext
 check the scripts and structure in e.g. petit-bootdisk-0v24.tgz)
+
+To boot this disk image with u-boot requires a working resident/vendor u-boot
+bootloader but this restriction can be removed if a "hidden" bootloader, i.e.
+u-boot, is installed in the gap leading up to the first partition. With such a
+bootloader properly installed, the disk will always boot from SD or USB on
+Amlogic devices, regardless of the state of the resident/vendor u-boot. More
+inforomation about this can be found in README_diy-bootdisk.md at Gitlab.
 EOF
 )
 
@@ -650,8 +655,8 @@ cd $imgfile_dir
 imgfile_loc=${imgfile_dir}/${imgfile_name}
 
 # This is a rough estimate: We do not take into account temporary files etc.
-imgfile_MB=$((skip_MB +boot_MB +root_MB))
-desired_MB=$((14*${imgfile_MB}/10)) # Approx. space for imgfile +imgfile.xz
+imgfile_MiB=$((gap_MiB +boot_MiB +root_MiB))
+desired_MiB=$((14*${imgfile_MiB}/10)) # Approx. space for imgfile +imgfile.xz
 
 echo -e "\n\033[92m -- Making image for $distro_name ($distro_edition) -- \033[0m\n"
 
@@ -659,15 +664,15 @@ echo -e "The image container file will be at:"
 echo $imgfile_loc
 
 if [[ "$compressed_img" == "no" ]]; then
-    required_MB=$imgfile_MB
+    required_MiB=$imgfile_MiB
 else
     echo -e "\nThe finished (compressed) image file will be at (w/ kernel version inserted):"
     echo ${imgfile_loc}.xz
-    required_MB=$desired_MB
+    required_MiB=$desired_MiB
 fi
 
 # The actual used space is smaller, but I don't know how to estimate that.
-echo -e "\nMake sure that you have enough space: up to ~${required_MB} MB +some.\n"
+echo -e "\nMake sure that you have enough space: up to ~${required_MiB} MB +some.\n"
 echo "This is what you have:"
 df -h
 echo -n -e "\nIs this enough? [N,y] "
@@ -686,8 +691,8 @@ echo -n -e ${i_msg}" Making a directory for temporary files..."
 mkdir -p $tmpfile_dir
 echo " Done."
 
-echo -e ${i_msg}" Setting up container file (${imgfile_MB} MB)..."
-dd if=/dev/zero of=$imgfile_loc bs=1M count=$imgfile_MB \
+echo -e ${i_msg}" Setting up container file (${imgfile_MiB} MB)..."
+dd if=/dev/zero of=$imgfile_loc bs=1M count=$imgfile_MiB \
    conv=fsync status=progress
 sync
 echo "Done."
@@ -695,9 +700,9 @@ echo "Done."
 echo -n -e ${i_msg}" Creating partitions in container file..."
 parted -s $imgfile_loc mklabel msdos 2>/dev/null
 parted -s $imgfile_loc mkpart primary fat32 \
-       $((skip_MB))MiB $((skip_MB + boot_MB - 1))MiB 2>/dev/null
+       $((gap_MiB))MiB $((gap_MiB + boot_MiB))MiB 2>/dev/null
 parted -s $imgfile_loc mkpart primary $rootfs_type \
-       $((skip_MB + boot_MB))MiB 100% 2>/dev/null
+       $((gap_MiB + boot_MiB))MiB 100% 2>/dev/null
 sync
 echo " Done."
 
