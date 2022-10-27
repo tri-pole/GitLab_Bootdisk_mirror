@@ -111,3 +111,9 @@ boot menu screen encountered after boot with a Petitboot bootdisk.*
 ![Boot menu in u-root](/images/u-root-bootmenu.png "u-root boot")*The menu
 of bootable images displayed after u-root has scanned the attached devices
 (here three USB sticks attached via a USB hub).*
+
+## Disclaimer
+
+All information here is to the best of my knowledge.
+I take no responsibility for any consequences of its use, so use at your own
+risk.

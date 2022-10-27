@@ -85,10 +85,10 @@
   In the latter case, the version of `u-boot.ext` required depends on the SoC
   but luckily there are many precompiled binaries freely available.
   A good selection of candidates can be found on the images produced by
-  [ophub](https://github.com/ophub/amlogic-s9xxx-armbian) and some of them
+  [Ophub](https://github.com/ophub/amlogic-s9xxx-armbian) and some of them
   can also be found on the chainloaded bootdisks.
   (Typically, these binaries have a name which is a variant of `u-boot.bin`
-  and ophub collectively refer to them as "overload" bootloaders.)
+  and Ophub collectively refer to them as "overload" bootloaders.)
 
   - *Only for chainloaded disk*
   
@@ -203,7 +203,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   `u-root-bootdisk`).
   These kernels are compiled using [unifreq's](https://github.com/unifreq)
   version of the Linux kernel source by employing
-  [ophub's](https://github.com/ophub/amlogic-s9xxx-armbian) build framework.
+  [Ophub's](https://github.com/ophub/amlogic-s9xxx-armbian) build framework.
   A few extra options have been enabled over the default kernel config such
   as kexec and support for btrfs and iso filesystems, see the `config-` files
   on the bootdisks.

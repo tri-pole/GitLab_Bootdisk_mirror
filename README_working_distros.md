@@ -134,12 +134,12 @@ initrd /boot/initrd.img-5.19.5-meson64
 
 Ophub's [builds](https://github.com/ophub/amlogic-s9xxx-armbian) of Armbian can
 be booted with a simple grub.cfg just like the board specific Armbian images.
-However, ophub's images already have a template for `extlinux.conf` (named
+However, Ophub's images already have a template for `extlinux.conf` (named
 `extlinux.conf.bak`) which `u-root-bootdisk` can parse.
 Therefore, it is easy to simply edit this file and use `u-root-bootdisk` for
 booting.
 For instance, on Ugoos Am6 plus the image for s922x can be booted with an
-`/extlinux/extlinux.conf` file like so (example for ophub build 220901):
+`/extlinux/extlinux.conf` file like so (example for Ophub build 220901):
 
 ```
 label Armbian
@@ -199,7 +199,7 @@ images on USB that can be made bootable via the bootdisks.)
 - Sometimes needed for first boot: Copy over a "a first boot kernel+initramfs"
   which is known to work for the TV-box in question
   (e.g. one of
-  [ophub's kernels](https://github.com/ophub/amlogic-s9xxx-armbian)).
+  [Ophub's kernels](https://github.com/ophub/amlogic-s9xxx-armbian)).
 
 - Do a first boot and upgrade e.g. to the final kernel desired, and then do the
   rest of the customization from there (and update `grub.cfg` accordingly
@@ -208,4 +208,4 @@ images on USB that can be made bootable via the bootdisks.)
 However, it should also be noted that if a Linux distribution image has a valid
 syslinux/extlinux configuration then the `u-root-bootdisk` can in general be
 used to boot the image (from USB) with minor alterations since `u-root` can
-parse also such boot configurations (cf. the comments on ophub's images above).
+parse also such boot configurations (cf. the comments on Ophub's images above).
