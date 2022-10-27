@@ -27,8 +27,8 @@ The boot process is also described in the README files on the bootdisks.
 
 It should be noted that since `u-root` scans also for bootable syslinux
 configurations (e.g. extlinux.conf) `u-root-bootdisk` can boot also disk
-images that are set up for chainloading with u-boot.ext (simply beacuse
-`u-root` bypasses u-boot.ext on the image to be booted). Therefore,
+images that are set up for chainloading with `u-boot.ext` (simply beacuse
+`u-root` bypasses `u-boot.ext` on the image to be booted). Therefore,
 `u-root-bootdisk` implements a unified boot solution for the final stages on
 booting and provides a separating layer between the SoC/board specific parts
 of the boot process and the parts shared among Linux distributions.
@@ -50,7 +50,7 @@ bootdisk using chainloading can (probably) be made to work also for other SoCs
 
 (Note that the term chainloading is used to describe two diffrent things here.
 First, the bootdisk itself which is chainloaded by the board resident `u-boot`.
-Second, on one of the bootdisks the binary u-boot.ext is used to chainload
+Second, on one of the bootdisks the binary `u-boot.ext` is used to chainload
 the kernel and initramfs that runs `u-boot`.)
 
 Downloads
@@ -116,8 +116,8 @@ on SD and then have several different USBs with boot target Linux distros
 attached during boot and then simply use the bootdisk as a boot selection tool.
 This works as intended on the two platforms tested (see below) but for other
 boxes some experimentation may be needed with e.g. the bootdisk on USB, with
-different u-boot.ext, with target image(s) connected from boot or only after
-reaching u-root prompt.
+different `u-boot.ext`, with target image(s) connected from boot or only after
+reaching `u-root` prompt.
 Finally, the ability to boot from external media (sometimes called "multiboot")
 for the SBC or TV-box must have been enabled.
 For TV-boxes this often amounts to going through a "toothpick" reset with an

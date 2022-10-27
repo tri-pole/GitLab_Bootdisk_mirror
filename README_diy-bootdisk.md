@@ -296,24 +296,25 @@ and for a non chainloaded (`-nc`) disk it could look like this
   The code in the boot ROM on Amlogic SoCs looks for bootloaders on all
   bootable devices, according to a
   [predefined search order](https://u-boot.readthedocs.io/en/latest/board/amlogic/boot-flow.html),
-  and boots the first working such that it finds.
-  This means that even if the resident/vendor (on eMMC) version of u-boot is
+  (not to be confused with `u-boot`s programmable boot order) and boots the
+  first working such that it finds.
+  This means that even if the resident/vendor (on eMMC) version of `u-boot` is
   non functional (for some reason) the code in the boot ROM will scan e.g. SD
   for a bootloader and if there is one, it will be used.
-  Thus, it is easy to set up a "rescue" bootdisk by adding a "hidden" u-boot
+  Thus, it is easy to set up a "rescue" bootdisk by adding a "hidden" `u-boot`
   bootloader to the gap on a bootdisk which will then do the same job as the
-  resident/vendor u-boot would otherwise do so that the bootdisk will always
+  resident/vendor `u-boot` would otherwise do so that the bootdisk will always
   boot.
 
   It is easy to add a u-boot bootloader to an SD, provided there is at least a
   2M gap before the first partition.
-  The version of u-boot.bin that should then be used is "the bigger one"
+  The version of `u-boot.bin` that should then be used is "the bigger one"
   (about 1.5M, typically) with all the
   [FIP blobs](https://github.com/LibreELEC/amlogic-boot-fip)
   added, which is used for
   ["cold booting"](https://github.com/ARM-software/arm-trusted-firmware/blob/master/docs/design/firmware-design.rst).
-  (The smaller u-boot.bin, about 800k, is typically used for chainloading
-  in the form of u-boot.ext, which is a form of "warm booting".)
+  (The smaller `u-boot.bin`, about 800k, is typically used for chainloading
+  in the form of `u-boot.ext`, which is a form of "warm booting".)
   Instructions on how to copy the bootloader onto the SD can be found in many
   places.
   The operation is typically done in two passes with the `dd` command; first
