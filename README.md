@@ -17,8 +17,8 @@ two variants; one pair of disks based on the
 pair based on the [`u-root`](https://u-root.org/) boot loader.
 The disks are named after the chainloader.
 The `Petitboot` boot loader provides a somewhat nicer UI and can boot
-[grub](https://wiki.archlinux.org/title/GRUB) configurations as defined in
-grub.cfg whereas the `u-root` boot loader can boot grub configurations as well
+[grub](https://wiki.archlinux.org/title/GRUB) configurations defined in
+`grub.cfg` whereas the `u-root` boot loader can boot grub configurations as well
 as a subset of
 [syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
 configurations,
