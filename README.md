@@ -21,8 +21,8 @@ The `Petitboot` boot loader provides a somewhat nicer UI and can boot
 grub.cfg whereas the `u-root` boot loader can boot grub configurations as well
 as a subset of
 [syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
-configurations which
-[includes](https://github.com/u-root/u-root/blob/main/pkg/boot/syslinux/syslinux.go)
+configurations,
+[including](https://github.com/u-root/u-root/blob/main/pkg/boot/syslinux/syslinux.go)
 the configurations in extlinux.conf used by `u-boot`.
 
 General info about the bootdisks `petit-bootdisk` and `u-root-bootdisk`
