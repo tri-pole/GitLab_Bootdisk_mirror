@@ -23,7 +23,7 @@ as a subset of
 [syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
 configurations,
 [including](https://github.com/u-root/u-root/blob/main/pkg/boot/syslinux/syslinux.go)
-the configurations in extlinux.conf used by `u-boot`.
+the `extlinux.conf` configurations used by `u-boot`.
 
 General info about the bootdisks `petit-bootdisk` and `u-root-bootdisk`
 (incl. download links) can can be found in the files
