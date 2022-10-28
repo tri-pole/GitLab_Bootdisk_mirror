@@ -7,7 +7,7 @@ live image, at least according to our experience.) As an example, we outline
 here how to make a small installer disk for openSuse (Tumbleweed or Leap 15.4).
 
 The install disk is very simple and contains only a small FAT32 partition with
-a few files on it; an installer kernel and initrd, a grub.cfg file (and for
+a few files on it; an installer kernel and initrd, a `grub.cfg` file (and for
 future compatibility a dtb file; it is not used currently by the bootloaders
 on the bootdisks).
 
@@ -37,7 +37,7 @@ is a dtb file for kernel 5.x matching your box.
 For openSuse, the files linux and initrd are taken from here
 [download.opensuse.org](https://download.opensuse.org/ports/aarch64/factory/repo/oss/boot/aarch64)
 
-and the grub.cfg file can look like this
+and the `grub.cfg` file can look like this
 
 ```
 menuentry "openSuse Netinst (Tumbleweed)" {
@@ -135,7 +135,7 @@ no longer needed and can be discarded/wiped or reused for something else.
 
 - Note: If you encounter problems with the automatic network detection or
  DHCP setup you can force the installer to ask for static IP settings by
- adding to the kernel command line (in grub.cfg) the following
+ adding to the kernel command line (in `grub.cfg`) the following
  
 ` netsetup=hostip,netmask,gateway,nameserver`
 

@@ -117,7 +117,7 @@ through the initial setup.
 Then, you can install e.g. the kernel `linux-image-current-meson64` and reboot
 with this kernel to have HDMI working again.
 
-The images for specific boards can be run if a simple grub.cfg file is added.
+The images for specific boards can be run if a simple `grub.cfg` file is added.
 For instance, on Ugoos Am6 plus the image for Odroid N2 can be booted and run
 with a file `/boot/grub/grub.cfg` like so (example for release 22.08.1):
 
@@ -133,7 +133,7 @@ initrd /boot/initrd.img-5.19.5-meson64
 #### Ophub's builds
 
 Ophub's [builds](https://github.com/ophub/amlogic-s9xxx-armbian) of Armbian can
-be booted with a simple grub.cfg just like the board specific Armbian images.
+be booted with a simple `grub.cfg` just like the board specific Armbian images.
 However, Ophub's images already have a template for `extlinux.conf` (named
 `extlinux.conf.bak`) which `u-root-bootdisk` can parse.
 Therefore, it is easy to simply edit this file and use `u-root-bootdisk` for

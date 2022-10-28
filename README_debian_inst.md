@@ -11,7 +11,7 @@ terminals.)
 The present writeup describes a workaround to this problem and shows how to do
 an install of a base system of Debian 11 for ARM64 on e.g. a USB stick, which
 can then booted for instance with `u-root-bootdisk` (or any other boot
-mechanism that relies only on a grub.cfg file).
+mechanism that relies only on a `grub.cfg` file).
 Our method is a (slight) variant of the method we have devised for installing
 Ubuntu (cf. the associated README) and uses the Debian tool
 [debootstrap](https://www.debian.org/releases/stable/arm64/apds03.en.html)
@@ -244,16 +244,17 @@ If grub is not installed by default, this is easily fixed by running e.g.
 
 `$ sudo apt install grub-common`
 
-Then your grub.cfg will be updated each time the kernel configuration(s) change.
+Then your `grub.cfg` will be updated each time the kernel configuration(s)
+change.
 
 To get sound working it is necessary on many TV-boxes to run (as user) the
 script `g12_sound.sh` which can be found e.g.
 [here.](https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/blob/master/g12_sound.sh)
 
-We have not set up a dtb file in grub.cfg (only a placeholder) since when
+We have not set up a dtb file in `grub.cfg` (only a placeholder) since when
 booting with `u-root-bootdisk` the dtb used by `u-root` is inherited.
 In general, however, a dtb must be present on the install target disk and
-specified in grub.cfg.
+specified in `grub.cfg`.
 
 ## Devuan install
 
@@ -277,5 +278,5 @@ items:
   add also the unstable repo like so
   `deb http://deb.devuan.org/merged unstable main`
 
-(3) Finally, you also have to edit the entries in the grub.cfg file according
+(3) Finally, you also have to edit the entries in the `grub.cfg` file according
 to what you have in /boot on the install target disk (mounted as /mnt/boot).

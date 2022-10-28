@@ -25,7 +25,7 @@ generic ARM64 generic desktop image, without the need for further installation
 of packages or adaption (except removal of some remnants of the raspi image).
 Since we only replace the kernel on the image the risk of ending up with a non
 bootable image are also drastically reduced:
-As long as kernel, initramfs and grub.cfg files are in place and functional,
+As long as kernel, initramfs and `grub.cfg` files are in place and functional,
 the image will boot.
 
 ## Prerequisites
@@ -97,9 +97,9 @@ onto a USB stick.
   (Again, there may be warnings but they are not critical.)
 
 - Create up a temporary grub file (mostly for first boot with new kernel):
-  Make a grub.cfg file at `/boot/grub/grub.cfg` (as seen from inside the jail;
-  from outside, this location would be `/mnt/boot/grub/grub.cfg`).
-  The grub.cfg file should have one single menu entry like so:
+  Make a `grub.cfg` file at `/boot/grub/grub.cfg` (as seen from inside the
+  jail; from outside, this location would be `/mnt/boot/grub/grub.cfg`).
+  The `grub.cfg` file should have one single menu entry like so:
   
 ```
 menuentry "Ubuntu Jammy (kernel 5.15.0-43)" {
@@ -111,7 +111,7 @@ initrd /boot/initrd.img-5.15.0-43-generic
 }
 ```
 
-- Check that the names of kernel and initramfs in grub.cfg actually match
+- Check that the names of kernel and initramfs in `grub.cfg` actually match
   what you have in `/boot` in chroot jail (i.e. in `/mnt/boot` from outside).
   (Check that the kernel file vmlinuz-\*-generic and initramfs file
   initrd-\*-generic really exist in `/boot` (`/mnt/boot`).)

@@ -13,7 +13,7 @@ which leaves the installed image in a non bootable state.
 The present writeup describes a workaround to this bug and shows how to do a
 clean install of Ubuntu Server ARM64 to e.g. a USB stick, which can then be
 booted for instance with `u-root-bootdisk` (or any other boot mechanism that
-relies only on a grub.cfg file).
+relies only on a `grub.cfg` file).
 Our method relies on the Ubuntu installer iso but uses the iso image only to
 get up to a running state of the installer from which a Ubuntu rootfs from
 [Ubuntu Base](https://wiki.ubuntu.com/Base) can be straightforwardly installed.
