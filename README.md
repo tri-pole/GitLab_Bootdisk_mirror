@@ -15,7 +15,7 @@ All the bootdisks employ a chainloading mechanism based on the Linux
 two variants; one pair of disks based on the
 [`Petitboot`](https://open-power.github.io/petitboot/) boot loader and another
 pair based on the [`u-root`](https://u-root.org/) boot loader.
-The disks are named after the chainloader.
+The disks are named after the boot loader.
 The `Petitboot` boot loader provides a somewhat nicer UI and can boot
 [grub](https://wiki.archlinux.org/title/GRUB) configurations defined in
 `grub.cfg` whereas the `u-root` boot loader can boot grub configurations as well
