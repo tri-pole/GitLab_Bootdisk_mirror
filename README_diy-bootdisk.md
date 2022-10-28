@@ -296,8 +296,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
   The code in the boot ROM on Amlogic SoCs looks for bootloaders on all
   bootable devices, according to a
   [predefined search order](https://u-boot.readthedocs.io/en/latest/board/amlogic/boot-flow.html),
-  (not to be confused with `u-boot`s programmable boot order) and boots the
-  first working such that it finds.
+  (not to be confused with `u-boot`'s programmable boot order) and boots the
+  first working bootloader it finds.
   This means that even if the resident/vendor (on eMMC) version of `u-boot` is
   non functional (for some reason) the code in the boot ROM will scan e.g. SD
   for a bootloader and if there is one, it will be used.

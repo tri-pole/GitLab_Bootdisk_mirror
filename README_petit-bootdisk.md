@@ -109,11 +109,20 @@ up. More info can be found in the README file on `petit-bootdisk`
     "/EFI/BOOT/grub.cfg"
 ```
 
-Finally, the ability to boot from external media (sometimes called "multiboot")
-for the SBC or TV-box must have been enabled.
-For TV-boxes this often amounts to going through a "toothpick" reset with an
-appropriate Linux image attached (such as one of the bootdisks).
-(Descriptions of this procedure are easy to find.)
+Part of the idea with the bootdisk was to be able to have the bootdisk on SD
+and have several different USBs with boot target Linux distros attached during
+boot, and then simply use the bootdisk as a boot selection tool.
+This works as intended on the two platforms tested (see below) but for other
+boxes some experimentation may be needed with e.g. the bootdisk on USB, with
+different `u-boot.ext` etc.
+
+The above assumes that the boot order of `u-boot` is set up so that external
+media is searched first, typically starting with SD (this is sometimes called
+"multiboot").
+If this is not enabled by default, a "toothpick" reset with an appropriate
+Linux image attached (such as one of the bootdisks) can in general be used to
+alter the boot order on TV-boxes. (Descriptions of this procedure are easy to
+find.)
 
 Platforms tested
 ----------------

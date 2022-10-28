@@ -3,31 +3,33 @@
 `u-root-bootdisk` is the name of a utility disk for booting various forms of
 Linux images on ARM64 single board computers (SBC) and TV-boxes with a resident
 `u-boot`.
-The `u-root-bootdisk` disk image can be copied (by e.g. the Linux `dd` command)
-to an SD card or a USB stick and this card/stick can be used as a middle stage
-in the normal `u-boot`-based booting process.
-In this middle stage a boot manager based on `u-root` can be launched which
-is capable of autodetecting bootable configurations and executing the boot.
+Booting is done via chainloading of another bootloader, based on `u-root`,
+which is located on `u-root-bootdisk` and acts as a middle stage in the
+booting process.
+When booting a SBC/TV-box with a `u-root-bootdisk` attached, the boot process
+pauses at the `u-root` boot menu where a list of bootable devices is displayed.
+After selection of a boot menu entry, the new boot configuration (kernel and
+initramfs) is loaded into memory and booting proceeds with the new
+configuration (utilizing a `kexec()` call).
 
 In more detail it works as follows:
-After the board resident `u-boot` has has finished the board initialization
-stages it loads a default Linux kernel and initramfs on
+The board resident `u-boot` scans storage devices for bootable configurations,
+as described by the boot scripts and configuration files known to `u-boot`.
+It will detect and load a default Linux kernel and initramfs on
 `u-root-bootdisk`.
-This kernel and initramfs are specially crafted to run (a subset of) the tools
-from [u-root](https://github.com/u-root).
-In `u-root`, the user is presented with a prompt (think BusyBox) at which the
-user can e.g. enter the command "boot".
-This initiates a scan for bootable grub (or syslinux) configurations on the
-attached media and the results of the scan are presented in a boot menu.
-When an entry is selected the `localboot()` function of `u-root` loads the new
-kernel and initramfs from the final boot target Linux image, and then executes
-a `kexec()` call into the target kernel-initramfs.
-
+This kernel and initramfs combination are specially crafted to run (a subset
+of) the tools from [u-root](https://github.com/u-root).
+These tools will initiate a scan for for bootable grub (or syslinux)
+configurations on the attached media and the results of the scan will be
+presented in a boot menu.
+When an entry is selected, a function of `u-root` loads the new kernel and
+initramfs from the final boot target Linux image, and then executes a `kexec()`
+call into the target kernel-initramfs.
 The boot process is also described in the README files on the bootdisks.
 
 It should be noted that since `u-root` scans also for bootable syslinux
 configurations (e.g. extlinux.conf) `u-root-bootdisk` can boot also disk
-images that are set up for chainloading with `u-boot.ext` (simply beacuse
+images that are set up for chainloading with `u-boot.ext` (simply because
 `u-root` bypasses `u-boot.ext` on the image to be booted). Therefore,
 `u-root-bootdisk` implements a unified boot solution for the final stages on
 booting and provides a separating layer between the SoC/board specific parts
@@ -111,18 +113,20 @@ On each partition searched, the `u-root` function `grub()` used in
 `localboot()` searches to a depth of 4 all subdirectories of
 `boot,EFI,efi,grub,grub2` for the file `grub.cfg`.
 
-Part of the idea with the `u-root-bootdisk` was to be able to have the bootdisk
-on SD and then have several different USBs with boot target Linux distros
-attached during boot and then simply use the bootdisk as a boot selection tool.
+Part of the idea with the bootdisk was to be able to have the bootdisk on SD
+and have several different USBs with boot target Linux distros attached during
+boot, and then simply use the bootdisk as a boot selection tool.
 This works as intended on the two platforms tested (see below) but for other
 boxes some experimentation may be needed with e.g. the bootdisk on USB, with
-different `u-boot.ext`, with target image(s) connected from boot or only after
-reaching `u-root` prompt.
-Finally, the ability to boot from external media (sometimes called "multiboot")
-for the SBC or TV-box must have been enabled.
-For TV-boxes this often amounts to going through a "toothpick" reset with an
-appropriate Linux image attached (such as one of the bootdisks).
-(Descriptions of this procedure are easy to find.)
+different `u-boot.ext` etc.
+
+The above assumes that the boot order of `u-boot` is set up so that external
+media is searched first, typically starting with SD (this is sometimes called
+"multiboot").
+If this is not enabled by default, a "toothpick" reset with an appropriate
+Linux image attached (such as one of the bootdisks) can in general be used to
+alter the boot order on TV-boxes. (Descriptions of this procedure are easy to
+find.)
 
 Platforms tested
 ----------------
