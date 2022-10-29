@@ -14,7 +14,8 @@ configuration (utilizing a `kexec()` call).
 (The process is analogous to that of `u-root`, see README_u-root-bootdisk.md)
 
 `Petitboot` is capable of reading and parsing several different boot
-configuration file formats, such as grub setups, syslinux and `Petitboot`'s own
+[configuration file formats](https://open-power.github.io/petitboot/func/parsers.html),
+such as grub setups, syslinux and `Petitboot`'s own
 [native format.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 More documentation about `Petitboot` can be found
 [here](https://open-power.github.io/petitboot).

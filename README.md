@@ -3,9 +3,10 @@
 This repo contains information relating to
 [bootdisks](https://en.wikipedia.org/wiki/Boot_disk) for TV-boxes/SBCs based on
 the ARM64 architecture.
-With these bootdisks you can boot e.g. many ("generic") ARM64 Linux images with
-UEFI+grub from major distributions such as Fedora 36, Ubuntu (e.g. Jammy),
-Debian (e.g. Bullseye) and openSuse (Leap 15.4 and Tumbleweed).
+With these bootdisks you can boot e.g. many ("generic") ARM64 Linux images
+from major distributions that have grub boot configurations, such as Fedora 36,
+Ubuntu (e.g. Jammy), Debian (e.g. Bullseye) and openSuse (Leap 15.4 and
+Tumbleweed).
 A good use case for TV-boxes is to have the bootdisk installed on SD and have
 several Linux distros installed on USBs to choose from.
 
@@ -17,12 +18,13 @@ two variants; one pair of disks based on the
 pair based on the [`u-root`](https://u-root.org/) boot loader.
 The `Petitboot` boot loader provides a somewhat nicer UI and can boot
 [grub](https://wiki.archlinux.org/title/GRUB) configurations defined in
-`grub.cfg` whereas the `u-root` boot loader can boot grub configurations as well
-as a subset of
+`grub.cfg` whereas the `u-root` boot loader can boot grub configurations as
+well as a subset of
 [syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
 configurations,
 [including](https://github.com/u-root/u-root/blob/main/pkg/boot/syslinux/syslinux.go)
-the `extlinux.conf` configurations used by `u-boot`.
+the `extlinux.conf` configurations used by
+[`u-boot`](https://en.wikipedia.org/wiki/Das_U-Boot).
 
 General info about the bootdisks `petit-bootdisk` and `u-root-bootdisk`
 (incl. download links) can can be found in the files
@@ -41,23 +43,22 @@ images.
 
 #### The easier way (with scripts)
 
-There are three scripts available to generate images (as well as downloads of
-the images).
-These images are CLI/server images but is it easy to add a graphical desktop;
+There are three scripts available to generate images (and there are downloads
+of the images available).
+The images are CLI/server images but is it easy to add a graphical desktop;
 typically it can be installed with a single command (see comments inside the
 scripts).
 All scripts can be run natively on an ARM64 Ubuntu/Debian machine but also on
 an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static) to generate an
 ARM64 image.
 The generated image can be booted using any of the bootdisks but also with
-[`u-boot`](https://en.wikipedia.org/wiki/Das_U-Boot) (using the
-resident/vendor version installed on the TV-box/SBC).
+`u-boot` (using the resident/vendor version installed on the TV-box/SBC).
 
-__Opbuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it
-is easy to produce an Ubuntu image (Focal, Jammy, Kinetic) with
+__Opbuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
+easy to produce an Ubuntu image (Focal, Jammy, Kinetic) with
 [Ophub/Flippy kernel.](https://github.com/ophub/kernel/tree/main/pub/stable)
-This kernel is adapted specifically for Amlogic TV-boxes (but has support also
-for Rockchip and Allwinner).
+This kernel is adapted for Amlogic TV-boxes but has support also for Rockchip
+and Allwinner.
 The script uses a daily official build of the Ubuntu
 [rootfs](https://cdimage.ubuntu.com/ubuntu-base) as a base.
 Images built using this script can be
