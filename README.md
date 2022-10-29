@@ -15,7 +15,6 @@ All the bootdisks employ a chainloading mechanism based on the Linux
 two variants; one pair of disks based on the
 [`Petitboot`](https://open-power.github.io/petitboot/) boot loader and another
 pair based on the [`u-root`](https://u-root.org/) boot loader.
-The disks are named after the boot loader.
 The `Petitboot` boot loader provides a somewhat nicer UI and can boot
 [grub](https://wiki.archlinux.org/title/GRUB) configurations defined in
 `grub.cfg` whereas the `u-root` boot loader can boot grub configurations as well
@@ -47,6 +46,12 @@ the images).
 These images are CLI/server images but is it easy to add a graphical desktop;
 typically it can be installed with a single command (see comments inside the
 scripts).
+All scripts can be run natively on an ARM64 Ubuntu/Debian machine but also on
+an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static) to generate an
+ARM64 image.
+The generated image can be booted using any of the bootdisks but also with
+[`u-boot`](https://en.wikipedia.org/wiki/Das_U-Boot) (using the
+resident/vendor version installed on the TV-box/SBC).
 
 __Opbuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it
 is easy to produce an Ubuntu image (Focal, Jammy, Kinetic) with
@@ -55,11 +60,6 @@ This kernel is adapted specifically for Amlogic TV-boxes (but has support also
 for Rockchip and Allwinner).
 The script uses a daily official build of the Ubuntu
 [rootfs](https://cdimage.ubuntu.com/ubuntu-base) as a base.
-It can be run natively on an ARM64 Ubuntu/Debian machine but also non natively
-on an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static) to generate an
-ARM64 image.
-The generated image can be booted using any of the bootdisks but also using
-[`u-boot`](https://en.wikipedia.org/wiki/Das_U-Boot).
 Images built using this script can be
 [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
 
@@ -68,19 +68,11 @@ __Debuntu:__ Debian (Bullseye) and Ubuntu (Focal, Jammy, Kinetic) images of
 [`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which employs the
 [debootstrap](https://wiki.debian.org/Debootstrap) mechanism to create the base
 system.
-Also this script can be run natively on an ARM64 Ubuntu/Debian machine as well
-as non natively on an x86_64 Ubuntu/Debian machine to generate an ARM64 image.
-The generated image can be booted using any of the bootdisks but also using
-`u-boot`.
 Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgSd5w5tnP9COEgeZ?e=zxF2uB).
 
 __Arch Linux:__ An image of Arch Linux ARM64 can be produced with the script
 [`archlnx_mkimg.bash`](archlnx_mkimg.bash) which uses the official Arch Linux
 [rootfs](http://os.archlinuxarm.org/os) tarball (with kernel) as a basis.
-Also this script can be run natively on an ARM64 Ubuntu/Debian machine as well
-as non natively on an x86_64 Ubuntu/Debian machine to generate an ARM64 image.
-The generated image can be booted using any of the bootdisks but also using
-`u-boot`.
 An image built using this script can be
 [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgUmwtYSHQ2O5Al1T?e=wdBIPh).
 

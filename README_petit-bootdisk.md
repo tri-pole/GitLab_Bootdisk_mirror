@@ -70,7 +70,7 @@ Caveats
 At present, the following caveats exist for booting ARM64 with `petit-bootdisk`:
 
 - The device tree (dtb) blob present on the target image (as indicated in the
-grub.cfg or extlinux.conf file) is not picked up and loaded along with the
+`grub.cfg` or `extlinux.conf` file) is not picked up and loaded along with the
 target kernel and initramfs.
 Instead, the dtb residing on the `petit-bootdisk` (and used by the kernel
 running `Petitboot`) is inherited.

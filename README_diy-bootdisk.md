@@ -318,6 +318,6 @@ and for a non chainloaded (`-nc`) disk it could look like this
   Instructions on how to copy the bootloader onto the SD can be found in many
   places.
   The operation is typically done in two passes with the `dd` command; first
-  the bootloader signature code in the beginning of sector 0 (MBR) and then
-  the body of the bootloader code in sector 1 and onward in the gap before
-  first partition.
+  the bootloader signature/bootstrap code in the first part of sector 0 (MBR)
+  and then the body of the bootloader code in sector 1 and onward in the gap
+  before first partition.

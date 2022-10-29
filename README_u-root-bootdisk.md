@@ -94,13 +94,13 @@ Caveats
 At present, the following three caveats exist for booting ARM64 with `u-root`:
 
 - The device tree (dtb) blob present on the target image (as indicated in the
-grub.cfg or extlinux.conf file) is not picked up and loaded along with the
+`grub.cfg` or `extlinux.conf` file) is not picked up and loaded along with the
 target kernel and initramfs.
 Instead, the dtb residing on the u-root-bootdisk (and used by the `u-root`
 kernel) is inherited.
 The shortcoming seems to lie in the `localboot()` function (since some lower
 level functions support dtb's, see e.g. `load_linux_arm64()`) where the
-`devicetree` (ARM64) directive in grub.cfg files is not recognized/parsed.
+`devicetree` (ARM64) directive in `grub.cfg` files is not recognized/parsed.
 
 - The file system where the target kernel and initramfs reside must be one of
 the following four types; FAT16, FAT32, EXT4 or XFS.
@@ -108,7 +108,7 @@ the following four types; FAT16, FAT32, EXT4 or XFS.
 scan so e.g. an EXT4 file system on a partition inside a hybrid iso image is
 permitted.)
 
-- The grub.cfg file must reside in one of a few standard locations:
+- The `grub.cfg` file must reside in one of a few standard locations:
 On each partition searched, the `u-root` function `grub()` used in
 `localboot()` searches to a depth of 4 all subdirectories of
 `boot,EFI,efi,grub,grub2` for the file `grub.cfg`.
