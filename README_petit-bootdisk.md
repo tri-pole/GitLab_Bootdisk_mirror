@@ -52,7 +52,7 @@ md5sums of latest release(s):
 
 `petit-bootdisk-0v24.tgz        9bbbd0dd30a12ba4d3a9689eb003c4d8`
 
-`petit-bootdisk-nc_0v24.tgz     3f91bf73d5eb7acea2671a4a23aebf18`
+`petit-bootdisk-nc_0v25.tgz     5e315187f6dab5fd9057d97224a67def`
 
 `bootdisk_skel.img.gz           6c8db71655b02a0aec70135a81a9c74c`
 

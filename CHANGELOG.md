@@ -38,6 +38,11 @@ petit-bootdisk-nc
 
 # u-root-bootdisk-nc:
 
+## [v0.33] - 22-10-30
+
+### Changed
+ - New boot scripts and changed to uImage.
+
 ## [v0.32] - 22-10-22
 
 ### Changed
@@ -104,6 +109,11 @@ petit-bootdisk-nc
  - First upload.
 
 # petit-bootdisk-nc:
+
+## [v0.25] - 22-10-30
+
+### Changed
+ - New boot scripts and changed to uImage.
 
 ## [v0.23] - 22-09-27
 

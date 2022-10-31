@@ -68,13 +68,9 @@ material):
 
 md5sums of latest release:
 
-`u-root-bootdisk-0v30.tgz        9924ae4fb88ffac5c142c60b6ff2ebbc`
-
 `u-root-bootdisk-0v32.tgz        f0a2838c986b6000d1771e75022fcabe`
 
-`u-root-bootdisk-nc_0v30.tgz     0f5de5359793f58806b8422ccca91e6b`
-
-`u-root-bootdisk-nc_0v32.tgz     3d5ca8c81798c274810a1de95a55cb1f`
+`u-root-bootdisk-nc_0v33.tgz     fa059ac2c1bccd4a97a3bc2bda0c7351`
 
 `bootdisk_skel.img.gz            6c8db71655b02a0aec70135a81a9c74c`
 
