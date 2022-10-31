@@ -3,8 +3,7 @@
 ## Background
 
   The bootdisks were developed for devices based on the Amlogic s922x SoC
-  (e.g. Beelink GT King pro and Ugoos Am6 plus) but there is nothing on the
-  disks that is critically dependent on this SoC.
+  but there is nothing on the disks that is critically dependent on this SoC.
   In order to facilitate do-it-yourself versions of these bootdisks, and to
   encourage porting/adapting to other TV-boxes/SBCs, we give here a breakdown
   of the structure of the disks and instructions for how to reproduce them.
@@ -32,9 +31,10 @@
 
 ## Prerequisites
 
-- Materials: The simplest is to start with either `u-root-bootdisk` (if the
-  goal is to produce a chainloaded version, which is a good start) or
-  `u-root-bootdisk-nc` (if the goal is a non chainloaded version).
+- Materials: The simplest is to start with either `u-root-bootdisk` or
+  `petit-bootdisk` (if the goal is to produce a chainloaded version), or
+  `u-root-bootdisk-nc` or `petit-bootdisk-nc` (if the goal is a non
+  chainloaded version).
   The files most likely to need customization for other TV-boxes/SBCs are the
   the kernel, the dtb file and the chainloader `u-boot.ext` (for chainloaded
   disk).
@@ -44,11 +44,11 @@
   kernel functionality is not required).
   However, any combination of kernel, dtb and chainloader (for a chainloaded
   disk) that works to boot the box otherwise will also work for the bootdisk.
-  
+
 - Skillz: A bit of command line experience, but not much beyond knowing how
   to burn/flash an image using the Linux `dd` command and using `fdisk` to
   set up a MBR partition table on an SD/USB.
-  (Being able to format and mount the disk is also necessary.)
+  Being able to format and mount the disk is also necessary, of course.
 
 ## Steps in the procedure
 
@@ -65,9 +65,9 @@
   Sectors 4096-S: Partition 1, type 'c' in fdisk, formatted with vfat.
 
   (The reason why we recommend a 2M gap is that the gap can be good to have if
-  we later decide to install a "hidden" bootloader. Such a bootloader is not
-  required for the normal use of the bootdisks but is useful if you later want
-  to convert the bootdisk into a rescue disk, see below.)
+  we later decide to install a "hidden" (`u-boot`) bootloader. Such a
+  bootloader is not required for the normal use of the bootdisks but is useful
+  if you later want to convert the bootdisk into a rescue disk, see below.)
 
   The value of S in the line above above is mostly dependent on how many
   kernels are needed (e.g. for experimentation); a value of S which corresponds
@@ -79,7 +79,8 @@
 
   #### Bootloader
 
-  The bootloader can be either the board resident (vendor) version of `u-boot`
+  The bootloader that loads the initramfs which contains `Petitboot/u-root` on
+  the bootdisk can be either the board resident/vendor version of `u-boot`
   (for a non chainloaded disk) or a chainloader in the form of a binary file
   `u-boot.ext` placed in the root directory on the disk (see below).
   In the latter case, the version of `u-boot.ext` required depends on the SoC
@@ -88,7 +89,9 @@
   [Ophub](https://github.com/ophub/amlogic-s9xxx-armbian) and some of them
   can also be found on the chainloaded bootdisks.
   (Typically, these binaries have a name which is a variant of `u-boot.bin`
-  and Ophub collectively refer to them as "overload" bootloaders.)
+  and Ophub collectively refer to them as "overload" bootloaders, to
+  distinguish them from the ones to be used as "hidden" bootloaders which he
+  refers to simply as "bootloaders".)
 
   - *Only for chainloaded disk*
   
@@ -119,30 +122,34 @@ and for a non chainloaded (`-nc`) disk it could look like this
 ```
   ├── aml_autoscript
   ├── aml_autoscript.zip
-  ├── boot.scr
   ├── dtbs
   │   └── amlogic
   │       └── meson-g12b-gtking-pro.dtb
-  ├── s905_autoscript
-  ├── uEnv.txt
+  ├── uEnv.ini
   ├── uInitrd
-  └── zImage
+  └── uImage
 ```
 
   ### Details of the files
 
   #### Script files
 
-  The three files `aml_autoscript, boot.scr, s905_autoscript` can be copied
-  either from `u-root-bootdisk` or `petit-bootdisk` (i.e. chainloader version)
-  or downloaded directly from
+  The files `aml_autoscript` and `s905_autoscript` are the two main script
+  files that control the boot sequence of `u-boot` (i.e. how resident/vendor
+  `u-boot` scan devices for bootable configurations).
+  We use slightly different versions of these file on the chainloaded and non
+  chainloaded bootdisks, however.
+  For the non chainloaded (`-nc`) disks we use scripts from
+  [Manjaro ARM](https://wiki.manjaro.org/index.php/Manjaro-ARM) (see the README
+  files on the bootdisk) and for the chainloaded disks we use scripts from
   [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts)
   (see also the script `armbian-install` in
   [Ophub's repo](https://github.com/ophub/amlogic-s9xxx-armbian)).
-  (These files are basically text files but with Amlogic signatures in the
-  headers, produced by the `mkimage` command from the `u-boot-tools` package.)
+  These files are basically text files but with Amlogic signatures in the
+  headers, produced by the `mkimage` command (often found in the
+  `u-boot-tools` package).
 
-  The file `aml_autoscript` is strictly only needed when multiboot is being
+  The file `aml_autoscript` is strictly only needed when "multiboot" is being
   enabled on a TV-box through the "toothpick procedure" (when the contents of
   this script file is read, parsed and stored internally on the TV-box, cf.
   the code inside `aml_autoscript` and
@@ -150,26 +157,22 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   The zero-length file `aml_autoscript.zip` is just a placeholder file.
   (My understanding is that the presence of this file is required on some
-  TV-boxes to trigger the board resident `u-boot` to read and parse
-  `aml_autoscript` when enabling multiboot.)
+  TV-boxes to trigger the board resident/vendor `u-boot` to read and parse
+  `aml_autoscript` when enabling "multiboot".)
 
   The script file `s905_autoscript` is always needed (it is referenced by
   `aml_autoscript`).
 
   - *Only for non chainloaded disk*
 
-  The file `boot.scr` is required by the board resident `u-boot` when
-  booting from SD (due to fall-through of `s905_autoscript`).
-
-  The `uEnv.txt` file is a small text file where the kernel, initramfs and
-  dtb file is defined.
-  It can for instance look like this
+  The `uEnv.ini` file is a small text file where the dtb file and the kernel
+  command line are specified.
+  It can for instance look like this (the `console` parameter varies between
+  SoCs)
 
 ```
-  LINUX=/zImage
-  INITRD=/uInitrd
-  FDT=/dtbs/amlogic/meson-g12b-gtking-pro.dtb
-  APPEND=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 net.ifnames=0 nr_cpus=1
+dtb_name=/dtbs/amlogic/meson-g12b-gtking-pro.dtb
+bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 net.ifnames=0 loglevel=1 nr_cpus=1 vga=773
 ```
 
   The kernel command line argument `nr_cpus=1` is sometimes needed to force
@@ -180,38 +183,49 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   On a chainloaded disk the kernel, initramfs and dtb is defined in the text
   file `extlinux.conf`.
-  A simplistic version of the file `extlinux.conf` (for an Amlogic SoC) can
-  look like this (the `console` parameter varies between SoCs)
+  A simplistic version of the file `extlinux.conf` can look like this
 
 ```
   LINUX=/vmlinuz
   INITRD=/initramfs.cpio.gz
   FDT=/dtbs/amlogic/meson-g12b-gtking-pro.dtb
-  APPEND=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 net.ifnames=0 nr_cpus=1
+  APPEND=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 net.ifnames=0 loglevel=1 nr_cpus=1 vga=773
 ```
  
   For the kernel command line argument `nr_cpus=1`, see above.
 
   #### Kernel
 
-  A good place for the `vmlinuz` file (chainloaded disk) or `zImage` (non
+  A good place for the `vmlinuz` file (chainloaded disk) or `uImage` (non
   chainloaded disk) is at the root of the disk, as indicated above.
-  (The kernel file `zImage` on the non chainloaded disk is just a renamed
-  version of a `vmlinuz` file from a chainloaded disk.)
-  On `u-root-bootdisk` there are several kernels to choose from which should
-  work with Amlogic, Allwinner or Rockchip SoCs (see the `config-` files on
-  `u-root-bootdisk`).
+  The `uImage` file is just a `u-boot` tagged version of a `vmlinuz` file
+  which is made using the `mkimage` command like so
+  
+  `$ mkimage -n "uImage" -A arm64 -O linux -T kernel -C none -a 0x1080000 -e 0x1080000 -d vmlinuz uImage`
+  
+  (The load address `-a` and entry point `-e` parameters here are for
+  [Amlogic SoCs](https://linux-meson.com/howto.html), for other SoCs they may
+  need to be adjusted.)
+  Note also that in the ARM community, despite the name, the `vmlinuz` kernel
+  images are often not compressed, and hence the use of `-C none` above.
+  A simple application of the `file` command can give more info about a given
+  `vmlinuz` file.)
+
+  On e.g. `u-root-bootdisk` there are several kernels to choose from which
+  should work with Amlogic, Allwinner or Rockchip SoCs (see the `config-` files
+  on e.g. `u-root-bootdisk`).
   These kernels are compiled using [unifreq's](https://github.com/unifreq)
   version of the Linux kernel source by employing
   [Ophub's](https://github.com/ophub/amlogic-s9xxx-armbian) build framework.
   A few extra options have been enabled over the default kernel config such
-  as kexec and support for btrfs and iso filesystems, see the `config-` files
+  as kexec and support for btrfs and iso file systems, see the `config-` files
   on the bootdisks.
 
   #### dtb file
 
   The dtb file is typically placed at `dtbs/boardmaker/boardfile.dtb`.
-  (A selection of dtb files to start with is provided on `u-root-bootdisk`.)
+  (A selection of dtb files to start with is provided on e.g.
+  `u-root-bootdisk`.)
 
   #### initramfs
 
@@ -219,11 +233,11 @@ and for a non chainloaded (`-nc`) disk it could look like this
   `Petitboot` is contained in a file with a name like `initramfs.cpio.gz` (as
   in the listing above).
   For the non chainloaded disk, the gzipped cpio archive containing the
-  initramfs has been converted to u-boot format by adding a small header to
+  initramfs has been converted to `u-boot` format by adding a small header to
   the file.
   The resulting file is called `uInitrd` (as in the listing above).
-  This conversion operation has been done using the `mkimage` command from the
-  `u-boot-tools` package (see below).
+  This conversion operation has been done using the `mkimage` command
+  (see below).
   
   Next we outline the contents of the initramfs and how to edit/adapt the
   initramfs, and where find sources and how to recreate the initramfs.
@@ -289,7 +303,6 @@ and for a non chainloaded (`-nc`) disk it could look like this
   In the `init` script/file a few additions/changes have been made in order to
   enable a smooth boot up and turning off of network connections etc.
   It is easy to introduce further customizations like this.
-
 
   #### Adding a ("hidden") bootloader
 

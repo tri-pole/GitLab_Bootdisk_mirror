@@ -27,15 +27,18 @@ Variants
 --------
 
 The `petit-bootdisk` exists in two variants; one with the chainloader
-`u-boot.ext` and one without the chainloader (which boots using resident
-`u-boot` together with boot scripts on the `petit-bootdisk`).
-The latter bootdisk has a name ending in `-nc` ("no chainload") and enables
-a faster boot process but may only work for Amlogic s922x SoCs whereas the
-bootdisk using chainloading can (probably) be made to work also for other SoCs
-(several alternative `u-boot.ext` are available on the chainloader bootdisk).
+`u-boot.ext` and one without the chainloader (which boots using board
+resident/vendor `u-boot` together with boot scripts on the `petit-bootdisk`).
+The latter bootdisk has a name ending in `-nc` ("no chainload") and enables a
+faster boot process but may not work for all TV-boxes/SBCs (this depends on the
+resident/vendor version of `u-boot`) whereas the bootdisk using chainloading
+can probably be made to work for most TV-boxes/SBCs (several alternative
+`u-boot.ext` are available on the chainloader bootdisk).
+The non chainloaded disk is the easiest to set up, however.
 
 (Note that the term chainloading is used to describe two diffrent things here.
-First, the bootdisk itself which is chainloaded by the board resident `u-boot`.
+First, the bootdisk itself which is chainloaded by the board resident/vendor
+`u-boot`.
 Second, on one of the bootdisks the binary `u-boot.ext` is used to chainload
 the kernel and initramfs that runs `Petitboot`.)
 
