@@ -192,8 +192,6 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   APPEND=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 net.ifnames=0 loglevel=1 nr_cpus=1 vga=773
 ```
  
-  For the kernel command line argument `nr_cpus=1`, see above.
-
   #### Kernel
 
   A good place for the `vmlinuz` file (chainloaded disk) or `uImage` (non
@@ -265,7 +263,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   
   ##### Doing customizations of the initramfs
 
-  The initramfs containing `u-root` can be recreated and adapted by
+  __u-root:__ The initramfs containing `u-root` can be recreated and adapted by
   downloading and compiling the `u-root` code from
   [u-root's Github repo](https://github.com/u-root/u-root).
   (We have cross compiled `u-root` using the instructions posted there.)
@@ -273,8 +271,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   `boot`. It has been compiled from a `u-root` release (tag) as indicated in
   the initramfs name, the current version is v0.10.0.
   
-  The initramfs for `Petitboot` has been compiled and assembled according by
-  following, largely, the instructions posted at
+  __Petitboot:__ The initramfs for `Petitboot` has been compiled and assembled
+  by following, largely, the instructions posted at
   [Raptor Engineering](https://www.raptorengineering.com/content/kb/1.html)
   (see also the comments in the README file on the bootdisk).
   For recreation and adaption of this package the sources below must be
@@ -286,7 +284,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   where also more Petitboot links can be found).
   It was based on release (tag) v1.13.
 
-  The initramfs also contains a build of the (full) `ip` command from
+  The Petitboot initramfs also contains a build of the (full) `ip` command from
   [iproute2](https://github.com/shemminger/iproute2), the `udevadm` daemon
   from [systemd](https://github.com/systemd/systemd), the package
   [kexec](https://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git),
@@ -298,8 +296,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   [buildroot](https://buildroot.org/)
   for handling of dependencies and building.)
 
-  A few script files have been added to the initramfs as well, most notably a
-  hack to produce a `shutdown` command and a fake `dmidecode` command.
+  A few script files have been added to the Petitboot initramfs as well, most
+  notably a hack to produce a `shutdown` command and a fake `dmidecode` command.
   In the `init` script/file a few additions/changes have been made in order to
   enable a smooth boot up and turning off of network connections etc.
   It is easy to introduce further customizations like this.
