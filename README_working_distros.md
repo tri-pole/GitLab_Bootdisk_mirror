@@ -15,12 +15,16 @@ The installation target for the Linux distribution is USB everywhere below
 
 The list covers distributions that have been tested and found working on
 Beelink GT King Pro and Ugoos Am6 plus (both Amlogic s922x).
+The list doesn't include images made with our image making scripts (e.g. for
+Ubuntu, Debian, ArchLinux) since these images can all be booted both with the
+bootdisks and with `u-boot`.
 
 Unless otherwise noted, everything works as intended on the distributions
 listed (HDMI video, HDMI sound, Ethernet, WiFi, Bluetooth), but see the caveats
 below.
-Also, unless otherwise noted, the editions of the distributions listed are the
-latest stable ones (e.g. Ubuntu Jammy and Debian 11.4).
+Also, unless otherwise noted (and where applicable), the editions of the
+distributions listed are the latest stable or long term stable (e.g. Debian
+Bullseye and Ubuntu Jammy).
 
 ### Caveats
 

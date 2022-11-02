@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ubuntu_mkimg.bash (a.k.a. opbuntu_mkimg.bash)
-# 22-10-09: v0.18
+# 22-11-02: v0.19
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
@@ -111,7 +111,7 @@ compressed_img=yes # {yes,no}
 # For a list of currently available kernel version numbers, see
 # https://github.com/ophub/kernel/tree/main/pub/stable
 # (but note that the download path on Github is slightly different, see below).
-ophub_kvers="6.0.5"
+ophub_kvers="6.0.6"
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
 ophub_krel=${ophub_kvers}"-flippy-78+" # Kernel name/release str., plain text.
@@ -351,7 +351,7 @@ EOF
 )
 
 aml_autoscript=$(cat <<"EOF"
-# Standard aml_autoscript to set boot order: mmc/SD, USB, emmc
+# Standard aml_autoscript to set u-boot boot order: mmc/SD, USB, emmc
 # Search for *_autoscript on these device types and execute the first such script found.
 # Sourced from Manjaro ARM.
 # Recompile with mkimage -A arm -O linux -T script -C none -d aml_autoscript.txt aml_autoscript
@@ -370,7 +370,7 @@ EOF
 )
 
 s905_autoscript=$(cat <<"EOF"
-# Standard s905_autoscript to set boot execution steps (for mmc/SD and USB).
+# Standard s905_autoscript to set u-boot execution steps for SD and USB.
 # Sourced from Manjaro ARM.
 # Recompile with mkimage -A arm -O linux -T script -C none -d s905_autoscript.txt s905_autoscript
 # (1) Try chainloader u-boot.ext, typically with boot conf. in extlinux.conf
@@ -388,6 +388,23 @@ setenv devnum 0
 run try_boot_start
 setenv devtype usb
 for devnum in 0 1 2 3 ; do run try_boot_start ; done
+EOF
+)
+
+# This is not used for ordinary SD/USB install (only here for advanced users).
+emmc_autoscript=$(cat <<"EOF"
+# Standard emmc_autoscript to set u-boot execution steps for emmc.
+# Sourced from Manjaro ARM.
+# Recompile with mkimage -A arm -O linux -T script -C none -d emmc_autoscript.txt emmc_autoscript
+# Performs the same actions as under step (2) in s905_autoscript but for emmc (i.e. only for devtype mmc and devnum 1).
+setenv env_addr 0x1040000
+setenv initrd_addr 0x13000000
+setenv boot_start 'bootm ${loadaddr} ${initrd_addr} ${dtb_mem_addr}'
+setenv addmac 'if printenv mac; then setenv bootargs ${bootargs} mac=${mac}; elif printenv eth_mac; then setenv bootargs ${bootargs} mac=${eth_mac}; fi'
+setenv try_boot_start 'if fatload ${devtype} ${devnum} ${loadaddr} uImage; then if fatload ${devtype} ${devnum} ${initrd_addr} uInitrd; then fatload ${devtype} ${devnum} ${env_addr} uEnv.ini && env import -t ${env_addr} ${filesize} && run addmac; fatload ${devtype} ${devnum} ${dtb_mem_addr} ${dtb_name} && run boot_start; fi;fi'
+setenv devtype mmc
+setenv devnum 1
+run try_boot_start
 EOF
 )
 
@@ -595,6 +612,18 @@ scripts used on Ophub's images https://github.com/ophub/amlogic-s9xxx-armbian
 EOF
 )
 
+README_altkernels=$(cat <<"EOF"
+There is no mechanism implemented for automatically updating the kernel (unless
+the Ubuntu kernel is used, see below). However, updating the kernel manually is
+easy since Ophub provides tarballs with kernels (and pre built initramfs) from
+several branches at https://github.com/ophub/amlogic-s9xxx-armbian
+The Ubuntu kernel can also be installed in the usual way via e.g. apt or
+aptitude (the package name is linux-image-generic).
+There are also some Tripole builds of kernels (using kernel.org source)
+available at https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV
+EOF
+)
+		    
 README_initramfs=$(cat <<"EOF"
 We have not imlemented any mechanism for automatic rebuilding of the initramfs
 when the kernel is updated. (However, the ordinary triggers for rebuilding of
@@ -874,10 +903,13 @@ echo -n -e ${i_msg}" Setting up script files and dtb on boot partition..."
 touch aml_autoscript.zip
 echo -e "$aml_autoscript" >aml_autoscript.txt
 echo -e "$s905_autoscript" >s905_autoscript.txt
+echo -e "$emmc_autoscript" >emmc_autoscript.txt # Not used on std. SD/USB inst.
 mkimage -A arm -O linux -T script -C none \
         -d aml_autoscript.txt aml_autoscript >/dev/null
 mkimage -A arm -O linux -T script -C none \
         -d s905_autoscript.txt s905_autoscript >/dev/null
+mkimage -A arm -O linux -T script -C none \
+        -d emmc_autoscript.txt emmc_autoscript >/dev/null
 echo -e "$uEnv" >uEnv.ini
 cp ${rootfs_mnt}/boot/dtbs/amlogic/${dtbfile_name} .
 echo " Done."
@@ -910,6 +942,11 @@ echo " Done."
 # Some info about how to rebuild initramfs.
 echo -n -e ${i_msg}" Writing instructions for rebuilding initramfs..."
 echo -e "$README_initramfs" >README_initramfs.txt
+echo " Done."
+
+# Some info about alternate kernels.
+echo -n -e ${i_msg}" Writing information about updating/alternate kernels..."
+echo -e "$README_altkernels" >README_altkernels.txt
 echo " Done."
 
 cd $imgfile_dir

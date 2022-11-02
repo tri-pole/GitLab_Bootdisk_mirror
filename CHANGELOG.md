@@ -168,6 +168,11 @@ petit-bootdisk-nc
 
 # ubuntu_mkimg.bash:
 
+## [v0.19] 22-11-02
+
+### Added
+ - Some more info e.g. in READMEs.
+ 
 ## [v0.18] 22-10-09
 
 ### Added

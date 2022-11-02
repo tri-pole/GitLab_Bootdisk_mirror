@@ -332,3 +332,18 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   the bootloader signature/bootstrap code in the first part of sector 0 (MBR)
   and then the body of the bootloader code in sector 1 and onward in the gap
   before first partition.
+
+  #### Install to eMMC
+
+  It is straightforward to install the contents of either `petit-bootdisk-nc`
+  or `u-root-bootdisk-nc` to a vfat partition on eMMC.
+  With such an installation, the TV-box/SBC has a boot manager that can
+  handle booting of Linux from eMMC and also from removable media SD and USB.
+  The only thing that needs to be changed, compared to an installation on
+  SD/USB, is that a bootscript emmc_autoscript has to be addded.
+  (A version of the script emmc_autoscript is outlined in the file
+  `ubuntu_mking.bash` for generating Opbuntu images and a copy of the script
+  appears on the images generated.)
+
+  This concept has been tested and verified on Ugoos Am6 plus, both with
+  resident/vendor `u-boot` and mainline (GTK pro) `u-boot` on eMMC.
