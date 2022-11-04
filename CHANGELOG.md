@@ -38,6 +38,11 @@ petit-bootdisk-nc
 
 # u-root-bootdisk-nc:
 
+## [v0.34] - 22-11-04
+
+### Added
+ - Alternative (optional) bootscripts.
+
 ## [v0.33] - 22-10-30
 
 ### Changed
@@ -109,6 +114,11 @@ petit-bootdisk-nc
  - First upload.
 
 # petit-bootdisk-nc:
+
+## [v0.26] - 22-11-04
+
+### Added
+ - Alternative (optional) bootscripts.
 
 ## [v0.25] - 22-10-30
 
