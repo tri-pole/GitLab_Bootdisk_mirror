@@ -42,6 +42,18 @@ First, the bootdisk itself which is chainloaded by the board resident/vendor
 Second, on one of the bootdisks the binary `u-boot.ext` is used to chainload
 the kernel and initramfs that runs `Petitboot`.)
 
+It should be noted also that the bootdisks were developed for booting on
+TV-boxes with a rather old code base for the resident/vendot `u-boot` (often
+dating back to 2015) when `u-boot` was lacking some modern booting concepts.
+More recent versions of (e.g. resident/vendor) `u-boot` implement
+[`u-boot` Standard Boot](https://u-boot.readthedocs.io/en/latest/develop/bootstd.html)
+and should e.g. be able to directly detect and parse `extlinux.conf` files.
+Therefore, newer resident/vendor `u-boot` should be able to directly boot a
+non chainloaded (`-nc`) bootdisk with an added `extlinux/extlinux.conf`
+(provided it is configured correctly, see e.g.
+[the `u-boot` reference](https://u-boot.readthedocs.io/en/latest/develop/distro.html#boot-configuration-files)
+or cf. a chainloaded disk).
+
 Downloads
 ---------
 
