@@ -104,19 +104,19 @@ distro_edition=Jammy # Tested with Focal, Jammy, Kinetic
 # Host name for image.
 host_name=opbu
 
-# Compression (xz) takes some extra time.
+# Compression (xz) takes some extra time (beyond the estimate above).
 compressed_img=yes # {yes,no}
 
 # Ophub kernel version (number), e.g. 5.19.10
 # For a list of currently available kernel version numbers, see
 # https://github.com/ophub/kernel/tree/main/pub/stable
 # (but note that the download path on Github is slightly different, see below).
-ophub_kvers="6.0.6"
+ophub_kvers="5.15.77"
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
-ophub_krel=${ophub_kvers}"-flippy-78+" # Kernel name/release str., plain text.
+ophub_krel=${ophub_kvers}"-flippy-78+o" # Kernel name/release str., plain text.
 # For a list of encodings, see https://en.wikipedia.org/wiki/Percent-encoding
-ophub_krel_url=${ophub_kvers}"-flippy-78%2B" # Name string URL encoded.
+ophub_krel_url=${ophub_kvers}"-flippy-78%2Bo" # Name string URL encoded.
 
 # Edit the image tag to your liking.
 img_tag=${ophub_krel}_3pole-$(date +"%y%m%d")
@@ -124,13 +124,22 @@ imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
 
 # Ophub repo w/ builds of flippy/unifreq kernels (incl. initramfs, thx. Ophub).
 ophub_repo_url="https://github.com/ophub"
-ophub_krepo_url=${ophub_repo_url}/kernel/raw/main/pub/stable
-ophub_kboot_url=${ophub_krepo_url}/${ophub_kvers}/boot-${ophub_krel_url}.tar.gz
-ophub_kmods_url=${ophub_krepo_url}/${ophub_kvers}/modules-${ophub_krel_url}.tar.gz
-ophub_kdtbs_am_url=${ophub_krepo_url}/${ophub_kvers}/dtb-amlogic-${ophub_krel_url}.tar.gz
-ophub_kdtbs_aw_url=${ophub_krepo_url}/${ophub_kvers}/dtb-allwinner-${ophub_krel_url}.tar.gz
-ophub_kdtbs_rk_url=${ophub_krepo_url}/${ophub_kvers}/dtb-rockchip-${ophub_krel_url}.tar.gz
-ophub_khdr_url=${ophub_krepo_url}/${ophub_kvers}/header-${ophub_krel_url}.tar.gz
+ophub_krepo_url=${ophub_repo_url}/kernel/raw/main/pub/stable/${ophub_kvers}
+ophub_kboot_url=${ophub_krepo_url}/boot-${ophub_krel_url}.tar.gz
+ophub_kmods_url=${ophub_krepo_url}/modules-${ophub_krel_url}.tar.gz
+ophub_khedr_url=${ophub_krepo_url}/header-${ophub_krel_url}.tar.gz
+
+# List of names for the SoC vendors for which you wish to download and install
+# the dtb package (the selected dtb below must be in one of these packages).
+# Ophub packages dtbs for amlogic, allwinner and rockchip w/ his kernels.
+socdtbs_list=("amlogic" "allwinner" "rockchip")
+
+# The paths to the dtb packages (defined below) are of the form
+# ophub_kdtbs_url=${ophub_krepo_url}/dtb-${socdtbs_name}-${ophub_krel_url}.tar.gz
+
+# dtb name in uEnv.ini/extlinux.conf (dtb must be in Ophub's boot-*.tar.gz pkg).
+#dtbfile_name=meson-g12b-ugoos-am6.dtb
+dtbfile_name=meson-g12b-gtking-pro.dtb
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
 ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/amlogic-u-boot/overload"
@@ -162,10 +171,6 @@ g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-pos
 
 # The string root=UUID=${rootfs_UUID} will be prepended below once UUID exists.
 kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1"
-
-# dtb name in uEnv.ini/extlinux.conf (dtb must be in Ophub's boot-*.tar.gz pkg).
-#dtbfile_name=meson-g12b-ugoos-am6.dtb
-dtbfile_name=meson-g12b-gtking-pro.dtb
 
 # File system sizes and types (unit MiB).
 # - The partition table type on the image is MBR.
@@ -415,16 +420,22 @@ EOF
 )
 
 extlinux_conf=$(cat <<EOF
-# This file is only to be used if resident/vendor u-boot cannot boot via boot
-# scripts (aml_autoscript, s905_autoscript and uEnv.ini) and you still want
-# to use u-boot for booting (rather than e.g. bootdisk +grub.cfg). Usage:
-# (1) Rename the file to extlinux.conf
-# (2) Edit the text below (if needed) to match your box and add a chainloader
-#     as u-boot.ext (see e.g. https://github.com/ophub/amlogic-s9xxx-armbian).
-
-# For more info about this file see (and the links therein)
+# This file has two uses, for old and new resident/vendor u-boot, respectively:
+# (1) For old vendor u-boot (which does not know about extlinux.conf) a
+#     chainloader u-boot.ext (with newer u-boot code) can be used which reads
+#     and parses this file, and loads the kernel, initramfs and dtb acordingly.
+# (2) Newer vendor u-boot should be able to read, parse and use this file
+#     directly.
+#
+# For more info about extlinux.conf see (and the links therein)
 # https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX
 # (Note: u-boot's parsing of this file may be slightly different/incomplete.)
+# The versions of u-boot (e.g. in the form of a cahinloader) that can read and
+# parse this file can also (most likely) use several other formats for kernel
+# and initrfamfs, such as Image/zImage, vmlinuz and initrd.img
+#
+# For an assortment of chainloaders u-boot.ext suitable for TV-boxes, see
+# https://github.com/ophub/amlogic-s9xxx-armbian).
 
 MENU TITLE <UBUNTU-BOOT>
 DEFAULT UBNT_DEFAULT
@@ -445,7 +456,7 @@ The files in this directory are intended to be used as chainloader when booting
 via this method. (The default boot methods are grub.cfg and boot script.)
 Usage: Find a binary here (u-boot-*) which matches your box and copy it to the
 name u-boot.ext at the top level on the boot (fat) partition. Then edit the
-file extlinux/extlinux.conf.bak according to the instructions inside that file.
+file extlinux/extlinux.conf according to the instructions inside that file.
 EOF
 )
 
@@ -606,9 +617,8 @@ are sourced from Manjaro ARM but this is certainly not the only setup possible.
 Another setup (with aml_autoscript, s905_autoscript, boot.scr), with somewhat
 different logic, can be found (along with some comments and explanations) at
 https://github.com/FauthD/amlogic-u-boot-scripts
-Yet another setup (which is probably more versatile but may require bootloader
-u-boot.bin flashed to the boot sector and gap before first partition) is the
-scripts used on Ophub's images https://github.com/ophub/amlogic-s9xxx-armbian
+Yet another setup is the scripts used on Ophub's images
+https://github.com/ophub/amlogic-s9xxx-armbian
 EOF
 )
 
@@ -803,6 +813,7 @@ chmod 0755 ${rootfs_mnt}/usr/local/bin/mkbootlinux.bash
 echo " Done."
 
 echo -e ${i_msg}" Downloading Ophub/Flippy/Unifreq kernel files..."
+
 wget -P $tmpfile_dir -nv $ophub_kboot_url
 if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the kernel boot files, exiting."
@@ -813,22 +824,15 @@ if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the kernel modules, exiting."
     exit 1
 fi
-wget -P $tmpfile_dir -nv $ophub_kdtbs_am_url
-if [[ $? -ne 0 ]]; then
-    echo -e ${i_msg}" Unable to download the Amlogic dtb files, exiting."
-    exit 1
-fi
-wget -P $tmpfile_dir -nv $ophub_kdtbs_aw_url
-if [[ $? -ne 0 ]]; then
-    echo -e ${i_msg}" Unable to download the Allwinner dtb files, exiting."
-    exit 1
-fi
-wget -P $tmpfile_dir -nv $ophub_kdtbs_rk_url
-if [[ $? -ne 0 ]]; then
-    echo -e ${i_msg}" Unable to download the Rockchip dtb files, exiting."
-    exit 1
-fi
-wget -P $tmpfile_dir -nv $ophub_khdr_url
+for socdtbs_name in ${socdtbs_list[*]}; do
+    ophub_kdtbs_url=${ophub_krepo_url}/dtb-${socdtbs_name}-${ophub_krel_url}.tar.gz
+    wget -P $tmpfile_dir -nv $ophub_kdtbs_url
+    if [[ $? -ne 0 ]]; then
+        echo -e ${i_msg}" Unable to download the $socdtbs_name dtb files, exiting."
+        exit 1
+    fi
+done
+wget -P $tmpfile_dir -nv $ophub_khedr_url
 if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the kernel header files, exiting."
     exit 1
@@ -840,9 +844,9 @@ opsave_dir=${rootfs_mnt}/var/cache/ophub
 mkdir $opsave_dir
 cp ${tmpfile_dir}/boot-${ophub_krel}.tar.gz $opsave_dir
 cp ${tmpfile_dir}/modules-${ophub_krel}.tar.gz $opsave_dir
-cp ${tmpfile_dir}/dtb-amlogic-${ophub_krel}.tar.gz $opsave_dir
-cp ${tmpfile_dir}/dtb-allwinner-${ophub_krel}.tar.gz $opsave_dir
-cp ${tmpfile_dir}/dtb-rockchip-${ophub_krel}.tar.gz $opsave_dir
+for socdtbs_name in ${socdtbs_list[*]}; do
+    cp ${tmpfile_dir}/dtb-${socdtbs_name}-${ophub_krel}.tar.gz $opsave_dir
+done
 cp ${tmpfile_dir}/header-${ophub_krel}.tar.gz $opsave_dir
 echo " Done."
 
@@ -850,8 +854,10 @@ echo -n -e ${i_msg}" Installing Ophub kernel files..."
 tar -xzf ${tmpfile_dir}/boot-${ophub_krel}.tar.gz -C ${rootfs_mnt}/boot
 mkdir -p -m 0744 ${rootfs_mnt}/lib/modules
 tar -xzf ${tmpfile_dir}/modules-${ophub_krel}.tar.gz -C ${rootfs_mnt}/lib/modules
-mkdir -p -m 0755 ${rootfs_mnt}/boot/dtbs/amlogic
-tar -xzf ${tmpfile_dir}/dtb-amlogic-${ophub_krel}.tar.gz -C ${rootfs_mnt}/boot/dtbs/amlogic
+for socdtbs_name in ${socdtbs_list[*]}; do
+    mkdir -p -m 0755 ${rootfs_mnt}/boot/dtbs/${socdtbs_name}
+    tar -xzf ${tmpfile_dir}/dtb-${socdtbs_name}-${ophub_krel}.tar.gz -C ${rootfs_mnt}/boot/dtbs/${socdtbs_name}
+done
 echo " Done."
 
 # The flash-kernel package causes problems on systems w/o flash storage (when
@@ -911,13 +917,19 @@ mkimage -A arm -O linux -T script -C none \
 mkimage -A arm -O linux -T script -C none \
         -d emmc_autoscript.txt emmc_autoscript >/dev/null
 echo -e "$uEnv" >uEnv.ini
-cp ${rootfs_mnt}/boot/dtbs/amlogic/${dtbfile_name} .
+dtbfile_loc=$(find ${rootfs_mnt}/boot/dtbs -name ${dtbfile_name})
+if [[ -f $dtbfile_loc ]]; then
+    cp $dtbfile_loc .
+else
+    echo -e ${i_msg}" Unable to find the dtb file ${dtbfile_name}, exiting."
+    exit 1
+fi
 echo " Done."
 
 # Only as a backup, in case vendor u-boot cannot boot via bootscripts.
 echo -e ${i_msg}" Setting up backup boot method (chainloader)..."
 mkdir extlinux
-echo -e "$extlinux_conf" >extlinux/extlinux.conf.bak
+echo -e "$extlinux_conf" >extlinux/extlinux.conf
 mkdir u-boot
 echo -e "$README_uboot" >u-boot/README_u-boot.txt
 for uboot_bin in ${uboot_list[*]}; do
