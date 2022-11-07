@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ubuntu_mkimg.bash (a.k.a. opbuntu_mkimg.bash)
-# 22-11-02: v0.19
+# 22-11-07: v0.20
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
@@ -17,12 +17,10 @@
 # Usage: ./ubuntu_mkimg.bash
 #        (i.e. not arguments, but check the parameters/options below)
 
-# Tested on: Ugoos AM6 plus (s922x, for executing, booting and running) and on
-# QEMU (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
-# Tested kernels:
-# 5.15.y-flippy-77+, 5.19.y-flippy-77+, 5.15.0-48-generic
-# This script is a template or proof-of-concept, nothing more (so please fork
-# it, improve it).
+# Tested on: Ugoos AM6 plus and Beelink GT King Pro (s922x, for executing,
+# booting and running) and on QEMU (qemu-system-x86_64 and qemu-system-aarch64,
+# for developing/executing). This script is a template or proof-of-concept,
+# nothing more (so please fork it, improve it).
 
 # Requires: Standard basic functionality incl. blkid, dd, losetup, mkfs, xz,
 # wget and the package systemd-container (for systemd-nspawn). ArchLinux wiki:
@@ -32,8 +30,8 @@
 # package qemu-user-static (which recommends the package binfmt-support); this
 # provides the required binary qemu-aarch64-static
 
-# Typical usage: Edit the parameters below and run the script from a temp dir.
-# (the image as well as all temporary files will be created in this dir.).
+# Typical usage: Edit the parameters below and run the script from a temporary
+# directory (the image as well as all temp. files will be created in this dir.).
 
 # Inspiration taken from
 # https://github.com/ophub/amlogic-s9xxx-armbian/blob/main/rebuild
@@ -65,6 +63,8 @@
 #   the rootfs partition has to be updated; see the scripts in /usr/local/bin).
 # - Some kernel versions may not boot using vendor u-boot and the installed
 #   boot scripts (this seems to be the case for text offset patched kernels).
+#   Alternate kernels using kernel.org source that seem to work well can be
+#   found at https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 #   Another alternative is kubuntu-desktop (nice and polished but larger).

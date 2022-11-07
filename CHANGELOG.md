@@ -178,6 +178,11 @@ petit-bootdisk-nc
 
 # ubuntu_mkimg.bash:
 
+## [v0.20] 22-11-07
+
+### Changed
+ - Bumbed version to v0.20
+
 ## [v0.19] 22-11-02
 
 ### Added
