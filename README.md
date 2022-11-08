@@ -66,10 +66,10 @@ Images built using this script can be
 
 __Tribuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
 also possible to produce images with a locally provided kernel, for instance
-mainline Linux (source from [kernel.org](https://kernel.org/) and kernel
+mainline Linux with source from [kernel.org](https://kernel.org/) and kernel
 configuration from [Ophub](https://github.com/ophub/amlogic-s9xxx-armbian/tree/main/compile-kernel/tools/config).
-(This combination seems to be particularly good for two tested s922x boxes.)
-Images built according to this recipe can be
+(This combination provides benefits for some TV-boxes, e.g. for booting.)
+Images built with this method can be
 [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOggJttM6dnwYJHVld?e=ZHgfkI).
 
 __Debuntu:__ Debian (Bullseye) and Ubuntu (Focal, Jammy, Kinetic) images of

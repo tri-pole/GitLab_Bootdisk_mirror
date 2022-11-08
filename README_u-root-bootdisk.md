@@ -59,7 +59,7 @@ Second, on one of the bootdisks the binary `u-boot.ext` is used to chainload
 the kernel and initramfs that runs `u-boot`.)
 
 It should be noted also that the bootdisks were developed for booting on
-TV-boxes with a rather old code base for the resident/vendot `u-boot` (often
+TV-boxes with a rather old code base for the resident/vendor `u-boot` (often
 dating back to 2015) when `u-boot` was lacking some modern booting concepts.
 More recent versions of (e.g. resident/vendor) `u-boot` implement
 [`u-boot` Standard Boot](https://u-boot.readthedocs.io/en/latest/develop/bootstd.html)
