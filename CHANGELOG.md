@@ -178,6 +178,11 @@ petit-bootdisk-nc
 
 # ubuntu_mkimg.bash:
 
+## [v0.22] 22-11-08
+
+### Added
+ - Possibility to use locally provided kernel packages.
+
 ## [v0.20] 22-11-07
 
 ### Changed
