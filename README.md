@@ -54,6 +54,13 @@ ARM64 image.
 The generated image can be booted using any of the bootdisks but also with
 `u-boot` (using the resident/vendor version installed on the TV-box/SBC).
 
+__Debuntu:__ Debian (Bullseye) and Ubuntu (Focal, Jammy, Kinetic) images of
+"standard" type (with Debian/Ubuntu kernel) can be produced with the script
+[`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which employs the
+[debootstrap](https://wiki.debian.org/Debootstrap) mechanism to create the base
+system.
+Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgSd5w5tnP9COEgeZ?e=zxF2uB).
+
 __Opbuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
 easy to produce an Ubuntu image (Focal, Jammy, Kinetic) with
 [Ophub/Flippy kernel.](https://github.com/ophub/kernel/tree/main/pub/stable)
@@ -67,17 +74,10 @@ Images built using this script can be
 __Tribuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
 also possible to produce images with a locally provided kernel, for instance
 mainline Linux with source from [kernel.org](https://kernel.org/) and kernel
-configuration from [Ophub](https://github.com/ophub/amlogic-s9xxx-armbian/tree/main/compile-kernel/tools/config).
-(This combination provides benefits for some TV-boxes, e.g. for booting.)
-Images built with this method can be
+[configuration](https://github.com/ophub/amlogic-s9xxx-armbian/tree/main/compile-kernel/tools/config) from Ophub (with support for Amlogic, Rockchip and
+Allwinner).
+Images built according to this ("lean") recipe can be
 [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOggJttM6dnwYJHVld?e=ZHgfkI).
-
-__Debuntu:__ Debian (Bullseye) and Ubuntu (Focal, Jammy, Kinetic) images of
-"standard" type (with Debian/Ubuntu kernel) can be produced with the script
-[`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which employs the
-[debootstrap](https://wiki.debian.org/Debootstrap) mechanism to create the base
-system.
-Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgSd5w5tnP9COEgeZ?e=zxF2uB).
 
 __Arch Linux:__ An image of Arch Linux ARM64 can be produced with the script
 [`archlnx_mkimg.bash`](archlnx_mkimg.bash) which uses the official Arch Linux
