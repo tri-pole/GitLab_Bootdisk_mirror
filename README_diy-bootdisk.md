@@ -347,3 +347,15 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
 
   This concept has been tested and verified on Ugoos Am6 plus, both with
   resident/vendor `u-boot` and mainline (GTK pro) `u-boot` on eMMC.
+
+  A note on eMMC and booting: The eMMC chips used in TV-boxes come pre
+  partitioned according to the (JEDEC) standard mobile eMMC partition scheme;
+  one large user partition (e.g. 8G, 16G, 32G), one
+  [replay protected memory block (rpmb)](https://en.wikipedia.org/wiki/Replay_Protected_Memory_Block)
+  partition of 4M and two 4M partitions labeled boot0 and boot1.
+  The latter two partitions hold copies of the resident/vendor bootloader
+  (`u-boot`) which is also installed in the first 4M on the main partition.
+  At least on Amlogic, as long as one of these three partitions holds a working
+  bootloader, the box can be booted, cf. the
+  [Amlogic boot flow](https://u-boot.readthedocs.io/en/latest/board/amlogic/boot-flow.html)
+  alluded to above.
