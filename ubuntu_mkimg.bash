@@ -194,9 +194,10 @@ rootfs_label=UBNT_ROOT
 # respectively, for u-boot. They are used in the script mkuimg.bash below to
 # create uImage from Image. The values must be adapted to the box/SoC. For e.g
 # some Amlogic s922x SoC (GT King pro, Ugoos AM6) both values are 0x1080000
+# see https://linux-meson.com/howto.html
+# and also https://www.kernel.org/doc/html/latest/arm64/booting.html
 # Note: When booting mainline (kernel.org) kernel using uImage there is a
-# one-line warning about the kernel being misaligned at boot. Possibly, this
-# is related to the values used below.
+# warning about the kernel being misaligned at boot (when using these values).
 k_load_addr=0x1080000
 k_entry_addr=0x1080000
 
@@ -550,6 +551,8 @@ mkuimg_p1=$(cat <<EOF
 
 # The values for -a (load address) and -e (entry point) may need to be adapted.
 # For some s922x (e.g. GTK pro, AM6) std. values for for -a,-e are 0x1080000
+# see https://linux-meson.com/howto.html
+# and also https://www.kernel.org/doc/html/latest/arm64/booting.html
 
 k_load_addr_=$k_load_addr
 k_entry_addr_=$k_entry_addr
