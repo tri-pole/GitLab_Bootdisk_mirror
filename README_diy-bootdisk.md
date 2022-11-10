@@ -20,8 +20,8 @@
 
   We have chosen, for convenience, to provide compiled binary versions of the
   components on the bootdisks.
-  However, all the binaries needed to produce the disks, including `u-boot.ext`
-  (for a chainloaded disk), can be compiled from sources available at Github
+  However, all the binaries needed to produce the disks, including the
+  chainloader (if applicable), can be compiled from sources available at Github
   or other public git repos (see below and the README files on the disks).
   Thus, it should be easy to customize, enhance and adapt the bootdisks to
   various needs based on the information provided here.
@@ -32,18 +32,16 @@
 ## Prerequisites
 
 - Materials: The simplest is to start with either `u-root-bootdisk` or
-  `petit-bootdisk` (if the goal is to produce a chainloaded version), or
-  `u-root-bootdisk-nc` or `petit-bootdisk-nc` (if the goal is a non
-  chainloaded version).
+  `petit-bootdisk` (for a chainloaded bootdisk), or `u-root-bootdisk-nc` or
+  `petit-bootdisk-nc` (for a non chainloaded bootdisk).
   The files most likely to need customization for other TV-boxes/SBCs are the
-  the kernel, the dtb file and the chainloader `u-boot.ext` (for chainloaded
-  disk).
+  the kernel, the dtb file and the chainloader (if applicable).
   The requirements for the kernel are straightforward; it must be able to
   recognize and read the block devices and file systems, including (perhaps)
   btrfs and iso, and to have the kexec functionality enabled (kexec crash
   kernel functionality is not required).
-  However, any combination of kernel, dtb and chainloader (for a chainloaded
-  disk) that works to boot the box otherwise will also work for the bootdisk.
+  However, any combination of kernel, dtb (and chainloader) that works to boot
+  the box otherwise will also work for the bootdisk.
 
 - Skillz: A bit of command line experience, but not much beyond knowing how
   to burn/flash an image using the Linux `dd` command and using `fdisk` to
@@ -65,12 +63,12 @@
   Sectors 4096-S: Partition 1, type 'c' in fdisk, formatted with vfat.
 
   (The reason why we recommend a 2M gap is that the gap can be good to have if
-  we later decide to install a "hidden" (`u-boot`) bootloader. Such a
-  bootloader is not required for the normal use of the bootdisks but is useful
-  if you later want to convert the bootdisk into a rescue disk, see below.)
+  we later decide to install a "hidden" (`u-boot`) bootloader.
+  Such a bootloader is not required for normal use of the bootdisks but is
+  useful if a bootdisk is later converted into a rescue disk, see below.)
 
   The value of S in the line above above is mostly dependent on how many
-  kernels are needed (e.g. for experimentation); a value of S which corresponds
+  kernels are needed (for experimentation); a value of S which corresponds
   to 100M is typically enough for a basic install (with a couple of kernels).
   (The bootable flag for the single partition above should be left unset.)
 
@@ -79,19 +77,22 @@
 
   #### Bootloader
 
-  The bootloader that loads the initramfs which contains `Petitboot/u-root` on
-  the bootdisk can be either the board resident/vendor version of `u-boot`
-  (for a non chainloaded disk) or a chainloader in the form of a binary file
-  `u-boot.ext` placed in the root directory on the disk (see below).
-  In the latter case, the version of `u-boot.ext` required depends on the SoC
-  but luckily there are many precompiled binaries freely available.
+  The bootloader that loads the kernel and the initramfs (containing
+  `Petitboot/u-root`) on the bootdisk can be either the board resident/vendor
+  version of `u-boot`, in case of a non chainloaded disk, or a chainloader in
+  the form of a binary file on the bootdisk.
+
+  In case of a chainloaded disk, the bootloader binary required is a version
+  of `u-boot.bin` which is renamed to `u-boot.ext` and is placed in the root
+  directory on the disk (see below).
+  The version of `u-boot.bin` that is suitable as `u-boot.ext` depends on the
+  SoC but luckily there are many precompiled variants freely available.
   A good selection of candidates can be found on the images produced by
   [Ophub](https://github.com/ophub/amlogic-s9xxx-armbian) and some of them
   can also be found on the chainloaded bootdisks.
-  (Typically, these binaries have a name which is a variant of `u-boot.bin`
-  and Ophub collectively refer to them as "overload" bootloaders, to
-  distinguish them from the ones to be used as "hidden" bootloaders which he
-  refers to simply as "bootloaders".)
+  (Ophub refers to the binaries used for chainloading as "overload"
+  bootloaders, to distinguish them from the ones to be used as "hidden"
+  bootloaders (see below) which he refers to simply as "bootloaders".)
 
   - *Only for chainloaded disk*
   
@@ -340,7 +341,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   With such an installation, the TV-box/SBC has a boot manager that can
   handle booting of Linux from eMMC and also from removable media SD and USB.
   The only thing that needs to be changed, compared to an installation on
-  SD/USB, is that a bootscript emmc_autoscript has to be addded.
+  SD/USB, is that a bootscript emmc_autoscript has to be addded (and renaming
+  `u-boot.ext` to `u-boot.emmc`, if applicable).
   (A version of the script emmc_autoscript is outlined in the file
   `ubuntu_mking.bash` for generating Opbuntu images and a copy of the script
   appears on the images generated.)
