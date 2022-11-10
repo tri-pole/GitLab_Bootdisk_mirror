@@ -5,8 +5,8 @@
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
-# (ophub/flippy/unifreq) for Amlogic TV-boxes/SBCs. The Ubuntu base system is
-# from daily builds of the rootfs of the Jammy, Focal, or Kinetic releases.
+# (e.g. ophub/flippy/unifreq) for Amlogic TV-boxes/SBCs. The Ubuntu base system
+# is from daily builds of the rootfs of the Jammy, Focal, or Kinetic releases.
 # The script must be executed (as root) on an Ubuntu/Debian type machine,
 # either natively on aarch64/ARM64 (e.g. Ubuntu Server Live booted via
 # bootdisk) or virtualized (using qemu-aarch64-static) on x86_64/amd64.
@@ -15,12 +15,12 @@
 # rootfs partition). Another alternative is chainloader u-boot.ext (included).
 
 # Usage: ./ubuntu_mkimg.bash
-#        (i.e. not arguments, but check the parameters/options below)
+#        (i.e. no arguments, but check the parameters/options below)
 
 # Tested on: Ugoos AM6 plus and Beelink GT King Pro (s922x, for executing,
 # booting and running) and on QEMU (qemu-system-x86_64 and qemu-system-aarch64,
-# for developing/executing). This script is a template or proof-of-concept,
-# nothing more (so please fork it, adapt it, improve it).
+# for developing/executing). This script should be considered as a template or
+# proof-of-concept, nothing more (so please fork it, adapt it, improve it).
 
 # Requires: Standard basic functionality incl. blkid, dd, losetup, mkfs, xz,
 # wget and the package systemd-container (for systemd-nspawn). ArchLinux wiki:
@@ -49,26 +49,23 @@
 #   scripts, only the image stick can be attached to the USB bus. When booting
 #   using a chainloader (u-boot.ext) it should not be a problem to have other
 #   (non bootable) USB sticks attached. When using grub booting (e.g. with a
-#   bootdisk on SD) having other USB sticks attached is not a problem.
-# - The dtb file is only used when booting via u-boot (and not when booting via
-#   grub, currently).
+#   bootdisk on SD) having other USB sticks attached is not a problem. There
+#   are also links to alternate boot scripts in a README file on bootfs.
+# - The dtb file is only used when booting via u-boot. When booting via grub
+#   (e.g. using bootdisk) it is assumed that a dtb file is loaded by other
+#   means (e.g. by the bootdisk software; see the bootdisk documantation).
 # - The uImage and uInitrd (u-boot tagged) versions of the kernel and initramfs
 #   that are on the fat partition (for booting via vendor u-boot) are created
 #   by the mkbootlinux.bash script (see below). Therefore, when updating the
-#   kernel or initramfs then uImage uInitrd have to be recreated "manually"
+#   kernel or initramfs the uImage uInitrd have to be recreated "manually"
 #   using this script (unless you rely on grub booting, then only grub.cfg on
 #   the rootfs partition has to be updated; see the scripts in /usr/local/bin).
 # - Some kernel versions may not boot using vendor u-boot and the installed
-#   boot scripts (this seems to be the case for text offset patched kernels).
-#   Alternate kernels using kernel.org source that seem to boot/work well can
-#   be found at https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV
+#   boot scripts (this can be due to patches; mainline kernel is typically OK).
+#   Alternate kernels using kernel.org source that seem to boot and work well
+#   can be found at https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV
 #   (These kernels are built using Ophub's build framework and can be installed
 #   using the local kernel install method, see below.)
-# - A simple working desktop can be obtained by installing e.g. xubuntu-core
-#   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
-#   Another alternative is kubuntu-desktop (nice and polished but larger).
-# - On some boxes it is necessary to run (as user) the script g12_sound.sh to
-#   get sound working. (Afterwards, check for soundcards with e.g. aplay -L)
 # - The standard Ubuntu kernel linux-image-generic can also be installed (after
 #   unminizing). It is then recommended to first install the dependency package
 #   linux-firmware (ca 900M) and then the package linux-image-generic.
@@ -78,6 +75,11 @@
 #   which will include also an entry for the ophub/flippy/unifreq kernel
 #   (albeit without the desired kernel command line parameters).
 # - The installed kernel package files are saved also in /var/cache/kernel.pkg
+# - A simple working desktop can be obtained by installing e.g. xubuntu-core
+#   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
+#   Another alternative is kubuntu-desktop (nice and polished but larger).
+# - On some boxes it is necessary to run (as user) the script g12_sound.sh to
+#   get sound working. (Afterwards, check for soundcards with e.g. aplay -L)
 # - Run time for this script (ex. compression) is less than 10m (on a modern
 #   computer with good network connectivity). Check: time ./ubuntu_mkimg.bash
 # - You will be asked to configure three things at runtime (near the end):
@@ -95,7 +97,7 @@
 # ------------------------------- parameters ---------------------------------
 
 # Q: Which parameters do I (really) need to edit?
-# A: Well, as always, "it depends". (Best to browse through all of them.)
+# A: Well, as always, "it depends". (Best to browse through them all, I guess.)
 
 distro_name=Ubuntu   # Used for the image name and in grub.cfg
 distro_edition=Jammy # Tested with Focal, Jammy, Kinetic
@@ -550,7 +552,7 @@ mkuimg_p1=$(cat <<EOF
 # (assuming that initrd.img is gzip compressed).
 
 # The values for -a (load address) and -e (entry point) may need to be adapted.
-# For some s922x (e.g. GTK pro, AM6) std. values for for -a,-e are 0x1080000
+# For some s922x (e.g. GTK pro, AM6) std. values for -a,-e are 0x1080000
 # see https://linux-meson.com/howto.html
 # and also https://www.kernel.org/doc/html/latest/arm64/booting.html
 

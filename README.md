@@ -76,8 +76,8 @@ also possible to produce images with a locally provided kernel, for instance
 mainline Linux with source from [kernel.org](https://kernel.org/) and kernel
 [configuration](https://github.com/ophub/amlogic-s9xxx-armbian/tree/main/compile-kernel/tools/config) from Ophub (with support for Amlogic, Rockchip and
 Allwinner).
-Images built according to this ("lean") recipe with a
-[kernel.org/Ophub kernel](https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV)
+Images built according to this ("lean") recipe (with a
+[kernel.org/Ophub kernel](https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV))
 can be
 [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOggJttM6dnwYJHVld?e=ZHgfkI).
 
