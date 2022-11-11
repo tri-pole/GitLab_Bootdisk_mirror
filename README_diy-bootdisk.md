@@ -15,8 +15,10 @@
   In fact, since the core application of the bootdisks (`u-root` or
   `Petitboot`) is run from an initramfs (which is universal) it should be
   possible to adapt the bootdisks to any TV-box/SBC that is booted via `u-boot`
-  from SD/USB, as long as a proper kernel, dtb and chainloader (in case of a
-  chainloaded disk) are available.
+  from SD/USB, as long as a proper kernel, dtb and chainloader (if applicable)
+  are available.
+  (The roles of resident/vendor `u-boot` and the optional chainloader are
+  further explained below.)
 
   We have chosen, for convenience, to provide compiled binary versions of the
   components on the bootdisks.
@@ -28,6 +30,14 @@
   
   The procedure outlined here has been used to produce bootdisks for booting
   from SD on Beelink GT King pro and Ugoos Am6 plus.
+
+## Outline
+
+  Most of what follows cover the steps in the procedure of creating a bootdisk
+  and what parts may need to be adpated and how this can be done.
+  At the very end we also make some remarks relating to the use of `u-boot`.
+  This material is not necessary for building a bootdisk but may provide an
+  better understanding of what options/approaches are available for booting.
 
 ## Prerequisites
 
@@ -50,22 +60,24 @@
 
 ## Steps in the procedure
 
-  The setup is basically a two step procedure; prepare the disk (SD/USB) and
-  copy the files.
+  A bootdisk can be created by setting up the right files and then transfer
+  them over to a SD/USB but for simplicity we shall here assume that the
+  bootdisk is created directly on the target SD/USB.
 
   ### Prepare the disk (SD/USB)
 
   It is possible to use one and the same (simple) disk geometry both for a
-  chainloading disk and for a non chainloading disk (512B sectors):
+  chainloading disk and for a non chainloading disk.
+  The following single-partition geometry can be used (512B sectors):
 
   Sectors 0-4095: MBR (sector 0) and gap (sector 1-4095).
 
-  Sectors 4096-S: Partition 1, type 'c' in fdisk, formatted with vfat.
+  Sectors 4096-S: Partition 1, partition type 'c' in fdisk, formatted with vfat.
 
-  (The reason why we recommend a 2M gap is that the gap can be good to have if
+  The reason why we recommend a 2M gap is that the gap can be good to have if
   we later decide to install a "hidden" (`u-boot`) bootloader.
   Such a bootloader is not required for normal use of the bootdisks but is
-  useful if a bootdisk is later converted into a rescue disk, see below.)
+  useful if a bootdisk is later converted into a rescue disk, see below.
 
   The value of S in the line above above is mostly dependent on how many
   kernels are needed (for experimentation); a value of S which corresponds
@@ -92,7 +104,9 @@
   can also be found on the chainloaded bootdisks.
   (Ophub refers to the binaries used for chainloading as "overload"
   bootloaders, to distinguish them from the ones to be used as "hidden"
-  bootloaders (see below) which he refers to simply as "bootloaders".)
+  bootloaders (see below) which he refers to simply as "bootloaders".
+  More info about booting with `u-boot` can be found at the end of this
+  document.)
 
   - *Only for chainloaded disk*
   
@@ -100,9 +114,8 @@
   
   ### Set up the necessary files
 
-  Assuming that `/dev/mydev` is mounted at at `/mnt/mydisk`, a minimal
-  bootdisk file tree under `/mnt/mydisk` could look like this for a
-  chainloaded disk
+  Assuming that `/dev/mydev` is mounted at `/mnt/mydisk`, a minimal bootdisk
+  file tree under `/mnt/mydisk` could look like this for a chainloaded disk
 
 ```
   ├── aml_autoscript
@@ -133,6 +146,9 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   ### Details of the files
 
+  In this section we discuss details of the files needed to boot the kernel
+  and initramfs that run either `Petitboot` or `u-root`.
+
   #### Script files
 
   The files `aml_autoscript` and `s905_autoscript` are the two main script
@@ -147,13 +163,21 @@ and for a non chainloaded (`-nc`) disk it could look like this
   (see also the script `armbian-install` in
   [Ophub's repo](https://github.com/ophub/amlogic-s9xxx-armbian)).
   These files are basically text files but with Amlogic signatures in the
-  headers, produced by the `mkimage` command (often found in the
-  `u-boot-tools` package).
+  headers.
+  The header equipped files are produced with the `mkimage` command (often
+  found in the `u-boot-tools` package).
+
+  In `aml_autoscript` it is defined in _what order_ various devices should be
+  searched by `u-boot` for bootable configurations (as described by e.g.
+  `s905_autoscript`).
+  In `s905_autoscript` it is defined _how_ booting should be done with
+  `u-boot`.
 
   The file `aml_autoscript` is strictly only needed when "multiboot" is being
-  enabled on a TV-box through the "toothpick procedure" (when the contents of
-  this script file is read, parsed and stored internally on the TV-box, cf.
-  the code inside `aml_autoscript` and
+  enabled on a TV-box through the "toothpick procedure".
+  (This is when the contents of `aml_autoscript` is read, parsed and stored
+  internally on the TV-box during a "user reset" or "update", cf. the code
+  inside `aml_autoscript` and
   [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts)).
 
   The zero-length file `aml_autoscript.zip` is just a placeholder file.
@@ -164,10 +188,16 @@ and for a non chainloaded (`-nc`) disk it could look like this
   The script file `s905_autoscript` is always needed (it is referenced by
   `aml_autoscript`).
 
+  In the versions of `s905_autoscript` that we employ, the code is written so
+  that resident/vendor `u-boot` tries to load and execute `u-boot.ext` (from
+  SD and USB) and if this fails (e.g. since there is no `u-boot.ext`, like on
+  a non chainloaded disk) then `u-boot` proceeds with ordinary (i.e. non
+  chainloaded) boot. 
+
   - *Only for non chainloaded disk*
 
-  The `uEnv.ini` file is a small text file where the dtb file and the kernel
-  command line are specified.
+  The `uEnv.ini` file is a small text file (referenced in `s905_autoscript`)
+  where the dtb file and the kernel command line are specified.
   It can for instance look like this (the `console` parameter varies between
   SoCs)
 
@@ -177,8 +207,12 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
 ```
 
   The kernel command line argument `nr_cpus=1` is sometimes needed to force
-  the kernel to use only one CPU during the kexec call (which otherwise may
-  lead to errors in the dmesg log of the kexec booted kernel.)
+  the kernel on the bootdisk to use only one CPU during the subsequent kexec
+  call.
+  (Without the single-CPU restriction during kexec there may errors in the
+  dmesg log of the kexec booted kernel on the target image.
+  The single-CPU restriction only applies up to and during kexec; the kernel
+  booted on the target image has access to all CPUs.)
 
   - *Only for chainloaded disk*
 
@@ -195,8 +229,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
  
   #### Kernel
 
-  A good place for the `vmlinuz` file (chainloaded disk) or `uImage` (non
-  chainloaded disk) is at the root of the disk, as indicated above.
+  The kernel file `uImage` (non chainloaded disk) or `vmlinuz` (chainloaded
+  disk) is placed at the top level of the bootdisk, as indicated above.
   The `uImage` file is just a `u-boot` tagged version of a `vmlinuz` file
   which is made using the `mkimage` command like so
   
@@ -204,7 +238,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   
   (The load address `-a` and entry point `-e` parameters here are for
   [Amlogic SoCs](https://linux-meson.com/howto.html), for other SoCs they may
-  need to be adjusted.)
+  need to be adjusted.
+  See also the documentation for [booting the ARM64 kernel](https://www.kernel.org/doc/html/latest/arm64/booting.html).)
   Note also that in the ARM community, despite the name, the `vmlinuz` kernel
   images are often not compressed, and hence the use of `-C none` above.
   A simple application of the `file` command can give more info about a given
@@ -236,10 +271,10 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   the file.
   The resulting file is called `uInitrd` (as in the listing above).
   This conversion operation has been done using the `mkimage` command
-  (see below).
+  (details are given below).
   
   Next we outline the contents of the initramfs and how to edit/adapt the
-  initramfs, and where find sources and how to recreate the initramfs.
+  initramfs, and where to find sources and how to recreate the initramfs.
 
   ##### Packing and unpacking the initramfs
 
@@ -256,6 +291,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   `dd if=uInitrd of=initrd.cpio.gz bs=64 skip=1`
   
   where the result `initrd.cpio.gz` can be further unpacked like above.
+
   To add an Amlogic header to `initrd.cpio.gz` do
   
   `mkimage -n 'my bootdisk' -A arm64 -O linux -T ramdisk -C gzip -d initrd.cpio.gz uInitrd`
@@ -303,13 +339,18 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   enable a smooth boot up and turning off of network connections etc.
   It is easy to introduce further customizations like this.
 
+  ## Some notes relating to `u-boot`
+
+  The following is not needed to set up a bootdisk but might help understand
+  some of the choices made in the development of the bootdisks.
+
   #### Adding a ("hidden") bootloader
 
   The code in the boot ROM on Amlogic SoCs looks for bootloaders on all
   bootable devices, according to a
   [predefined search order](https://u-boot.readthedocs.io/en/latest/board/amlogic/boot-flow.html),
-  (not to be confused with `u-boot`'s programmable boot order) and boots the
-  first working bootloader it finds.
+  (not to be confused with `u-boot`'s programmable boot order, as defined e.g.
+  in `aml_autoscript`) and boots the first working bootloader it finds.
   This means that even if the resident/vendor (on eMMC) version of `u-boot` is
   non functional (for some reason) the code in the boot ROM will scan e.g. SD
   for a bootloader and if there is one, it will be used.
@@ -341,9 +382,9 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   With such an installation, the TV-box/SBC has a boot manager that can
   handle booting of Linux from eMMC and also from removable media SD and USB.
   The only thing that needs to be changed, compared to an installation on
-  SD/USB, is that a bootscript emmc_autoscript has to be addded (and renaming
-  `u-boot.ext` to `u-boot.emmc`, if applicable).
-  (A version of the script emmc_autoscript is outlined in the file
+  SD/USB, is that a bootscript `emmc_autoscript` has to be addded (and
+  renaming `u-boot.ext` to `u-boot.emmc`, if applicable).
+  (A version of the script `emmc_autoscript` is outlined in the file
   `ubuntu_mking.bash` for generating Opbuntu images and a copy of the script
   appears on the images generated.)
 
