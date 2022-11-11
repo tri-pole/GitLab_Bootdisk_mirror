@@ -34,10 +34,10 @@
 ## Outline
 
   Most of what follows cover the steps in the procedure of creating a bootdisk
-  and what parts may need to be adpated and how this can be done.
+  and what parts may need to be adapted, and how this can be done.
   At the very end we also make some remarks relating to the use of `u-boot`.
-  This material is not necessary for building a bootdisk but may provide an
-  better understanding of what options/approaches are available for booting.
+  The latter material is not necessary for building a bootdisk but may provide
+  an better understanding of what options/approaches are available for booting.
 
 ## Prerequisites
 
@@ -178,7 +178,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   (This is when the contents of `aml_autoscript` is read, parsed and stored
   internally on the TV-box during a "user reset" or "update", cf. the code
   inside `aml_autoscript` and
-  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts)).
+  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts).)
 
   The zero-length file `aml_autoscript.zip` is just a placeholder file.
   (My understanding is that the presence of this file is required on some
@@ -342,7 +342,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   ## Some notes relating to `u-boot`
 
   The following is not needed to set up a bootdisk but might help understand
-  some of the choices made in the development of the bootdisks.
+  and utilize better the booting process on e.g. TV-boxes.
 
   #### Adding a ("hidden") bootloader
 
