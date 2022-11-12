@@ -130,12 +130,11 @@ initrd /boot/initrd.img-5.19.5-meson64
 }
 ```
 
-On some earlier releases (e.g. 22.08) HDMI might not work with the default
-kernel (`linux-image-current-arm64`) on some TV-boxes (such as Ugoos AM6 plus).
-However, you can still log in via ssh (root@uefi-arm64, p/w "1234") and go
-through the initial setup.
-Then, you can install e.g. the kernel `linux-image-current-meson64` and reboot
-with this kernel to have HDMI working again.
+Note: On some earlier releases of the Generic images (e.g. 22.08) HDMI might
+not work with the default kernel (`linux-image-current-arm64`) on some TV-boxes.
+However, log in via ssh (root@uefi-arm64, p/w "1234") still works and it is
+pissible to go through the initial setup from there and then install e.g.
+e.g. the kernel `linux-image-current-meson64` and reboot to have working HDMI.
 
 #### Ophub's builds
 
