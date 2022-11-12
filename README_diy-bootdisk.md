@@ -236,12 +236,13 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   
   `$ mkimage -n "uImage" -A arm64 -O linux -T kernel -C none -a 0x1080000 -e 0x1080000 -d vmlinuz uImage`
   
-  (The load address `-a` and entry point `-e` parameters here are for
-  [Amlogic SoCs](https://linux-meson.com/howto.html), for other SoCs they may
-  need to be adjusted.
+  (The load address `-a` and entry point `-e` parameters here are recommended
+  for [Amlogic SoCs](https://linux-meson.com/howto.html), for other SoCs they
+  may need to be adjusted.
   See also the documentation for [booting the ARM64 kernel](https://www.kernel.org/doc/html/latest/arm64/booting.html).)
   Note also that in the ARM community, despite the name, the `vmlinuz` kernel
-  images are often not compressed, and hence the use of `-C none` above.
+  images are often not compressed (i.e. they are of type plain `Image`), and
+  hence the use of `-C none` above.
   A simple application of the `file` command can give more info about a given
   `vmlinuz` file.)
 
@@ -348,9 +349,9 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
 
   The code in the boot ROM on Amlogic SoCs looks for bootloaders on all
   bootable devices, according to a
-  [predefined search order](https://u-boot.readthedocs.io/en/latest/board/amlogic/boot-flow.html),
+  [predefined search order](https://u-boot.readthedocs.io/en/latest/board/amlogic/boot-flow.html)
   (not to be confused with `u-boot`'s programmable boot order, as defined e.g.
-  in `aml_autoscript`) and boots the first working bootloader it finds.
+  in `aml_autoscript`), and boots the first working bootloader it finds.
   This means that even if the resident/vendor (on eMMC) version of `u-boot` is
   non functional (for some reason) the code in the boot ROM will scan e.g. SD
   for a bootloader and if there is one, it will be used.
@@ -360,14 +361,14 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   boot.
 
   It is easy to add a u-boot bootloader to an SD, provided there is at least a
-  2M gap before the first partition.
-  The version of `u-boot.bin` that should then be used is "the bigger one"
-  (about 1.5M, typically) with all the
+  2M gap before the first partition (some builds of `u-boot` require up to 4M).
+  The version of `u-boot.bin` that should then be used is one of the "the
+  bigger ones" (about 1.5M, typically, for mainline `u-boot`) with all the
   [FIP blobs](https://github.com/LibreELEC/amlogic-boot-fip)
   added, which is used for
   ["cold booting"](https://github.com/ARM-software/arm-trusted-firmware/blob/master/docs/design/firmware-design.rst).
-  (The smaller `u-boot.bin`, about 800k, is typically used for chainloading
-  in the form of `u-boot.ext`, which is a form of "warm booting".)
+  (The smaller versions of `u-boot.bin`, about 800k, are typically used for
+  chainloading in the form of `u-boot.ext`, which is a form of "warm booting".)
   Instructions on how to copy the bootloader onto the SD can be found in many
   places.
   The operation is typically done in two passes with the `dd` command; first
