@@ -28,7 +28,7 @@ Bullseye and Ubuntu Jammy).
 
 ### Caveats
 
-To get (HDMI) sound to work (at least on s922x) it is in general required to
+To get sound over HDMI to work (at least on s922x) it is in general required to
 run a certain script once (as ordinary user).
 The script is called `g12_sound.sh` and can be found e.g.
 [here](https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/blob/master/g12_sound.sh).
@@ -64,9 +64,12 @@ README_ubuntu_inst.md
 
 #### Ubuntu Desktop
 
-Ubuntu Desktop ARM64 can be installed using the install method described in
-README_ubuntu_inst.md but also by exchanging the kernel on a Ubuntu
-Raspberry Pi image, see README_ubuntu_frompi.md
+Ubuntu Desktop ARM64 can be installed using the method described in
+README_ubuntu_inst.md, or more conveniently, using the script
+`debuntu_dbstrap.bash`.
+It can also be installed by exchanging the kernel on a Ubuntu Raspberry Pi
+image, see README_ubuntu_frompi.md
+The ARM64 live iso images can be run as-is.
 
 ### Fedora
 
@@ -76,7 +79,8 @@ The Fedora 36 Generic ARM64 images can be booted and run as-is.
 ### Debian
 
 Debian ARM64 can be installed and run using the debootstrap procedure
-described in README_debian_inst.md
+described in README_debian_inst.md, or more conveniently, using the script
+`debuntu_dbstrap.bash`.
 
 ### openSuse
 
@@ -111,15 +115,7 @@ end of README_debian_inst.md
 
 ### Armbian
 
-The Armbian Generic ARM64 images can be booted and run as-is, up to and
-including release 22.05.
-
-In later releases (e.g. 22.08) HDMI might not work with the default kernel
-(`linux-image-current-arm64`) on some TV-boxes (such as Ugoos AM6 plus).
-However, you can still log in via ssh (root@uefi-arm64, p/w "1234") and go
-through the initial setup.
-Then, you can install e.g. the kernel `linux-image-current-meson64` and reboot
-with this kernel to have HDMI working again.
+The Armbian Generic ARM64 images can be booted and run as-is.
 
 The images for specific boards can be run if a simple `grub.cfg` file is added.
 For instance, on Ugoos Am6 plus the image for Odroid N2 can be booted and run
@@ -133,6 +129,13 @@ initrd /boot/initrd.img-5.19.5-meson64
 
 }
 ```
+
+On some earlier releases (e.g. 22.08) HDMI might not work with the default
+kernel (`linux-image-current-arm64`) on some TV-boxes (such as Ugoos AM6 plus).
+However, you can still log in via ssh (root@uefi-arm64, p/w "1234") and go
+through the initial setup.
+Then, you can install e.g. the kernel `linux-image-current-meson64` and reboot
+with this kernel to have HDMI working again.
 
 #### Ophub's builds
 
