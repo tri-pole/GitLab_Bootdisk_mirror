@@ -7,8 +7,8 @@ known to work with the bootdisks.
 
 ## Scope
 
-Here we only give basic information on working distributions and, occasionally,
-minor hints on how to get a distro up and running with the bootdisks.
+Here we only give basic information on working distributions and minor hints on
+how to get the distro up and running with the bootdisks.
 For detailed information the reader is referred to the adjacent README files.
 The installation target for the Linux distribution is USB everywhere below
 (with the bootdisk installed on SD).
@@ -39,19 +39,16 @@ question (various Internet sources describe this).
 ## Distributions
 
 In general, the requirements for a Linux ARM64 distribution to boot and run
-from USB is that there is available a kernel and initramfs with sufficient
+from USB is that there is a kernel and initramfs available with sufficient
 support for the boot medium (here USB) and for the TV-box/SBC (SoC) in
 question.
 For some of the distributions everything is in place on the images already as
 posted on the download site, on others only minor tweaks are needed (such as
 setting up a `grub.cfg` file).
-For some distributions a new kernel needs to be installed and for others a
-new image may need to be built because of shortcomings in the existing
-installers.
-(Examples of these scenarios and details are given in the adjacent README
-files.)
-Here, we only give a short summary of the steps needed to get a certain
-distro up and running.
+
+In some cases a new kernel needs to be installed and for others a new image
+may need to be built because of shortcomings in the existing installers.
+(Examples of these scenarios are given in the adjacent README files.)
 
 ### Ubuntu
 
@@ -65,8 +62,7 @@ README_ubuntu_inst.md
 #### Ubuntu Desktop
 
 Ubuntu Desktop ARM64 can be installed using the method described in
-README_ubuntu_inst.md, or more conveniently, using the script
-`debuntu_dbstrap.bash`.
+README_ubuntu_inst.md
 It can also be installed by exchanging the kernel on a Ubuntu Raspberry Pi
 image, see README_ubuntu_frompi.md
 The ARM64 live iso images can be run as-is.
@@ -79,8 +75,7 @@ The Fedora 36 Generic ARM64 images can be booted and run as-is.
 ### Debian
 
 Debian ARM64 can be installed and run using the debootstrap procedure
-described in README_debian_inst.md, or more conveniently, using the script
-`debuntu_dbstrap.bash`.
+described in README_debian_inst.md
 
 ### openSuse
 
@@ -130,11 +125,12 @@ initrd /boot/initrd.img-5.19.5-meson64
 }
 ```
 
-Note: On some earlier releases of the Generic images (e.g. 22.08) HDMI might
-not work with the default kernel (`linux-image-current-arm64`) on some TV-boxes.
-However, log in via ssh (root@uefi-arm64, p/w "1234") still works and it is
-pissible to go through the initial setup from there and then install e.g.
-e.g. the kernel `linux-image-current-meson64` and reboot to have working HDMI.
+Note: On some earlier releases of the Armbian Generic images (e.g. 22.08) HDMI
+might not work with the default kernel (`linux-image-current-arm64`), on some
+TV-boxes.
+However, it is still possible to log in via ssh (root@uefi-arm64, p/w "1234")
+and go through the initial setup via ssh and then install e.g. the kernel
+`linux-image-current-meson64` to get back HDMI, after a reboot.
 
 #### Ophub's builds
 
