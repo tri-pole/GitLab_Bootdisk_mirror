@@ -17,24 +17,24 @@
   possible to adapt the bootdisks to any TV-box/SBC that is booted via `u-boot`
   from SD/USB, as long as a proper kernel, dtb and chainloader (if applicable)
   are available.
-  (The roles of resident/vendor `u-boot` and the optional chainloader are
-  further explained below.)
+  The boot process might be slightly different for other SoC brands than
+  Amlogic, however (see comments below).
 
   We have chosen, for convenience, to provide compiled binary versions of the
   components on the bootdisks.
-  However, all the binaries needed to produce the disks, including the
-  chainloader (if applicable), can be compiled from sources available at Github
-  or other public git repos (see below and the README files on the disks).
+  However, all the binaries needed to produce the disks (including the optional
+  chainloader) can be compiled from sources available at Github or other public
+  git repos (see below and the README files on the disks).
   Thus, it should be easy to customize, enhance and adapt the bootdisks to
   various needs based on the information provided here.
-  
+
   The procedure outlined here has been used to produce bootdisks for booting
   from SD on Beelink GT King pro and Ugoos Am6 plus.
 
 ## Outline
 
-  Most of what follows cover the steps in the procedure of creating a bootdisk
-  and what parts may need to be adapted, and how this can be done.
+  Most of what follows cover the steps in the procedure of creating a
+  bootdisk, what parts may need to be adapted and how this can be done.
   At the very end we also make some remarks relating to the use of `u-boot`.
   The latter material is not necessary for building a bootdisk but may provide
   an better understanding of what options/approaches are available for booting.
@@ -111,7 +111,7 @@
   - *Only for chainloaded disk*
   
   The `u-boot.ext` file must be placed in the root directory of the disk.
-  
+
   ### Set up the necessary files
 
   Assuming that `/dev/mydev` is mounted at `/mnt/mydisk`, a minimal bootdisk
@@ -194,6 +194,11 @@ and for a non chainloaded (`-nc`) disk it could look like this
   a non chainloaded disk) then `u-boot` proceeds with ordinary (i.e. non
   chainloaded) boot. 
 
+  For other SoC brands than Amlogic the boot order of `u-boot` is defined in
+  other ways than described above but the basic working of `u-boot` and the
+  usage of the boot configuration files (e.g. `extlinux.conf`, see below) is
+  similar.
+
   - *Only for non chainloaded disk*
 
   The `uEnv.ini` file is a small text file (referenced in `s905_autoscript`)
@@ -226,7 +231,12 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   FDT=/dtbs/amlogic/meson-g12b-gtking-pro.dtb
   APPEND=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 net.ifnames=0 loglevel=1 nr_cpus=1 vga=773
 ```
- 
+
+  For newer versions of (e.g. resident/vendor) `u-boot` the main configuration
+  file is `extlinux.conf` and a proper set up of this file is (typically)
+  sufficient for booting (also without chainloader), provided it resides on a
+  device searched by `u-boot`.
+
   #### Kernel
 
   The kernel file `uImage` (non chainloaded disk) or `vmlinuz` (chainloaded
