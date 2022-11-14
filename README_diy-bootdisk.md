@@ -19,6 +19,9 @@
   are available.
   The boot process might be slightly different for other SoC brands than
   Amlogic, however (see comments below).
+  It should also be noted that the boot process described and used here is
+  adapted to older versions of resident/vendor `u-boot` which were the most
+  common on TV-boxes produced up to recently.
 
   We have chosen, for convenience, to provide compiled binary versions of the
   components on the bootdisks.
@@ -153,7 +156,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   The files `aml_autoscript` and `s905_autoscript` are the two main script
   files that control the boot sequence of `u-boot` (i.e. how resident/vendor
-  `u-boot` scan devices for bootable configurations).
+  `u-boot` scan devices for bootable configurations), for Amlogic devices.
   We use slightly different versions of these file on the chainloaded and non
   chainloaded bootdisks, however.
   For the non chainloaded (`-nc`) disks we use scripts from
@@ -232,10 +235,13 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   APPEND=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 net.ifnames=0 loglevel=1 nr_cpus=1 vga=773
 ```
 
-  For newer versions of (e.g. resident/vendor) `u-boot` the main configuration
+  For newer versions of `u-boot` (e.g. resident/vendor) the main configuration
   file is `extlinux.conf` and a proper set up of this file is (typically)
   sufficient for booting (also without chainloader), provided it resides on a
   device searched by `u-boot`.
+  Moreover, these newer versions of `u-boot` can typically handle a variety of
+  formats for the kernel and initramfs, in particular files without the
+  `u-boot` tag/header.
 
   #### Kernel
 
