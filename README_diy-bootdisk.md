@@ -179,9 +179,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   The file `aml_autoscript` is strictly only needed when "multiboot" is being
   enabled on a TV-box through the "toothpick procedure".
   (This is when the contents of `aml_autoscript` is read, parsed and stored
-  internally on the TV-box during a "user reset" or "update", cf. the code
-  inside `aml_autoscript` and
-  [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts).)
+  internally on the TV-box during a "user reset" or "update".)
 
   The zero-length file `aml_autoscript.zip` is just a placeholder file.
   (My understanding is that the presence of this file is required on some
@@ -197,6 +195,10 @@ and for a non chainloaded (`-nc`) disk it could look like this
   a non chainloaded disk) then `u-boot` proceeds with ordinary (i.e. non
   chainloaded) boot. 
 
+  The boot flow of `u-boot` on Amlogic devices is described in more detail
+  [here](https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html) where
+  also more details about the script files discussed above is given (see also
+  [here](https://github.com/FauthD/amlogic-u-boot-scripts)).
   For other SoC brands than Amlogic the boot order of `u-boot` is defined in
   other ways than described above but the basic working of `u-boot` and the
   usage of the boot configuration files (e.g. `extlinux.conf`, see below) is
@@ -377,7 +379,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   boot.
 
   It is easy to add a u-boot bootloader to an SD, provided there is at least a
-  2M gap before the first partition (some builds of `u-boot` require up to 4M).
+  2M gap before the first partition (some builds of `u-boot` require up to 4M,
+  or even larger).
   The version of `u-boot.bin` that should then be used is one of the "the
   bigger ones" (about 1.5M, typically, for mainline `u-boot`) with all the
   [FIP blobs](https://github.com/LibreELEC/amlogic-boot-fip)
