@@ -520,6 +520,8 @@ The file u-boot.bin-gtkp-pb is compiled from source using
 https://source.denx.de/u-boot/custodians/u-boot-amlogic
 (tag u-boot-amlogic-20220809) with gtk pro defconf and usb_start added as
 preboot command.
+The file u-boot.bin-gtkp-pb can also be downloaded from here
+https://1drv.ms/u/s!Aqo_UY80B5WOgSPiIHPXM9mzWAYn?e=zCpgub
 EOF
 )
 
