@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ubuntu_mkimg.bash (a.k.a. opbuntu_mkimg.bash)
-# 22-11-08: v0.22
+# 22-11-19: v0.23
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
@@ -100,7 +100,7 @@
 # A: Well, as always, "it depends". (Best to browse through them all, I guess.)
 
 distro_name=Ubuntu   # Used for the image name and in grub.cfg
-distro_edition=Jammy # Tested with Focal, Jammy, Kinetic
+distro_edition=Jammy # Tested with Focal, Jammy, Kinetic, Lunar
 
 # Host name for image.
 host_name=opbu
@@ -112,10 +112,10 @@ compressed_img=yes # {yes,no}
 # For a list of currently available (stable) kernels, see
 # https://github.com/ophub/kernel/tree/main/pub/stable
 # (but note that the download path on Github is slightly different, see below).
-ophub_kvers="5.15.77" # version (number), e.g. 5.19.10
+ophub_kvers="6.0.9" # version (number), e.g. 5.19.10
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
-krnver_str=${ophub_kvers}"-flippy-78+o" # Kernel name/release str., plain text.
+krnver_str=${ophub_kvers}"-flippy-78+" # Kernel name/release str., plain text.
 
 # Ophub repo w/ builds of flippy/unifreq kernels (incl. initramfs, thx. Ophub).
 ophub_repo_url="https://github.com/ophub"
@@ -165,14 +165,30 @@ uboot_list=("u-boot-e900v22c.bin" "u-boot-gtking.bin"
 # Official Ubuntu rootfs tarball.
 distro_release="$(tr [A-Z] [a-z] <<< "$distro_edition")" # To lowercase.
 distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
-# Note: When Kinetic is officially released (October 2022), the $distro_urlbase
-# string must probably have a trailing ${distro_release} str. also for Kinetic.
-# (Thus, the "if" and "fi" statements below should then be commented out.)
-if [[ "$distro_release" != "kinetic" ]]; then
-    distro_urlbase=$distro_urlbase/${distro_release}
-fi
-distro_buildfile=${distro_release}-base-arm64.tar.gz
-distro_buildurl=${distro_urlbase}/daily/current/${distro_buildfile}
+# At cdimage.ubuntu.com, three different formats for URLs seem to be used:
+# (1) Daily build of a development edition (e.g. Lunar).
+# (2) Release build of a non LTS release (e.g. Kinetic).
+# (3) Daily build of an LTS release (e.g. Focal, Jammy).
+case "$distro_release" in
+    "lunar")
+        distro_buildfile=${distro_release}-base-arm64.tar.gz
+        distro_buildurl=${distro_urlbase}/daily/current/${distro_buildfile}
+    ;;
+    "kinetic")
+        distro_buildfile=ubuntu-base-22.10-base-arm64.tar.gz
+        distro_urlbase=$distro_urlbase/releases
+        distro_buildurl=${distro_urlbase}/kinetic/release/${distro_buildfile}
+    ;;
+    "focal" | "jammy")
+        distro_buildfile=${distro_release}-base-arm64.tar.gz
+        distro_urlbase=$distro_urlbase/${distro_release}
+        distro_buildurl=${distro_urlbase}/daily/current/${distro_buildfile}
+    ;;
+    *)
+        echo "The distro release $distro_release is unknown, exiting."
+        exit 1
+    ;;
+esac
 
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
@@ -279,7 +295,7 @@ if [[ -z $rootfs_UUID || -z $eth0nm_UUID ]]; then
     exit 1
 fi
 
-# Full kernel command line.
+# Full kernel command line (goes into uEnv.ini, extlinux.conf and grub.cfg).
 kernel_cmdline="root=UUID=${rootfs_UUID} "${kernel_cmdline_opts}
 
 # ------------------------------- here-docs ----------------------------------
@@ -676,7 +692,7 @@ imgfile_loc=${imgfile_dir}/${imgfile_name}
 imgfile_MiB=$((gap_MiB +boot_MiB +root_MiB))
 desired_MiB=$((14*${imgfile_MiB}/10)) # Approx. space for imgfile +imgfile.xz
 
-echo -e "\n\033[92m -- Making image for $distro_name ($distro_edition) -- \033[0m\n"
+echo -e "\n\033[92m -- Making image for $distro_name $distro_edition -- \033[0m\n"
 
 echo -e "The image container file will be at:"
 echo $imgfile_loc

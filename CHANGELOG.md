@@ -178,6 +178,11 @@ petit-bootdisk-nc
 
 # ubuntu_mkimg.bash:
 
+## [v0.23] 22-11-19
+
+### Added
+ - More Ubuntu editions/releases.
+
 ## [v0.22] 22-11-08
 
 ### Added

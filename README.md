@@ -62,7 +62,7 @@ system.
 Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgSd5w5tnP9COEgeZ?e=zxF2uB).
 
 __Opbuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
-easy to produce an Ubuntu image (Focal, Jammy, Kinetic) with
+easy to produce an Ubuntu image (Focal, Jammy, Kinetic, Lunar) with
 [Ophub/Flippy kernel.](https://github.com/ophub/kernel/tree/main/pub/stable)
 This kernel is adapted for Amlogic TV-boxes but has support also for Rockchip
 and Allwinner.
