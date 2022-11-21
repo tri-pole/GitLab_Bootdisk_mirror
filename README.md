@@ -39,12 +39,11 @@ Instructions for recreating or adapting the bootdisks can be found in the file
 ### Making ARM64 Linux images
 
 This repo also contains scripts and information on how to create ARM64 Linux
-images.
+images (and there are downloads of the images available).
 
 #### The easier way (with scripts)
 
-There are three scripts available to generate images (and there are downloads
-of the images available).
+There are three scripts available to generate images.
 The images are CLI/server images but is it easy to add a graphical desktop;
 typically it can be installed with a single command (see comments inside the
 scripts).

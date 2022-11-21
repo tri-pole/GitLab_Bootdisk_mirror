@@ -108,7 +108,7 @@
   (Ophub refers to the binaries used for chainloading as "overload"
   bootloaders, to distinguish them from the ones to be used as "hidden"
   bootloaders (see below) which he refers to simply as "bootloaders".
-  More info about booting with `u-boot` can be found at the end of this
+  More info about booting with `u-boot` can be found further down in this
   document.)
 
   - *Only for chainloaded disk*
@@ -195,10 +195,11 @@ and for a non chainloaded (`-nc`) disk it could look like this
   a non chainloaded disk) then `u-boot` proceeds with ordinary (i.e. non
   chainloaded) boot. 
 
-  The boot flow of `u-boot` on Amlogic devices is described in more detail
-  [here](https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html) where
-  also more details about the script files discussed above is given (see also
-  [here](https://github.com/FauthD/amlogic-u-boot-scripts)).
+  A very readable exposition of the boot flow of `u-boot` on Amlogic devices
+  can be found on
+  [7Ji's blog](https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html)
+  where there are also more details about the script files discussed above (see
+  also [here](https://github.com/FauthD/amlogic-u-boot-scripts)).
   For other SoC brands than Amlogic the boot order of `u-boot` is defined in
   other ways than described above but the basic working of `u-boot` and the
   usage of the boot configuration files (e.g. `extlinux.conf`, see below) is
