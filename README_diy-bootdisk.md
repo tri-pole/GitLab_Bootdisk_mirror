@@ -198,7 +198,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   A very readable exposition of the boot flow of `u-boot` on Amlogic devices
   can be found on
   [7Ji's blog](https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html)
-  where there are also more details about the script files discussed above (see
+  where also more details about the script files discussed above is given (see
   also [here](https://github.com/FauthD/amlogic-u-boot-scripts)).
   For other SoC brands than Amlogic the boot order of `u-boot` is defined in
   other ways than described above but the basic working of `u-boot` and the
