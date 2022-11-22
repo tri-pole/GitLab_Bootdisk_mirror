@@ -151,6 +151,12 @@ petit-bootdisk-nc
 
 # debuntu_dbstrap.bash:
 
+## [v0.12] 22-11-22
+
+### Changed
+ - More available editions/releases.
+ - Fixed sources.list for multiple eds./rels.
+
 ## [v0.11] 22-10-10
 
 ### Changed

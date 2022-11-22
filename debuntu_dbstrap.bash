@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # debuntu_dbstrap.bash
-# 22-10-10: v0.11
+# 22-11-22: v0.12
 # Author: Tripole
 
 # - Introduction -
@@ -82,9 +82,12 @@
 # ------------------------------- parameters ---------------------------------
 
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
-ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic
+ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic, Lunar
 debian_name=Debian      # Used for the image name and in grub.cfg
-debian_edition=Bullseye # Only tested with Bullseye
+debian_edition=Bullseye # Tested with Bullseye, Sid
+
+ubuntu_release="$(tr [A-Z] [a-z] <<< "$ubuntu_edition")" # To lowercase.
+debian_release="$(tr [A-Z] [a-z] <<< "$debian_edition")" # To lowercase.
 
 # Host name for image.
 host_name=debnt
@@ -334,21 +337,21 @@ unmanaged-devices=*,except:type:wifi,except:type:gsm,except:type:cdma,except:typ
 EOF
 )
 
-ubuntu_repo_list=$(cat <<"EOF"
-deb http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
-deb http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted
+ubuntu_repo_list=$(cat <<EOF
+deb http://ports.ubuntu.com/ubuntu-ports/ $ubuntu_release main restricted
+deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-updates main restricted
 
-deb http://ports.ubuntu.com/ubuntu-ports/ jammy universe
-deb http://ports.ubuntu.com/ubuntu-ports/ jammy-updates universe
+deb http://ports.ubuntu.com/ubuntu-ports/ $ubuntu_release universe
+deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-updates universe
 
-deb http://ports.ubuntu.com/ubuntu-ports/ jammy multiverse
-deb http://ports.ubuntu.com/ubuntu-ports/ jammy-updates multiverse
+deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release} multiverse
+deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-updates multiverse
 
-deb http://ports.ubuntu.com/ubuntu-ports/ jammy-backports main restricted universe multiverse
+# deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-backports main restricted universe multiverse
 
-deb http://ports.ubuntu.com/ubuntu-ports/ jammy-security main restricted
-deb http://ports.ubuntu.com/ubuntu-ports/ jammy-security universe
-deb http://ports.ubuntu.com/ubuntu-ports/ jammy-security multiverse
+deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-security main restricted
+deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-security universe
+deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-security multiverse
 EOF
 )
 
@@ -394,11 +397,11 @@ EOF
 
 ubuntu_custom_inst="${ubuntu_custom_inst_p1}""${ubuntu_custom_inst_p2}"
 
-debian_repo_list=$(cat <<"EOF"
-deb http://deb.debian.org/debian bullseye main contrib non-free
-deb http://deb.debian.org/debian bullseye-updates main contrib non-free
-deb http://deb.debian.org/debian bullseye-backports main contrib non-free
-deb http://security.debian.org/debian-security/ bullseye-security main contrib non-free
+debian_repo_list=$(cat <<EOF
+deb http://deb.debian.org/debian $debian_release main contrib non-free
+deb http://deb.debian.org/debian ${debian_release}-updates main contrib non-free
+# deb http://deb.debian.org/debian ${debian_release}-backports main contrib non-free
+deb http://security.debian.org/debian-security/ ${debian_release}-security main contrib non-free
 EOF
 )
 

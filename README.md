@@ -53,9 +53,9 @@ ARM64 image.
 The generated image can be booted using any of the bootdisks but also with
 `u-boot` (using the resident/vendor version installed on the TV-box/SBC).
 
-__Debuntu:__ Debian (Bullseye) and Ubuntu (Focal, Jammy, Kinetic) images of
-"standard" type (with Debian/Ubuntu kernel) can be produced with the script
-[`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which employs the
+__Debuntu:__ Debian (Bullseye, Sid) and Ubuntu (Focal, Jammy, Kinetic, Lunar)
+images of "standard" type (with Debian/Ubuntu kernel) can be produced with the
+script [`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which employs the
 [debootstrap](https://wiki.debian.org/Debootstrap) mechanism to create the base
 system.
 Images built using this script can be [downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgSd5w5tnP9COEgeZ?e=zxF2uB).
