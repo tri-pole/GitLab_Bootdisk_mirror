@@ -268,7 +268,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   On e.g. `u-root-bootdisk` there are several kernels to choose from which
   should work with Amlogic, Allwinner or Rockchip SoCs (see the `config-` files
   on e.g. `u-root-bootdisk`).
-  These kernels are compiled using [unifreq's](https://github.com/unifreq)
+  These kernels are compiled using [Unifreq's](https://github.com/unifreq)
   version of the Linux kernel source by employing
   [Ophub's](https://github.com/ophub/amlogic-s9xxx-armbian) build framework.
   A few extra options have been enabled over the default kernel config such
@@ -323,10 +323,12 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   __u-root:__ The initramfs containing `u-root` can be recreated and adapted by
   downloading and compiling the `u-root` code from
   [u-root's Github repo](https://github.com/u-root/u-root).
-  (We have cross compiled `u-root` using the instructions posted there.)
-  Our version contains all the packages in the `u-root `collections `core` and
-  `boot`. It has been compiled from a `u-root` release (tag) as indicated in
-  the initramfs name, the current version is v0.10.0.
+  (We have cross compiled `u-root` for ARM64 on x86_64 using the instructions
+  posted in this repo.)
+  Our version of the `u-root` initramfs contains all the packages in the
+  `u-root` package collections `core` and `boot`.
+  The initramfs has been compiled from a `u-root` source release (tag) as
+  indicated in the initramfs name, the current version is v0.10.0.
   
   __Petitboot:__ The initramfs for `Petitboot` has been compiled and assembled
   by following, largely, the instructions posted at
@@ -357,6 +359,9 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   notably a hack to produce a `shutdown` command and a fake `dmidecode` command.
   In the `init` script/file a few additions/changes have been made in order to
   enable a smooth boot up and turning off of network connections etc.
+  Similarly, in `u-root`, a small delay followed by autostart of the `boot`
+  command has been introduced through the `uinitcmd` mechanism (cf. `u-root`
+  docs.).
   It is easy to introduce further customizations like this.
 
   ## Some notes relating to `u-boot`
