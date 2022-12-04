@@ -54,10 +54,8 @@
 #   when the kernel is upgraded or the initramfs is rebuilt. Therefore, when
 #   upgrading the kernel or rebuilding the initramfs these components have to
 #   be copied manually over to the bootfs (which us typically mounted under
-#   /boot/aux on the rootfs). (Likewise, if boting via bootscripts, the uImage
-#   and uInitrd have to be recreated using the script mklinuxboot.bash)
-#   The file grub.cfg can be updated using grub-mkimage or via scripts in
-#   /usr/local/bin
+#   /boot/aux on the rootfs). The file grub.cfg can be updated using
+#   grub-mkimage or via scripts in /usr/local/bin
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 #   Another alternative is kubuntu-desktop.
@@ -620,17 +618,17 @@ info on such "bootdisk" booting, see https://gitlab.com/tripole-inc/bootdisk
 
 To install e.g. Petitboot on this bootfs (same for u-root), do the following:
 
-(1) Download the latest tarball with Petitboot in the non chainloaded version,
-    e.g. petit-bootdisk-nc_0v24.tgz
+(1) Download the latest tarball with Petitboot in the chainloaded version,
+    e.g. petit-bootdisk-0v24.tgz
 (2) Unpack the tarball in some temporary directory.
-(3) Copy the existing Image and uInitrd on the bootfs to some backup location.
-(4) Copy the Image (or zImage; it is an Image) from the tarball to Image on the
-    bootfs and copy the uInitrd from the tarball to uInitrd on the bootfs.
-(5) Make a uImage from Image/zImage using the script /usr/local/bin/mkuimg.bash
-(6) Reboot into Petitboot.
+(3) Copy the existing vmlinuz and initrd.img on the bootfs to some backup
+    location.
+(4) Copy one of the vmlinuz-* kernel images from the tarball to vmlinuz on the
+    bootfs and copy the initrd-* (w/ Petitboot) from the tarball to initrd.img
+    on the bootfs.
+(5) Reboot into Petitboot.
 
-(The procedure is similar when starting Petitboot via chainloader u-boot.ext
-check the scripts and structure in e.g. petit-bootdisk-0v24.tgz)
+The procedure is similar when using a bootdisk with the u-root bootloader.
 
 To boot this disk image with u-boot requires a working resident/vendor u-boot
 bootloader but this restriction can be removed if a "hidden" bootloader, i.e.
