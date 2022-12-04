@@ -624,8 +624,8 @@ To install e.g. Petitboot on this bootfs (same for u-root), do the following:
 (3) Copy the existing vmlinuz and initrd.img on the bootfs to some backup
     location.
 (4) Copy one of the vmlinuz-* kernel images from the tarball to vmlinuz on the
-    bootfs and copy the initrd-* (w/ Petitboot) from the tarball to initrd.img
-    on the bootfs.
+    bootfs and copy the initramfs-petitboot-*.cpio.gz (w/ Petitboot) from the
+    tarball to initrd.img on the bootfs.
 (5) Reboot into Petitboot.
 
 The procedure is similar when using a bootdisk with the u-root bootloader.
