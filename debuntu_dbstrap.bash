@@ -102,18 +102,19 @@ img_tag=3pole-$(date +"%y%m%d")
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
 ophub_repo_url="https://github.com/ophub"
-ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/amlogic-u-boot/overload"
+ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/u-boot/amlogic/overload"
 
 # u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
 # Note: Some of these may not be able to boot newer Ubuntu kernels or initramfs
 # since they do not have support for decompression is zstd compressed files.
 # (Such support is missing e.g. in u-boot-s905.bin, u-boot-s905x-s912.bin and
 # u-boot-s905x2-s922.bin but seems to be present in the others.)
-uboot_list=("u-boot-e900v22c.bin" "u-boot-gtking.bin"
-    "u-boot-gtkingpro-rev-a.bin" "u-boot-gtkingpro.bin" "u-boot-n1.bin"
-    "u-boot-odroid-n2.bin" "u-boot-p201.bin" "u-boot-p212.bin"
-    "u-boot-s905.bin" "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin"
-    "u-boot-sei510.bin" "u-boot-sei610.bin" "u-boot-tx3-bz.bin"
+uboot_list=(
+    "u-boot-e900v22c.bin" "u-boot-gtking.bin" "u-boot-gtkingpro-rev-a.bin"
+    "u-boot-gtkingpro.bin" "u-boot-n1.bin" "u-boot-odroid-n2.bin"
+    "u-boot-p201.bin" "u-boot-p212.bin" "u-boot-s905.bin"
+    "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin" "u-boot-sei510.bin"
+    "u-boot-sei610.bin" "u-boot-skyworth-lb2004.bin" "u-boot-tx3-bz.bin"
     "u-boot-tx3-qz.bin" "u-boot-u200.bin" "u-boot-ugoos-x3.bin"
     "u-boot-x96max.bin" "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
 )
@@ -132,7 +133,6 @@ kernel_cmdline_opts="quiet splash"
 
 # The dtb file name used in extlinux.conf (and uEnv.ini.bak).
 # (dtb must be in local /usr/lib/firmware/{kernel-version}/device-tree/amlogic).
-#dtbfile_name=meson-g12b-ugoos-am6.dtb
 dtbfile_name=meson-g12b-gtking-pro.dtb
 
 # File system sizes and types (unit MiB).

@@ -85,7 +85,8 @@
 # - You will be asked to configure three things at runtime (near the end):
 #   time zone, keyboard and root password.
 # - Basic configuration: You might want to configure zram (and optionally set
-#   up swap), see e.g. /etc/default/zramswap and https://wiki.debian.org/ZRam
+#   up swap), see e.g. https://wiki.debian.org/ZRam and also the info and links
+#   inside the config. file /etc/default/zramswap (try e.g. with PERCENT=35).
 #   Also, you can remove/disable unnecessary packages/functionality, e.g.
 #   # systemctl disable spice-vdagent.service --now
 #   # apt remove snapd && apt autoremove
@@ -112,10 +113,10 @@ compressed_img=yes # {yes,no}
 # For a list of currently available (stable) kernels, see
 # https://github.com/ophub/kernel/tree/main/pub/stable
 # (but note that the download path on Github is slightly different, see below).
-ophub_kvers="6.0.9" # version (number), e.g. 5.19.10
+ophub_kvers="5.15.81" # version (number), e.g. 5.19.10
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
-krnver_str=${ophub_kvers}"-flippy-78+" # Kernel name/release str., plain text.
+krnver_str=${ophub_kvers}"-flippy-79+o" # Kernel name/release str., plain text.
 
 # Ophub repo w/ builds of flippy/unifreq kernels (incl. initramfs, thx. Ophub).
 ophub_repo_url="https://github.com/ophub"
@@ -135,7 +136,7 @@ socdtbs_list=("amlogic" "allwinner" "rockchip")
 # The packages (boot-,modules-,dtb-,header-) must have same form as Ophub's,
 # e.g. be the result of a kernel compilation using Ophob's build environment.
 use_local_kern=no # {yes,no}
-loc_krnver_str="5.15.76-koop-3pole" # Kernel name/release str., plain text.
+loc_krnver_str="5.15.81-koop-3pole" # Kernel name/release str., plain text.
 
 # Image tag and name.
 if [[ "$use_local_kern" == "yes" ]]; then
@@ -150,14 +151,15 @@ imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
 dtbfile_name=meson-g12b-gtking-pro.dtb
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
-ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/amlogic-u-boot/overload"
+ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/u-boot/amlogic/overload"
 
 # u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
-uboot_list=("u-boot-e900v22c.bin" "u-boot-gtking.bin"
-    "u-boot-gtkingpro-rev-a.bin" "u-boot-gtkingpro.bin" "u-boot-n1.bin"
-    "u-boot-odroid-n2.bin" "u-boot-p201.bin" "u-boot-p212.bin"
-    "u-boot-s905.bin" "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin"
-    "u-boot-sei510.bin" "u-boot-sei610.bin" "u-boot-tx3-bz.bin"
+uboot_list=(
+    "u-boot-e900v22c.bin" "u-boot-gtking.bin" "u-boot-gtkingpro-rev-a.bin"
+    "u-boot-gtkingpro.bin" "u-boot-n1.bin" "u-boot-odroid-n2.bin"
+    "u-boot-p201.bin" "u-boot-p212.bin" "u-boot-s905.bin"
+    "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin" "u-boot-sei510.bin"
+    "u-boot-sei610.bin" "u-boot-skyworth-lb2004.bin" "u-boot-tx3-bz.bin"
     "u-boot-tx3-qz.bin" "u-boot-u200.bin" "u-boot-ugoos-x3.bin"
     "u-boot-x96max.bin" "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
 )
@@ -580,6 +582,10 @@ EOF
 
 mkuimg_p2=$(cat <<"EOF"
 
+if [[ -f $2 ]]; then
+    mv $2 ${2}.bak
+fi
+
 mkimage -n "uImage" -A arm64 -O linux -T kernel -C none \
     -a $k_load_addr_ -e $k_entry_addr_ -d $1 $2
 EOF
@@ -592,6 +598,10 @@ mkuird=$(cat <<"EOF"
 
 # Takes an ARM64 initrd.img and produces a u-boot tagged uImage from it.
 # Usage: /usr/local/bin/mkuimg /path/to/initrd.img /path/to/uImage
+
+if [[ -f $2 ]]; then
+    mv $2 ${2}.bak
+fi
 
 mkimage -n "uInitrd" -A arm64 -O linux -T ramdisk -C gzip -d ${1} ${2}
 
@@ -608,6 +618,11 @@ mkbootlinux=$(cat <<"EOF"
 # and /path/to/bootpart/mount is e.g. /boot/aux (and is mounted).
 
 /usr/local/bin/mkuimg.bash /boot/vmlinuz-${1} ${2}/uImage
+
+if [[ -f ${2}/uInitrd ]]; then
+    mv ${2}/uInitrd ${2}/uInitrd.bak
+fi
+
 cp /boot/uInitrd-${1} ${2}/uInitrd
 EOF
 )
