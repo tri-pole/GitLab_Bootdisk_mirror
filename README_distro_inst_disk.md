@@ -1,10 +1,11 @@
 # Using a bootdisk to boot a Linux installer disk
 
 A good use case for the bootdisks is booting of an installer for another
-Linux distro. (As mentioned in the README.md file, there is a greater chance
-that this will work as a way to install a UEFI ARM64 Linux distro than using a
-live image, at least according to our experience.) As an example, we outline
-here how to make a small installer disk for openSuse (Tumbleweed or Leap 15.4).
+Linux distro. (As mentioned in the [`README.md`](README.md) file, there is a
+greater chance that this will work as a way to install a UEFI ARM64 Linux
+distro than using a live image, at least according to our experience.)
+As an example, we outline here how to make a small installer disk for openSuse
+(Tumbleweed or Leap 15.4).
 
 The install disk is very simple and contains only a small FAT32 partition with
 a few files on it; an installer kernel and initrd, a `grub.cfg` file (and for

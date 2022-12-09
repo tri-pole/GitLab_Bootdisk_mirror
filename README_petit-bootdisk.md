@@ -11,7 +11,8 @@ displayed.
 After selection of a boot menu entry, the new boot configuration (kernel and
 initramfs) is loaded into memory and booting proceeds with the new
 configuration (utilizing a `kexec()` call).
-(The process is analogous to that of `u-root`, see README_u-root-bootdisk.md)
+(The process is analogous to that of `u-root`, see
+[`README_u-root-bootdisk.md`](README_u-root-bootdisk.md).)
 
 `Petitboot` is capable of reading and parsing several different boot
 [configuration file formats](https://open-power.github.io/petitboot/func/parsers.html),
@@ -160,7 +161,7 @@ The petit-bootdisks have been tested with Fedora 36 (Gnome, KDE), openSuse
 Leap 15.4 (KDE), Armbian generic ARM64 images (XFCE) and with the Ubuntu and
 Debian images built according to the instructions in adjacent README files.
 For a full list of distribtions that work with these bootdisks, see
-README_working_distros.md
+[`README_working_distros.md`](README_working_distros.md).
 
 Some live images of these distros and others do not work because of the
 caveats listed above but the installer images typically work as intended.

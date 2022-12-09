@@ -57,14 +57,14 @@ may need to be built because of shortcomings in the existing installers.
 Ubuntu Server ARM64 can be booted directly using the live iso (burned to USB).
 Using the installer on the iso to install to disk does not work currently but
 Ubuntu Server can be installed using the install method described in
-README_ubuntu_inst.md
+[`README_ubuntu_inst.md`](README_ubuntu_inst.md).
 
 #### Ubuntu Desktop
 
 Ubuntu Desktop ARM64 can be installed using the method described in
-README_ubuntu_inst.md
+[`README_ubuntu_inst.md`](README_ubuntu_inst.md).
 It can also be installed by exchanging the kernel on a Ubuntu Raspberry Pi
-image, see README_ubuntu_frompi.md
+image, see [`README_ubuntu_frompi.md`](README_ubuntu_frompi.md).
 The ARM64 live iso images can be run as-is.
 
 ### Fedora
@@ -75,7 +75,7 @@ The Fedora 36 Generic ARM64 images can be booted and run as-is.
 ### Debian
 
 Debian ARM64 can be installed and run using the debootstrap procedure
-described in README_debian_inst.md
+described in [`README_debian_inst.md`](README_debian_inst.md).
 
 ### openSuse
 
@@ -83,7 +83,7 @@ The installer (iso)
 [images](https://download.opensuse.org/ports/aarch64/distribution/leap/15.4/iso/)
 for openSuse ARM64 can be run directly to install openSuse.
 Alternatively, a network install procedure can be used, see
-README_distro_inst_disk.md
+[`README_distro_inst_disk.md`](README_distro_inst_disk.md).
 
 The pre made openSuse images for ARM64, called
 [appliances](https://download.opensuse.org/ports/aarch64/distribution/leap/15.4/appliances/),
@@ -106,7 +106,7 @@ password is "linux".
 ### Devuan
 
 Devuan ARM64 can be installed using the debootstrap method described and the
-end of README_debian_inst.md
+end of [`README_debian_inst.md`](README_debian_inst.md).
 
 ### Armbian
 
