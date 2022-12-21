@@ -132,6 +132,7 @@ up. More info can be found in the README file on `petit-bootdisk`
 it seems that it cannot boot (via kexec) kernels residing on SD. So, in
 particular, if the bootdisk is installed on SD it will boot into `Petitboot`
 but then the (kexec) loading of a kernel residing on the same SD will fail.
+(This has been observed on s922x devices.)
 
 Part of the idea with the bootdisk was to be able to have the bootdisk on SD
 and have several different USBs with boot target Linux distros attached during
