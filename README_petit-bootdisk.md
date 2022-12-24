@@ -184,7 +184,8 @@ I have mostly assembled and compiled (and slightly tweaked) other people's
 source code, or copied freely available scripts, and made disk images of the
 result.
 Detailed descriptions of the sources of my material can be found in the README
-files on the bootdisks.
+files on the bootdisks and in
+[`README_diy-bootdisk.md`](README_diy-bootdisk.md).
 In some cases, such as script files, the material has been used and evolved,
 with small modifications, in several projects or by several people.
 To properly trace the origin of various ideas/concepts one then has to follow
