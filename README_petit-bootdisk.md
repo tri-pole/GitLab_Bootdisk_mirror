@@ -58,7 +58,11 @@ or cf. a chainloaded disk).
 Downloads
 ---------
 
-The actual bootdisk images are hosted outside of Gitlab, at the links below
+The actual bootdisk images are hosted outside of Gitlab, at the link below
+
+[petit-bootdisk and petit-bootdisk-nc](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw)
+
+or at the alternative locations
 
 [petit-bootdisk](https://1drv.ms/u/s!Aqo_UY80B5WOdTjyhTFQhoebEwU?e=PwkQHO)
 

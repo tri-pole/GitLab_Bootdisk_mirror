@@ -63,7 +63,9 @@
 # - Some kernel versions may not boot using vendor u-boot and the installed
 #   boot scripts (this can be due to patches; mainline kernel is typically OK).
 #   Alternate kernels using kernel.org source that seem to boot and work well
-#   can be found at https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV
+#   can be found at
+#   https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw
+#   https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV
 #   (These kernels are built using Ophub's build framework and can be installed
 #   using the local kernel install method, see below.)
 # - The standard Ubuntu kernel linux-image-generic can also be installed (after
@@ -113,10 +115,10 @@ compressed_img=yes # {yes,no}
 # For a list of currently available (stable) kernels, see
 # https://github.com/ophub/kernel/tree/main/pub/stable
 # (but note that the download path on Github is slightly different, see below).
-ophub_kvers="5.15.81" # version (number), e.g. 5.19.10
+ophub_kvers="5.15.89" # version (number), e.g. 5.19.10
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
-krnver_str=${ophub_kvers}"-flippy-79+o" # Kernel name/release str., plain text.
+krnver_str=${ophub_kvers}"-flippy-81+o" # Kernel name/release str., plain text.
 
 # Ophub repo w/ builds of flippy/unifreq kernels (incl. initramfs, thx. Ophub).
 ophub_repo_url="https://github.com/ophub"
@@ -136,7 +138,7 @@ socdtbs_list=("amlogic" "allwinner" "rockchip")
 # The packages (boot-,modules-,dtb-,header-) must have same form as Ophub's,
 # e.g. be the result of a kernel compilation using Ophob's build environment.
 use_local_kern=no # {yes,no}
-loc_krnver_str="5.15.81-koop-3pole" # Kernel name/release str., plain text.
+loc_krnver_str="5.15.85-koop-3pole" # Kernel name/release str., plain text.
 
 # Image tag and name.
 if [[ "$use_local_kern" == "yes" ]]; then
@@ -678,7 +680,9 @@ several branches at https://github.com/ophub/amlogic-s9xxx-armbian
 The Ubuntu kernel can also be installed in the usual way via e.g. apt or
 aptitude (the package name is linux-image-generic).
 There are also some Tripole builds of kernels (using kernel.org source)
-available at https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV
+available at
+https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw
+https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV
 EOF
 )
 		    

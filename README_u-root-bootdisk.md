@@ -73,9 +73,11 @@ or cf. a chainloaded disk).
 Downloads
 ---------
 
-The actual bootdisk images are hosted outside of Gitlab, at the links below
-(here at Gitlab I have only posted various mini guides and explanatory
-material):
+The actual bootdisk images are hosted outside of Gitlab, at the link below
+
+[u-root-bootdisk and u-root-bootdisk-nc](https://mega.nz/folder/SMt1VLSY#VTR2-eZv4jC7PH4hASp0tg)
+
+or at the alternative locations
 
 [u-root-bootdisk](https://1drv.ms/u/s!Aqo_UY80B5WObWK9pvbIA_gvdY4?e=1IXMqD)
 
