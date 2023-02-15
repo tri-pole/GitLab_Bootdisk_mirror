@@ -84,6 +84,8 @@ An image (Jammy) built according to this ("lean") recipe (with a
 can be
 [downloaded from here](https://mega.nz/folder/KJdAwK4Q#r4HNsKQRkLgT7HTD2s1GLg)
 [ or here](https://1drv.ms/u/s!Aqo_UY80B5WOggJttM6dnwYJHVld?e=ZHgfkI).
+(The `koop-3pole` line of kernels used on these images can be downloaded from
+[here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
 __Arch Linux:__ An image of Arch Linux ARM64 can be produced with the script
 [`archlnx_mkimg.bash`](archlnx_mkimg.bash) which uses the official Arch Linux
