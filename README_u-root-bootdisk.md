@@ -80,8 +80,8 @@ The actual bootdisk images are hosted outside of Gitlab, at the link below
 The version of `u-root` on the latest `u-root-bootdisk`(s) listed above is
 v0.10.0.
 
-The bootdisks are released as tarballs (since no special disk is needed, only
-a single FAT partition large enough to hold all the files).
+The bootdisks are released as tarballs since no special disk is needed, only
+a single FAT partition large enough to hold all the files.
 The skeleton image `bootdisk_skel.img` (one single, empty, 120M FAT partition)
 can be used as a basis when building a bootdisk from a tarball of the bootdisk
 files (just uncompress the tarball onto the skeleton image).
