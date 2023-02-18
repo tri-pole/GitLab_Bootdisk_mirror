@@ -58,9 +58,8 @@ images of "standard" type (with Debian/Ubuntu kernel) can be produced with the
 script [`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which employs the
 [debootstrap](https://wiki.debian.org/Debootstrap) mechanism to create the base
 system.
-Images built using this script can be
-[downloaded from here](https://mega.nz/folder/CBM0hCTD#GDw2iXQpfeoqgWJ45E2Seg)
-[ or here](https://1drv.ms/u/s!Aqo_UY80B5WOgSd5w5tnP9COEgeZ?e=zxF2uB).
+Images built using this script can be downloaded from
+[here](https://mega.nz/folder/CBM0hCTD#GDw2iXQpfeoqgWJ45E2Seg).
 
 __Opbuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
 easy to produce an Ubuntu image (Focal, Jammy, Kinetic, Lunar) with
@@ -69,9 +68,8 @@ This kernel is adapted for Amlogic TV-boxes but has support also for Rockchip
 and Allwinner.
 The script uses a daily official build of the Ubuntu
 [rootfs](https://cdimage.ubuntu.com/ubuntu-base) as a base.
-Images built using this script can be
-[downloaded from here](https://mega.nz/folder/XEckCbSL#sC0UVeOI9PGRJ8Zxm4FiPw)
-[ or here](https://1drv.ms/u/s!Aqo_UY80B5WOgRhJtp07M3M-EjW1?e=KwnM48).
+Images built using this script can be downloaded from
+[here](https://mega.nz/folder/XEckCbSL#sC0UVeOI9PGRJ8Zxm4FiPw).
 
 __Tribuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
 also possible to produce Ubuntu images with a locally provided kernel, for
@@ -79,21 +77,16 @@ instance mainline Linux with source from [kernel.org](https://kernel.org/) and
 kernel
 [configuration](https://github.com/ophub/amlogic-s9xxx-armbian/tree/main/compile-kernel/tools/config) from Ophub (with support for Amlogic, Rockchip and
 Allwinner).
-An image (Jammy) built according to this ("lean") recipe (with a
-[kernel.org/Ophub kernel/config](https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV))
-can be
-[downloaded from here](https://mega.nz/folder/KJdAwK4Q#r4HNsKQRkLgT7HTD2s1GLg)
-[ or here](https://1drv.ms/u/s!Aqo_UY80B5WOggJttM6dnwYJHVld?e=ZHgfkI).
-(The `koop-3pole` line of kernels used on these images can be
-[downloaded from here](https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV)
-[ or here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).)
+An image (Jammy) built according to this ("lean") recipe can be downloaded from
+[here](https://mega.nz/folder/KJdAwK4Q#r4HNsKQRkLgT7HTD2s1GLg).
+(The `koop-3pole` line of kernels used on these images can be downloaded from
+[here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).)
 
 __Arch Linux:__ An image of Arch Linux ARM64 can be produced with the script
 [`archlnx_mkimg.bash`](archlnx_mkimg.bash) which uses the official Arch Linux
 [rootfs](http://os.archlinuxarm.org/os) tarball (with kernel) as a basis.
-An image built using this script can be
-[downloaded from here](https://mega.nz/folder/WVkjiY7Y#SReLKJnmRXOCgfGijuQMPg)
-[ or here](https://1drv.ms/u/s!Aqo_UY80B5WOgUmwtYSHQ2O5Al1T?e=wdBIPh).
+An image built using this script can be downloaded from
+[here](https://mega.nz/folder/WVkjiY7Y#SReLKJnmRXOCgfGijuQMPg).
 
 The script `debuntu_inst.bash` is an older (deprecated) script for image
 creation using debootstrap.

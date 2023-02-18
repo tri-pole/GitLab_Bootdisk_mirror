@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ubuntu_mkimg.bash (a.k.a. opbuntu_mkimg.bash)
-# 22-11-19: v0.23
+# 23-02-18: v0.23
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
@@ -65,7 +65,6 @@
 #   Alternate kernels using kernel.org source that seem to boot and work well
 #   can be found at
 #   https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw
-#   https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV
 #   (These kernels are built using Ophub's build framework and can be installed
 #   using the local kernel install method, see below.)
 # - The standard Ubuntu kernel linux-image-generic can also be installed (after
@@ -138,7 +137,7 @@ socdtbs_list=("amlogic" "allwinner" "rockchip")
 # The packages (boot-,modules-,dtb-,header-) must have same form as Ophub's,
 # e.g. be the result of a kernel compilation using Ophob's build environment.
 use_local_kern=no # {yes,no}
-loc_krnver_str="5.15.85-koop-3pole" # Kernel name/release str., plain text.
+loc_krnver_str="5.15.94-koop-3pole" # Kernel name/release str., plain text.
 
 # Image tag and name.
 if [[ "$use_local_kern" == "yes" ]]; then
@@ -206,7 +205,7 @@ kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115
 # - The boot fs type is vfat/fat32 and the root fs type is one of {ext4,btrfs}.
 # Note: The boot fs is only for u-boot formatted copies of kernel +initramfs.
 gap_MiB=2
-boot_MiB=150
+boot_MiB=200
 root_MiB=5000
 rootfs_type=ext4
 bootfs_label=UBNT_BOOT
@@ -552,6 +551,7 @@ for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
 	# devicetree /boot/dtbs/amlogic/${dtbfile_name_} # not used currently
 	
 	}
+	
 	EOF
 done
 EOF1
@@ -682,7 +682,6 @@ aptitude (the package name is linux-image-generic).
 There are also some Tripole builds of kernels (using kernel.org source)
 available at
 https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw
-https://1drv.ms/u/s!Aqo_UY80B5WOgVj4AaKJ5uDmElqY?e=k05dwV
 EOF
 )
 		    

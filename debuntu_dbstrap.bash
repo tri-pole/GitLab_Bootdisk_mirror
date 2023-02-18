@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # debuntu_dbstrap.bash
-# 22-11-22: v0.12
+# 23-02-18: v0.12
 # Author: Tripole
 
 # - Introduction -
@@ -119,11 +119,11 @@ uboot_list=(
     "u-boot-x96max.bin" "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
 )
 
-# This is a link to the u-boot/aml-220809 directory at Onedrive where the
+# This is a link to the u-boot/aml-220809 directory at Mega where the
 # binary u-boot.bin-gtkp-pb (for uboot.ext) can be found (for description, see
 # README_u-boot-aml below). If u-boot.bin-gtkp-pb exists in $imgfile_dir (see
 # below) then it will be installed as the default u-boot.ext
-# https://1drv.ms/u/s!Aqo_UY80B5WOgSQfui5EDAmYUGHC?e=V80eXf
+# https://mega.nz/folder/fBlwCYjL#Yjg6iU0GwP4Pobu0TrJzPQ
 
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
@@ -522,7 +522,7 @@ https://source.denx.de/u-boot/custodians/u-boot-amlogic
 (tag u-boot-amlogic-20220809) with gtk pro defconf and usb_start added as
 preboot command.
 The file u-boot.bin-gtkp-pb can also be downloaded from here
-https://1drv.ms/u/s!Aqo_UY80B5WOgSPiIHPXM9mzWAYn?e=zCpgub
+https://mega.nz/folder/fBlwCYjL#Yjg6iU0GwP4Pobu0TrJzPQ
 EOF
 )
 
@@ -600,6 +600,7 @@ for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
 	# devicetree /dtbs/amlogic/${dtbfile_name_} # not used currently
 	
 	}
+	
 	EOF
 done
 EOF1
