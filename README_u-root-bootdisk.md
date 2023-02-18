@@ -77,28 +77,11 @@ The actual bootdisk images are hosted outside of Gitlab, at the link below
 
 [u-root-bootdisk and u-root-bootdisk-nc](https://mega.nz/folder/SMt1VLSY#VTR2-eZv4jC7PH4hASp0tg)
 
-or at the alternative locations
-
-[u-root-bootdisk](https://1drv.ms/u/s!Aqo_UY80B5WObWK9pvbIA_gvdY4?e=1IXMqD)
-
-[u-root-bootdisk-nc](https://1drv.ms/u/s!Aqo_UY80B5WObi-Z-XGwIq3hwsM?e=5qb4Zz)
-
-md5sums of latest release:
-
-`u-root-bootdisk-0v32.tgz        f0a2838c986b6000d1771e75022fcabe`
-
-`u-root-bootdisk-nc_0v33.tgz     fa059ac2c1bccd4a97a3bc2bda0c7351`
-
-`u-root-bootdisk-nc_0v34.tgz     fd14c96aec4cc436e5fdc9d400dc19e0`
-
-`bootdisk_skel.img.gz            6c8db71655b02a0aec70135a81a9c74c`
-
 The version of `u-root` on the latest `u-root-bootdisk`(s) listed above is
 v0.10.0.
 
-Starting with v0.28-2 the bootdisks will only be released as tarballs (since
-no special disk is needed, only a single FAT partition large enough to hold
-all the files).
+The bootdisks are released as tarballs (since no special disk is needed, only
+a single FAT partition large enough to hold all the files).
 The skeleton image `bootdisk_skel.img` (one single, empty, 120M FAT partition)
 can be used as a basis when building a bootdisk from a tarball of the bootdisk
 files (just uncompress the tarball onto the skeleton image).
