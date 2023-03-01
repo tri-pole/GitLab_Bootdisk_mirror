@@ -16,7 +16,7 @@
 # rootfs partition). Another alternative is chainloader u-boot.ext (included).
 
 # Usage: ./debuntu_dbstrap distro
-#        where distro is one of: ubunty, debian
+#        where distro is one of: ubuntu, debian
 
 # Tested on: Ugoos AM6 plus (s922x, for booting and running) and on QEMU
 # (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
@@ -82,7 +82,7 @@
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
 ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic, Lunar
 debian_name=Debian      # Used for the image name and in grub.cfg
-debian_edition=Bullseye # Tested with Bullseye, Sid
+debian_edition=Bullseye # Tested with Bullseye, Bookworm, Sid
 
 ubuntu_release="$(tr [A-Z] [a-z] <<< "$ubuntu_edition")" # To lowercase.
 debian_release="$(tr [A-Z] [a-z] <<< "$debian_edition")" # To lowercase.

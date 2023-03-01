@@ -248,6 +248,11 @@ petit-bootdisk-nc
 
 # archlnx_mkimg.bash:
 
+## [v0.13] 23-03-01
+
+### Added
+ - Possibility to generate Manjaro ARM images.
+
 ## [v0.1] 22-10-16
 
 ### Added

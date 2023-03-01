@@ -1,11 +1,14 @@
 #!/bin/bash
 
 # archlnx_mkimg.bash
-# 22-10-16: v0.1
+# 23-03-01: v0.13
 # Author: Tripole
 
 # Script to generate an Arch Linux ARM64 (CLI, "server") image using the
-# offical pre built tarball with rootfs (and kernel) from Arch Linux ARM.
+# offical pre built tarball with rootfs (and kernel) from Arch Linux ARM, or
+# generate a Manjaro Linux ARM (CLI, "server") image using the official pre
+# built rootfs together with a locally supplied kernel, such as e.g. Ophub's.
+
 # The script must be executed (as root) on an Ubuntu/Debian type machine,
 # either natively on aarch64/ARM64 (e.g. Ubuntu Server Live booted via
 # bootdisk) or virtualized (using qemu-aarch64-static) on x86_64/amd64.
@@ -42,10 +45,11 @@
 # Inspiration taken from
 # https://archlinuxarm.org/
 # https://wiki.pine64.org/wiki/Installing_Arch_Linux_ARM_On_The_Pinebook_Pro
+# https://forum.manjaro.org/c/arm/100
+# https://gitlab.manjaro.org/manjaro-arm/applications/manjaro-arm-installer/-/blob/master/manjaro-arm-installer
 
 # Notes:
-# - The root password is "root" and there is a default user "alarm" set up.
-#   Therefore, on first boot (as root) change the passwords for root and alarm.
+# -- General --
 # - On some boxes, when booting from USB using vendor u-boot and the boot
 #   scripts, only the image stick can be attached to the USB bus. When booting
 #   using a chainloader (u-boot.ext) it should not be a problem to have other
@@ -59,56 +63,117 @@
 #   uInitrd have to be recreated "manually" using this script (unless you rely
 #   on grub booting, then only grub.cfg on the rootfs partition has to be
 #   updated; see the scripts in /usr/local/bin).
+# - On some boxes it is necessary to run (as user) the script g12_sound.sh to
+#   get sound working. (Afterwards, check for soundcards with e.g. aplay -L)
+# - Run time for this script is about 5m or less (on a modern computer with
+#   good network connectivity). Try this to check: time ./ubuntu_mkimg.bash
+# - Pro tip: Generate the image cheaply, say 2G rootfs (so that burn to SD/USB
+#   goes quickly). Then, (before first boot) enlarge the rootfs partition on
+#   SD/USB to desired size, e.g. with (100% here uses all of the SD/USB):
+#   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
+# -- ArchLinux --
+# - The root password is "root" and there is a default user "alarm" set up.
+#   Therefore, on first boot (as root) change the passwords for root and alarm.
 # - A desktop environment can be obtained by installing e.g. plasma-meta (for a
 #   full KDE plasma desktop). You may have to install separately the KDE
 #   terminal program konsole separately and you may have to enable the
 #   installed display manager manually: systemctl enable sddm.service --now
 #   More info about e.g. desktop environments can be found in Arch Linux's very
 #   comprehensive Wiki at https://wiki.archlinux.org
-# - On some boxes it is necessary to run (as user) the script g12_sound.sh to
-#   get sound working. (Afterwards, check for soundcards with e.g. aplay -L)
-# - Run time for this script is about 2m or less (on a modern computer with
-#   good network connectivity). Try this to check: time ./ubuntu_mkimg.bash
-# - Pro tip: Generate the image cheaply, say 2G rootfs (so that burn to SD/USB
-#   goes quickly). Then, (before first boot) enlarge the rootfs partition on
-#   SD/USB to desired size, e.g. with (100% here uses all of the SD/USB):
-#   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
+# -- Manjaro --
+# - The root password is set during image creation.
+#   For desktop use it is recommended to add an ordinary user e.g. like so
+#   useradd <yourusername> -m -G \
+#       wheel,sys,audio,input,video,storage,lp,network,users,power
+#   A graphical desktop can easily be added, e.g. a basic KDE plasma desktop;
+#   pacman -Sy
+#   pacman -S plasma-desktop plasma-wayland-session plasma-nm sddm
+#   systemctl enable sddm
+#   reboot
 
 # ------------------------------- parameters ---------------------------------
 
-distro_name=ArchLinux  # Used for the image name and in grub.cfg
-distro_edition=current # Arch Linux ARM is a rolling release distro.
-
-# Host name for image.
-host_name=arch
+distro_name=ArchLinux  # {ArchLinux, Manjaro}
+distro_edition=current # For Arch and Manjaro use "current" (latest release).
 
 # Compression (xz) takes some extra time.
 compressed_img=yes # {yes,no}
 
-# The official rootfs tarball from Arch Linux ARM also contains a kernel.
-archlnx_repo_url="http://os.archlinuxarm.org/os"
-distro_buildfile="ArchLinuxARM-aarch64-latest.tar.gz"
-distro_buildurl=${archlnx_repo_url}/${distro_buildfile}
+if [[ "$distro_name" == "Manjaro" ]]; then
+    # Host name for image.
+    host_name=mnjo
+
+    # Manjaro Linux rootfs tarball for ARM64. Does not contain kernel.
+    mnjo_repo_url_base="https://github.com/manjaro-arm/rootfs/releases/latest/download"
+    mnjo_buildnum=$distro_edition
+    mnjo_buildfile="Manjaro-ARM-aarch64-latest.tar.gz"
+    #mnjo_buildurl=${mnjo_repo_url_base}/${mnjo_buildnum}/${mnjo_buildfile}
+    mnjo_buildurl=${mnjo_repo_url_base}/${mnjo_buildfile}
+
+    distro_buildfile=$mnjo_buildfile
+    distro_buildurl=$mnjo_buildurl
+    
+    # List of names for the SoC vendors for which you wish to d/l and install
+    # the dtb package (the selected dtb below must be in one of these packages).
+    # Ophub packages dtbs for amlogic, allwinner and rockchip w/ his kernels.
+    # (The paths to the dtb packages (defined below) are of the form
+    # ${ophub_krepo_url}/dtb-${socdtbs_name}-${krnver_str_url}.tar.gz)
+    socdtbs_list=("amlogic" "allwinner" "rockchip")
+
+    # Locally provided kernel (required for Manjaro).
+    # The packages (boot-,modules-,dtb-,header-) must have same form as Ophub's,
+    # e.g. be the result of a kernel compil. using Ophob's build environment.
+    loc_krnver_str="5.15.95-koop-3pole" # Kernel name/release str., plain text.
+    krnver_str=$loc_krnver_str
+
+    # Name of the final image.
+    img_tag=${krnver_str}_$(date +"%y%m%d") # Edit to your liking.
+    imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
+
+    kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1"
+
+    bootfs_label=MNJO_BOOT
+    rootfs_label=MNJO_ROOT
+else
+    # Host name for image.
+    host_name=arch
+
+    # The official rootfs tarball from Arch Linux ARM also contains a kernel.
+    archlnx_repo_url="http://os.archlinuxarm.org/os"
+    distro_buildfile="ArchLinuxARM-aarch64-latest.tar.gz"
+    distro_buildurl=${archlnx_repo_url}/${distro_buildfile}
+
+    # Name of the container file used during image creation. After completion
+    # the image is renamed and the kernel version is included in the name.
+    imgfile_name=${distro_name}_${distro_edition}.img
+
+    # The image tag is added to the final image name. Edit to taste.
+    img_tag=3pole-$(date +"%y%m%d")
+
+    # The string root=UUID=${rootfs_UUID} is prepended below once UUID exists.
+    kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw"
+
+    bootfs_label=ARCH_BOOT
+    rootfs_label=ARCH_ROOT
+fi
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
 ophub_repo_url="https://github.com/ophub"
-ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/amlogic-u-boot/overload"
+ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/u-boot/amlogic/overload"
 
 # u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
-uboot_list=("u-boot-e900v22c.bin" "u-boot-gtking.bin"
-    "u-boot-gtkingpro-rev-a.bin" "u-boot-gtkingpro.bin" "u-boot-n1.bin"
-    "u-boot-odroid-n2.bin" "u-boot-p201.bin" "u-boot-p212.bin"
-    "u-boot-s905.bin" "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin"
-    "u-boot-sei510.bin" "u-boot-sei610.bin" "u-boot-tx3-bz.bin"
+uboot_list=(
+    "u-boot-e900v22c.bin" "u-boot-gtking.bin" "u-boot-gtkingpro-rev-a.bin"
+    "u-boot-gtkingpro.bin" "u-boot-n1.bin" "u-boot-odroid-n2.bin"
+    "u-boot-p201.bin" "u-boot-p212.bin" "u-boot-s905.bin"
+    "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin" "u-boot-sei510.bin"
+    "u-boot-sei610.bin" "u-boot-skyworth-lb2004.bin" "u-boot-tx3-bz.bin"
     "u-boot-tx3-qz.bin" "u-boot-u200.bin" "u-boot-ugoos-x3.bin"
     "u-boot-x96max.bin" "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
 )
 
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
-
-# The string root=UUID=${rootfs_UUID} will be prepended below once UUID exists.
-kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw"
 
 # dtb name in uEnv.ini/extlinux.conf (dtb must be in Ophub's boot-*.tar.gz pkg).
 #dtbfile_name=meson-g12b-ugoos-am6.dtb
@@ -120,11 +185,9 @@ dtbfile_name=meson-g12b-gtking-pro.dtb
 # - The boot fs type is vfat/fat32 and the root fs type is one of {ext4,btrfs}.
 # Note: The boot fs is only for u-boot formatted copies of kernel +initramfs.
 gap_MiB=2
-boot_MiB=150
+boot_MiB=200
 root_MiB=5000
 rootfs_type=ext4
-bootfs_label=ARCH_BOOT
-rootfs_label=ARCH_ROOT
 
 # These to parameters define the kernel memory load address and starting point,
 # respectively, for u-boot. They are used in the script mkuimg.bash below to
@@ -137,17 +200,13 @@ k_entry_addr=0x1080000
 imgfile_dir=$PWD
 tmpfile_dir=${imgfile_dir}/temp_files
 
+# Location of local kernel pkg. files (if applicable).
+krnfile_dir=${imgfile_dir}/my_kernel
+
 # Temporary mount points (dirs) used during image creation.
 rootfs_mnt=${imgfile_dir}/rootfs_tmp
 bootfs_dir=/boot/aux
 bootfs_mnt=${rootfs_mnt}/${bootfs_dir}
-
-# Name of the container file used during image creation. After completion the
-# image is renamed and the kernel version is included in the name.
-imgfile_name=${distro_name}_${distro_edition}.img
-
-# The image tag is added to the final image name. Edit to taste.
-img_tag=3pole-$(date +"%y%m%d")
 
 # Do we want to clean up all temporary files and directories afterwards?
 docleanup_after=yes # {yes,no}
@@ -253,8 +312,8 @@ EOF
 )
 
 # This is the basic (default) set of packages installed on top of the rootfs.
-# (If you want to add packages, edit the here-doc ubuntu_custom_extra above.)
-ubuntu_custom_inst=$(cat <<EOF
+# (If you want to add packages, edit the here-doc archlnx_custom_extra above.)
+archlnx_custom_inst=$(cat <<EOF
 #!/bin/bash
 
 pacman-key --init
@@ -270,9 +329,43 @@ $archlnx_custom_extra
 # until passwd; do echo "Try again."; done
 echo "Setting up boot (2 items):"
 echo "(1) Creating /boot/grub/grub.cfg"
-/usr/local/bin/mkgrubcfg_arch.bash
+/usr/local/bin/mkgrubcfg_simple.bash
 echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, Initrd)."
 /usr/local/bin/mkbootlinux.bash ${ophub_krel} ${bootfs_dir} >/dev/null
+EOF
+)
+
+# If you want to add packages (to the default below), this is where to do it.
+# (The double quotes around the limit string EOF prevents command substitution.)
+manjaro_custom_extra=$(cat <<"EOF"
+pacman -S --noconfirm man-db pacman-contrib alsa-utils networkmanager
+systemctl enable NetworkManager
+systemctl enable systemd-resolved
+EOF
+)
+
+# This is the basic (default) set of packages installed on top of the rootfs.
+# (If you want to add packages, edit the here-doc manjaro_custom_extra above.)
+manjaro_custom_inst=$(cat <<EOF
+#!/bin/bash
+
+pacman-key --init
+pacman-key --populate archlinuxarm manjaro manjaro-arm
+pacman -Sy
+pacman -S --noconfirm uboot-tools
+pacman -S --noconfirm base manjaro-system manjaro-release systemd systemd-libs
+# timedatectl list-timezones
+timedatectl set-timezone America/New_York
+# localectl list-keymaps
+localectl set-keymap us
+$manjaro_custom_extra
+echo "Set password for \033[91mroot:\033[0m"
+until passwd; do echo "Try again."; done
+echo "Setting up boot (2 items):"
+echo "(1) Creating /boot/grub/grub.cfg"
+/usr/local/bin/mkgrubcfg_simple.bash
+echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, Initrd)."
+/usr/local/bin/mkbootlinux.bash ${krnver_str} ${bootfs_dir} >/dev/null
 EOF
 )
 
@@ -421,6 +514,51 @@ EOF1
 
 mkgrubcfg_arch="${mkgrubcfg_arch_p1}""${mkgrubcfg_arch_p2}"
 
+mkgrubcfg_simple_p1=$(cat <<EOF
+#!/bin/bash
+
+# Scans for vmlinuz-* in /boot and makes a simple grub.cfg in /boot/grub
+# Usage: /usr/local/bin/mkgrubcfg_simple.bash
+
+distro_name_=$distro_name
+distro_edition_=$distro_edition
+kernel_cmdline_="$kernel_cmdline"
+dtbfile_name_=$dtbfile_name
+
+EOF
+)
+
+mkgrubcfg_simple_p2=$(cat <<"EOF1"
+
+cd /boot
+if [[ -f grub/grub.cfg ]]; then
+    mv grub/grub.cfg grub/grub.cfg.bak
+fi
+
+for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
+    kernel_name=vmlinuz-${kernel_version}
+    initrd_name=initrd.img-${kernel_version}
+
+    kernel_path=/boot/$kernel_name
+    initrd_path=/boot/$initrd_name
+    echo "Adding entry: $distro_name_ $distro_edition_ (kernel $kernel_version)"
+    # Note: The leading tabs in the here-document below are important.
+	cat <<-EOF >> grub/grub.cfg
+	menuentry "$distro_name_ $distro_edition_ (kernel $kernel_version)" {
+	
+	linux  $kernel_path $kernel_cmdline_
+	initrd $initrd_path
+	# devicetree /boot/dtbs/amlogic/${dtbfile_name_} # not used currently
+	
+	}
+	
+	EOF
+done
+EOF1
+)
+
+mkgrubcfg_simple="${mkgrubcfg_simple_p1}""${mkgrubcfg_simple_p2}"
+
 mkuimg_p1=$(cat <<EOF
 #!/bin/bash
 
@@ -431,6 +569,8 @@ mkuimg_p1=$(cat <<EOF
 
 # The values for -a (load address) and -e (entry point) may need to be adapted.
 # For some s922x (e.g. GTK pro, AM6) std. values for for -a,-e are 0x1080000
+# see https://linux-meson.com/howto.html
+# and also https://www.kernel.org/doc/html/latest/arm64/booting.html
 
 k_load_addr_=$k_load_addr
 k_entry_addr_=$k_entry_addr
@@ -439,6 +579,10 @@ EOF
 )
 
 mkuimg_p2=$(cat <<"EOF"
+
+if [[ -f $2 ]]; then
+    mv $2 ${2}.bak
+fi
 
 mkimage -n "uImage" -A arm64 -O linux -T kernel -C none \
     -a $k_load_addr_ -e $k_entry_addr_ -d $1 $2
@@ -453,12 +597,16 @@ mkuird=$(cat <<"EOF"
 # Takes an ARM64 initrd.img and produces a u-boot tagged uImage from it.
 # Usage: /usr/local/bin/mkuimg /path/to/initrd.img /path/to/uImage
 
+if [[ -f $2 ]]; then
+    mv $2 ${2}.bak
+fi
+
 mkimage -n "uInitrd" -A arm64 -O linux -T ramdisk -C gzip -d ${1} ${2}
 
 EOF
 )
 
-mkbootlinux=$(cat <<"EOF"
+mkbootlinux_arch=$(cat <<"EOF"
 #!/bin/bash
 
 # Produces an uImage and uInitrd on the bootfs partition from Arch Linux ARM
@@ -468,6 +616,29 @@ mkbootlinux=$(cat <<"EOF"
 
 /usr/local/bin/mkuimg.bash /boot/Image ${1}/uImage
 /usr/local/bin/mkuird.bash /boot/initramfs-linux.img ${1}/uInitrd
+EOF
+)
+
+mkbootlinux_mnjo=$(cat <<"EOF"
+#!/bin/bash
+
+# Produces an uImage and uInitrd on the fat boot partition from flippy's
+# kernel and initramfs.
+# Usage: /usr/local/bin/mkbootlinux kernel_release /path/to/bootpart/mount
+# where kernel_release is e.g. 5.19.9-flippy-76+
+# and /path/to/bootpart/mount is e.g. /boot/aux (and is mounted).
+
+if [[ -f ${2}/uImage ]]; then
+    mv ${2}/uImage ${2}/uImage.bak
+fi
+
+/usr/local/bin/mkuimg.bash /boot/vmlinuz-${1} ${2}/uImage
+
+if [[ -f ${2}/uInitrd ]]; then
+    mv ${2}/uInitrd ${2}/uInitrd.bak
+fi
+
+cp /boot/uInitrd-${1} ${2}/uInitrd
 EOF
 )
 
@@ -527,6 +698,15 @@ EOF
 )
 
 #----------------------------------- code -----------------------------------
+
+if [[ "$distro_name" == "Manjaro" ]]; then
+    mkbootlinux=$mkbootlinux_mnjo
+    distro_custom_inst=$manjaro_custom_inst
+else
+    mkgrubcfg_simple=$mkgrubcfg_arch
+    mkbootlinux=$mkbootlinux_arch
+    distro_custom_inst=$archlnx_custom_inst
+fi
 
 cd $imgfile_dir
 
@@ -672,6 +852,55 @@ else
 fi
 echo "Done."
 
+if [[ "$distro_name" == "Manjaro" ]]; then
+    echo -e ${i_msg}" Copying locally supplied kernel files to $tmpfile_dir..."
+
+    cp ${krnfile_dir}/boot-${krnver_str}.tar.gz $tmpfile_dir
+    if [[ $? -ne 0 ]]; then
+        echo -e ${i_msg}" Unable to locate the kernel boot files pkg., exiting."
+        exit 1
+    fi
+    cp ${krnfile_dir}/modules-${krnver_str}.tar.gz $tmpfile_dir
+    if [[ $? -ne 0 ]]; then
+        echo -e ${i_msg}" Unable to locate the kernel modules pkg., exiting."
+        exit 1
+    fi
+    for socdtbs_name in ${socdtbs_list[*]}; do
+        cp ${krnfile_dir}/dtb-${socdtbs_name}-${krnver_str}.tar.gz $tmpfile_dir
+        if [[ $? -ne 0 ]]; then
+            echo -e ${i_msg}" Unable to locate the $socdtbs_name dtb files pkg., exiting."
+            exit 1
+        fi
+    done
+    cp ${krnfile_dir}/header-${krnver_str}.tar.gz $tmpfile_dir
+    if [[ $? -ne 0 ]]; then
+        echo -e ${i_msg}" Unable to locate the kernel header files pkg., exiting."
+        exit 1
+    fi
+    echo "Done."
+
+    echo -n -e ${i_msg}" Saving kernel pkg. files to /var/cache/kernel.pkg ..."
+    opsave_dir=${rootfs_mnt}/var/cache/kernel.pkg
+    mkdir $opsave_dir
+    cp ${tmpfile_dir}/boot-${krnver_str}.tar.gz $opsave_dir
+    cp ${tmpfile_dir}/modules-${krnver_str}.tar.gz $opsave_dir
+    for socdtbs_name in ${socdtbs_list[*]}; do
+        cp ${tmpfile_dir}/dtb-${socdtbs_name}-${krnver_str}.tar.gz $opsave_dir
+    done
+    cp ${tmpfile_dir}/header-${krnver_str}.tar.gz $opsave_dir
+    echo " Done."
+
+    echo -n -e ${i_msg}" Installing kernel, initramfs, modules and dtb files..."
+    tar -xzf ${tmpfile_dir}/boot-${krnver_str}.tar.gz -C ${rootfs_mnt}/boot
+    mkdir -p -m 0744 ${rootfs_mnt}/lib/modules
+    tar -xzf ${tmpfile_dir}/modules-${krnver_str}.tar.gz -C ${rootfs_mnt}/lib/modules
+    for socdtbs_name in ${socdtbs_list[*]}; do
+        mkdir -p -m 0755 ${rootfs_mnt}/boot/dtbs/${socdtbs_name}
+        tar -xzf ${tmpfile_dir}/dtb-${socdtbs_name}-${krnver_str}.tar.gz -C ${rootfs_mnt}/boot/dtbs/${socdtbs_name}
+    done
+    echo " Done."
+fi
+
 # Pick up the kernel version here since it is used shortly (e.g. in grub.cfg).
 kernel_version=$(ls --format=single-column ${rootfs_mnt}/lib/modules)
 
@@ -681,8 +910,8 @@ echo " Done."
 
 echo -n -e ${i_msg}" Installing grub scripts in /usr/local/bin ..."
 # This script produces a basic grub.cfg file and works inside a loop device.
-echo -e "$mkgrubcfg_arch" >${rootfs_mnt}/usr/local/bin/mkgrubcfg_arch.bash
-chmod 0755 ${rootfs_mnt}/usr/local/bin/mkgrubcfg_arch.bash
+echo -e "$mkgrubcfg_simple" >${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
+chmod 0755 ${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
 echo " Done."
 
 echo -n -e ${i_msg}" Installing scripts to create uImage and uInitrd on bootfs..."
@@ -695,8 +924,9 @@ chmod 0755 ${rootfs_mnt}/usr/local/bin/mkbootlinux.bash
 echo " Done."
 
 echo -n -e ${i_msg}" Preparing for chroot jail..."
-echo -e "$ubuntu_custom_inst" >${rootfs_mnt}/root/ubuntu_custom_inst.bash
-chmod 0755 ${rootfs_mnt}/root/ubuntu_custom_inst.bash
+echo -e "$distro_custom_inst" >${rootfs_mnt}/root/distro_custom_inst.bash
+chmod 0755 ${rootfs_mnt}/root/distro_custom_inst.bash
+
 echo " Done."
 
 if [[ $arch_str != "aarch64" ]]; then
@@ -707,8 +937,8 @@ if [[ $arch_str != "aarch64" ]]; then
 fi
 
 echo -e ${i_msg}" Entering chroot jail. Installing some pkgs., running some scripts..."
-systemd-nspawn -q --timezone=off -D ${rootfs_mnt} /root/ubuntu_custom_inst.bash
-rm ${rootfs_mnt}/root/ubuntu_custom_inst.bash
+systemd-nspawn -q --timezone=off -D ${rootfs_mnt} /root/distro_custom_inst.bash
+rm ${rootfs_mnt}/root/distro_custom_inst.bash
 sleep 2 # Just to be able to read some of the messages.
 echo "Done."
 
@@ -780,11 +1010,15 @@ echo -n -e ${i_msg}" Disconnecting and removing the loop devices..."
 losetup -d $loop_dev 2>/dev/null 
 echo " Done."
 
-imgfile_name_full=${distro_name}_${distro_edition}_${kernel_version}_${img_tag}.img
-echo -n -e ${i_msg}" Renaming image file to $imgfile_name_full"
-imgfile_loc_full=${imgfile_dir}/${imgfile_name_full}
-mv $imgfile_loc $imgfile_loc_full
-echo " Done."
+if [[ "$distro_name" == "Manjaro" ]]; then
+    imgfile_loc_full=$imgfile_loc
+else
+    imgfile_name_full=${distro_name}_${distro_edition}_${kernel_version}_${img_tag}.img
+    echo -n -e ${i_msg}" Renaming image file to $imgfile_name_full"
+    imgfile_loc_full=${imgfile_dir}/${imgfile_name_full}
+    mv $imgfile_loc $imgfile_loc_full
+    echo " Done."
+fi
 
 if [[ "$compressed_img" == "yes" ]]; then
     echo -e ${i_msg}" Compressing the image using xz compression..."

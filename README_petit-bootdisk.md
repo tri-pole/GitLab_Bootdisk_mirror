@@ -71,7 +71,7 @@ can be used as a basis when building a bootdisk from a tarball of the bootdisk
 files (just uncompress the tarball onto the skeleton image).
 
 There is also an early version of `multi-bootdisk` which combines the files
-for Petitboot and u-root onto one disk. It can be downloaded from
+for `Petitboot` and `u-root` onto one disk. It can be downloaded from
 [here](https://mega.nz/folder/fd0DxILD#msDXVG0mBLYvP1dyPqNzAw).
 
 Caveats
