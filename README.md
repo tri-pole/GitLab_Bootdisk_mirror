@@ -79,14 +79,23 @@ kernel
 Allwinner).
 An image (Jammy) built according to this ("lean") recipe can be downloaded from
 [here](https://mega.nz/folder/KJdAwK4Q#r4HNsKQRkLgT7HTD2s1GLg).
-(The `koop-3pole` line of kernels used on these images can be downloaded from
-[here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).)
+The `koop-3pole` line of kernels used on these images can be downloaded from
+[here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
 __Arch Linux:__ An image of Arch Linux ARM64 can be produced with the script
 [`archlnx_mkimg.bash`](archlnx_mkimg.bash) which uses the official Arch Linux
 [rootfs](http://os.archlinuxarm.org/os) tarball (with kernel) as a basis.
 An image built using this script can be downloaded from
 [here](https://mega.nz/folder/WVkjiY7Y#SReLKJnmRXOCgfGijuQMPg).
+
+__Trinjaro:__ With the script [`archlnx_mkimg.bash`](archlnx_mkimg.bash) it is
+also possible to produce Manjaro images with a locally provided kernel, for
+instance Ophubs's kernels or the `koop-3pole` kernels linked to above.
+An image built using this recipe with a `koop-3pole` kernel can be downloaded
+from [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
+(Note: These Trinjaro images are very crude compared to the polished high
+quality images produced by [Manjaro ARM](https://github.com/manjaro-arm).
+The Trinjaro images are only meant as a proof of concept and for tinkering.)
 
 The script `debuntu_inst.bash` is an older (deprecated) script for image
 creation using debootstrap.
