@@ -85,7 +85,7 @@ The `koop-3pole` line of kernels used on these images can be downloaded from
 __Arch Linux:__ An image of Arch Linux ARM64 can be produced with the script
 [`archlnx_mkimg.bash`](archlnx_mkimg.bash) which uses the official Arch Linux
 [rootfs](http://os.archlinuxarm.org/os) tarball (with kernel) as a basis.
-An image built using this script can be downloaded from
+Images built using this script can be downloaded from
 [here](https://mega.nz/folder/WVkjiY7Y#SReLKJnmRXOCgfGijuQMPg).
 
 __Trinjaro:__ With the script [`archlnx_mkimg.bash`](archlnx_mkimg.bash) it is
