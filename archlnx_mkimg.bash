@@ -317,7 +317,7 @@ archlnx_custom_inst=$(cat <<EOF
 #!/bin/bash
 
 pacman-key --init
-pacman-key --populate archlinuxarm
+pacman-key --populate archlinuxarm archlinux
 pacman -Sy
 pacman -S --noconfirm uboot-tools
 # timedatectl list-timezones
