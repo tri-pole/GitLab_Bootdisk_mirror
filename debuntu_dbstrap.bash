@@ -112,18 +112,21 @@ ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/
 uboot_list=(
     "u-boot-e900v22c.bin" "u-boot-gtking.bin" "u-boot-gtkingpro-rev-a.bin"
     "u-boot-gtkingpro.bin" "u-boot-n1.bin" "u-boot-odroid-n2.bin"
-    "u-boot-p201.bin" "u-boot-p212.bin" "u-boot-s905.bin"
+    "u-boot-p201.bin" "u-boot-p212.bin" "u-boot-r3300l.bin" "u-boot-s905.bin"
     "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin" "u-boot-sei510.bin"
     "u-boot-sei610.bin" "u-boot-skyworth-lb2004.bin" "u-boot-tx3-bz.bin"
     "u-boot-tx3-qz.bin" "u-boot-u200.bin" "u-boot-ugoos-x3.bin"
     "u-boot-x96max.bin" "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
 )
 
-# This is a link to the u-boot/aml-220809 directory at Mega where the
-# binary u-boot.bin-gtkp-pb (for uboot.ext) can be found (for description, see
-# README_u-boot-aml below). If u-boot.bin-gtkp-pb exists in $imgfile_dir (see
-# below) then it will be installed as the default u-boot.ext
-# https://mega.nz/folder/fBlwCYjL#Yjg6iU0GwP4Pobu0TrJzPQ
+# If the file $uboot_ext_local exists in $imgfile_dir (see below) then it will
+# be installed on the image as the default u-boot.ext on the bootfs.
+# uboot_ext_local=u-boot.bin-gtkp-pb
+# uboot_ext_local_bldtag=u-boot-amlogic-20220809
+uboot_ext_local=u-boot.bin-gtkp-pb-1s-ctrlc
+uboot_ext_local_bldtag=u-boot-amlogic-20230131
+uboot_ext_local_url1="https://mega.nz/folder/rUdggRyb#11ffZO8FBqN-gCcXGBcd4g"
+uboot_ext_local_url2="https://mega.nz/folder/fBlwCYjL#Yjg6iU0GwP4Pobu0TrJzPQ"
 
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
@@ -504,7 +507,7 @@ LABEL DEBNT_DEFAULT
 EOF
 )
 
-README_uboot_ophub=$(cat <<"EOF"
+README_uboot_ophub=$(cat <<EOF
 The files in this directory are from $ophub_uboot_url
 They are intended to be used as chainloader (u-boot.ext) when booting via this
 method.
@@ -516,13 +519,14 @@ Note that some chainloaders can not boot newer kernels/initrfamfs.
 EOF
 )
 
-README_uboot_aml=$(cat <<"EOF"
-The file u-boot.bin-gtkp-pb is compiled from source using
+README_uboot_aml=$(cat <<EOF
+The file $uboot_ext_local is compiled from source using
 https://source.denx.de/u-boot/custodians/u-boot-amlogic
-(tag u-boot-amlogic-20220809) with gtk pro defconf and usb_start added as
-preboot command.
-The file u-boot.bin-gtkp-pb can also be downloaded from here
-https://mega.nz/folder/fBlwCYjL#Yjg6iU0GwP4Pobu0TrJzPQ
+using the tag $uboot_ext_local_bldtag
+with gtk pro defconf and usb_start added as preboot command.
+For more info about $uboot_ext_local and downloads of similar files see
+$uboot_ext_local_url1
+$uboot_ext_local_url2
 EOF
 )
 
@@ -531,7 +535,7 @@ The scripts in /usr/local/bin can be used to assist in kernel handling.
 
 For booting via grub (e.g. via bootdisk) the script mkgrubcfg_simple.bash can
 be used to generate simple grub entries for vmlinuz- kernels and accompanying
-initramfs.img- files in /boot (see instructions inside the script).
+initramfs.img- files residing in /boot (see instructions inside the script).
 
 Alternate kernels that work with TV-boxes and are packaged as deb files can be
 found via https://apt.armbian.com
@@ -609,6 +613,11 @@ EOF1
 mkgrubcfg_simple="${mkgrubcfg_simple_p1}""${mkgrubcfg_simple_p2}"
 
 README_auxbootldr=$(cat <<"EOF"
+Note: It appears that Petitboot/u-root can not boot a kernel residing on the
+same medium as Petitboot/u-root, unless the medium is eMMC. (This behavior has
+been observed on Ugoos AM6 plus, Amlogic s922x SOC.) Therefore the procedure
+outlined below may only work if the image is installed to eMMC.
+
 It is easy to install Petitboot or u-root on this bootfs. With any of these two
 bootloaders/bootmanagers you can boot "generic" UEFI+grub (and more generally
 images with a valid grub config). If this image is installed on SD (so that it
@@ -952,12 +961,12 @@ for uboot_bin in ${uboot_list[*]}; do
     fi
 done
 
-if [[ -f ${imgfile_dir}/u-boot.bin-gtkp-pb ]]; then
-    echo -n -e ${i_msg}" Found u-boot.bin-gtkp-pb, installing it as default u-boot.ext ..."
+if [[ -f ${imgfile_dir}/${uboot_ext_local} ]]; then
+    echo -n -e ${i_msg}" Found $uboot_ext_local, installing it as default u-boot.ext ..."
     mkdir u-boot-3pole
     echo -e "$README_uboot_aml" >u-boot-3pole/README_u-boot-aml.txt
-    cp ${imgfile_dir}/u-boot.bin-gtkp-pb u-boot-3pole
-    cp ${imgfile_dir}/u-boot.bin-gtkp-pb u-boot.ext
+    cp ${imgfile_dir}/${uboot_ext_local} u-boot-3pole
+    cp ${imgfile_dir}/${uboot_ext_local} u-boot.ext
 fi
 
 echo " Done."
