@@ -104,7 +104,8 @@
   SoC but luckily there are many precompiled variants freely available.
   A good selection of candidates can be found on the images produced by
   [Ophub](https://github.com/ophub/amlogic-s9xxx-armbian) and some of them
-  can also be found on the chainloaded bootdisks.
+  can also be found on the chainloaded bootdisks (for Amlogic s922x SOC, see
+  also [here](https://mega.nz/folder/rUdggRyb#11ffZO8FBqN-gCcXGBcd4g)).
   (Ophub refers to the binaries used for chainloading as "overload"
   bootloaders, to distinguish them from the ones to be used as "hidden"
   bootloaders (see below) which he refers to simply as "bootloaders".
