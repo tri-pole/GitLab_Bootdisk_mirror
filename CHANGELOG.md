@@ -248,6 +248,9 @@ petit-bootdisk-nc
 
 # archlnx_mkimg.bash:
 
+## [v0.14] 23-03-09
+ - Possibility to use also Manjaro native kernel.
+
 ## [v0.13] 23-03-01
 
 ### Added
