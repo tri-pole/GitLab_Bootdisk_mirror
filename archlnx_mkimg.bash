@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # archlnx_mkimg.bash
-# 23-03-01: v0.13
+# 23-03-09: v0.14
 # Author: Tripole
 
 # Script to generate an Arch Linux ARM64 (CLI, "server") image using the
@@ -100,6 +100,12 @@ distro_edition=current # For Arch and Manjaro use "current" (latest release).
 compressed_img=yes # {yes,no}
 
 if [[ "$distro_name" == "Manjaro" ]]; then
+    # Use Manjaro native or locally provided kernel (see below).
+    use_local_kern=no # {yes,no}
+
+    # Name of Manjaro kernel (when not using locally provided kernel below).
+    mnjo_kern_name=linux-lts
+
     # Host name for image.
     host_name=mnjo
 
@@ -107,12 +113,11 @@ if [[ "$distro_name" == "Manjaro" ]]; then
     mnjo_repo_url_base="https://github.com/manjaro-arm/rootfs/releases/latest/download"
     mnjo_buildnum=$distro_edition
     mnjo_buildfile="Manjaro-ARM-aarch64-latest.tar.gz"
-    #mnjo_buildurl=${mnjo_repo_url_base}/${mnjo_buildnum}/${mnjo_buildfile}
     mnjo_buildurl=${mnjo_repo_url_base}/${mnjo_buildfile}
 
     distro_buildfile=$mnjo_buildfile
     distro_buildurl=$mnjo_buildurl
-    
+
     # List of names for the SoC vendors for which you wish to d/l and install
     # the dtb package (the selected dtb below must be in one of these packages).
     # Ophub packages dtbs for amlogic, allwinner and rockchip w/ his kernels.
@@ -120,20 +125,23 @@ if [[ "$distro_name" == "Manjaro" ]]; then
     # ${ophub_krepo_url}/dtb-${socdtbs_name}-${krnver_str_url}.tar.gz)
     socdtbs_list=("amlogic" "allwinner" "rockchip")
 
-    # Locally provided kernel (required for Manjaro).
+    # Locally provided kernel.
     # The packages (boot-,modules-,dtb-,header-) must have same form as Ophub's,
     # e.g. be the result of a kernel compil. using Ophob's build environment.
-    loc_krnver_str="5.15.95-koop-3pole" # Kernel name/release str., plain text.
-    krnver_str=$loc_krnver_str
-
-    # Name of the final image.
-    img_tag=${krnver_str}_$(date +"%y%m%d") # Edit to your liking.
-    imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
-
-    kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1"
+    krnver_str="5.15.98-koop-3pole" # Kernel name/release str., plain text.
 
     bootfs_label=MNJO_BOOT
     rootfs_label=MNJO_ROOT
+
+    # The image tag is added to the final image name. Edit to taste.
+    if [[  "$use_local_kern" == "yes" ]] ; then
+        kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1"
+        img_tag=$(date +"%y%m%d")
+    else
+        kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 quiet splash plymouth.ignore-serial-consoles"
+        img_tag=3pole-$(date +"%y%m%d")
+    fi
+
 else
     # Host name for image.
     host_name=arch
@@ -143,18 +151,15 @@ else
     distro_buildfile="ArchLinuxARM-aarch64-latest.tar.gz"
     distro_buildurl=${archlnx_repo_url}/${distro_buildfile}
 
-    # Name of the container file used during image creation. After completion
-    # the image is renamed and the kernel version is included in the name.
-    imgfile_name=${distro_name}_${distro_edition}.img
-
-    # The image tag is added to the final image name. Edit to taste.
-    img_tag=3pole-$(date +"%y%m%d")
-
     # The string root=UUID=${rootfs_UUID} is prepended below once UUID exists.
     kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw"
 
     bootfs_label=ARCH_BOOT
     rootfs_label=ARCH_ROOT
+
+    # The image tag is added to the final image name. Edit to taste.
+    img_tag=3pole-$(date +"%y%m%d")
+
 fi
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
@@ -165,7 +170,7 @@ ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/
 uboot_list=(
     "u-boot-e900v22c.bin" "u-boot-gtking.bin" "u-boot-gtkingpro-rev-a.bin"
     "u-boot-gtkingpro.bin" "u-boot-n1.bin" "u-boot-odroid-n2.bin"
-    "u-boot-p201.bin" "u-boot-p212.bin" "u-boot-s905.bin"
+    "u-boot-p201.bin" "u-boot-p212.bin" "u-boot-r3300l.bin" "u-boot-s905.bin"
     "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin" "u-boot-sei510.bin"
     "u-boot-sei610.bin" "u-boot-skyworth-lb2004.bin" "u-boot-tx3-bz.bin"
     "u-boot-tx3-qz.bin" "u-boot-u200.bin" "u-boot-ugoos-x3.bin"
@@ -195,6 +200,10 @@ rootfs_type=ext4
 # some Amlogic s922x SoC (GT King pro, Ugoos AM6) both values are 0x1080000
 k_load_addr=0x1080000
 k_entry_addr=0x1080000
+
+# Name of the container file used during image creation. After completion
+# the image is renamed and the kernel version is included in the name.
+imgfile_name=${distro_name}_${distro_edition}.img
 
 # Location (dir) of disk image container during install (for size, see below).
 imgfile_dir=$PWD
@@ -330,8 +339,8 @@ $archlnx_custom_extra
 echo "Setting up boot (2 items):"
 echo "(1) Creating /boot/grub/grub.cfg"
 /usr/local/bin/mkgrubcfg_simple.bash
-echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, Initrd)."
-/usr/local/bin/mkbootlinux.bash ${ophub_krel} ${bootfs_dir} >/dev/null
+echo "(2) Creating uImage, uInitrd on boot part."
+/usr/local/bin/mkbootlinux.bash ${bootfs_dir} >/dev/null
 EOF
 )
 
@@ -339,8 +348,7 @@ EOF
 # (The double quotes around the limit string EOF prevents command substitution.)
 manjaro_custom_extra=$(cat <<"EOF"
 pacman -S --noconfirm man-db pacman-contrib alsa-utils networkmanager
-systemctl enable NetworkManager
-systemctl enable systemd-resolved
+systemctl enable NetworkManager systemd-resolved
 EOF
 )
 
@@ -359,13 +367,16 @@ timedatectl set-timezone America/New_York
 # localectl list-keymaps
 localectl set-keymap us
 $manjaro_custom_extra
+if [[ "$use_local_kern" != "yes" ]] ; then
+    pacman -S --noconfirm $mnjo_kern_name
+fi
 echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
 echo "Setting up boot (2 items):"
 echo "(1) Creating /boot/grub/grub.cfg"
 /usr/local/bin/mkgrubcfg_simple.bash
-echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, Initrd)."
-/usr/local/bin/mkbootlinux.bash ${krnver_str} ${bootfs_dir} >/dev/null
+echo "(2) Creating uImage, uInitrd on boot partition."
+/usr/local/bin/mkbootlinux.bash ${bootfs_dir} >/dev/null
 EOF
 )
 
@@ -622,23 +633,51 @@ EOF
 mkbootlinux_mnjo=$(cat <<"EOF"
 #!/bin/bash
 
-# Produces an uImage and uInitrd on the fat boot partition from flippy's
-# kernel and initramfs.
+# Produces an uImage and uInitrd on the fat boot partition.
 # Usage: /usr/local/bin/mkbootlinux kernel_release /path/to/bootpart/mount
 # where kernel_release is e.g. 5.19.9-flippy-76+
 # and /path/to/bootpart/mount is e.g. /boot/aux (and is mounted).
+# If kernel_release is omitted, it will be automagically determined.
 
-if [[ -f ${2}/uImage ]]; then
-    mv ${2}/uImage ${2}/uImage.bak
+if [[ $# -eq 1 ]] ; then
+    # Manjaro's kernels come with a directory named /lib/modules/extramodules-
+    # and therefore we need to filter out only the main modules directory name.
+
+    lib_mod_strs=$(ls --format=single-column /lib/modules)
+    lib_mod_arr=($lib_mod_strs)
+    kern_ver="${lib_mod_arr[0]}" # Pick out dir. name with kernel version.
+    echo "mkbootlinux: Will use kernel version $kern_ver"
+
+    boot_dir=${1}
+else
+    kern_ver=${1}
+    boot_dir=${2}
 fi
 
-/usr/local/bin/mkuimg.bash /boot/vmlinuz-${1} ${2}/uImage
-
-if [[ -f ${2}/uInitrd ]]; then
-    mv ${2}/uInitrd ${2}/uInitrd.bak
+if [[ -f ${boot_dir}/uImage ]]; then
+    mv ${boot_dir}/uImage ${boot_dir}/uImage.bak
 fi
 
-cp /boot/uInitrd-${1} ${2}/uInitrd
+if [[ -f "/boot/vmlinuz-${kern_ver}" ]] ; then
+    # For Ophub/Flippy's kernels.
+    /usr/local/bin/mkuimg.bash /boot/vmlinuz-${kern_ver} ${boot_dir}/uImage
+else
+    # For Manjaro kernels
+    /usr/local/bin/mkuimg.bash /boot/Image ${boot_dir}/uImage
+fi
+
+if [[ -f ${boot_dir}/uInitrd ]]; then
+    mv ${boot_dir}/uInitrd ${boot_dir}/uInitrd.bak
+fi
+
+if [[ -f "/boot/uInitrd-${kern_ver}" ]] ; then
+    # For Ophub/Flippy's initramfs (already provided in u-boot format).
+    cp /boot/uInitrd-${kern_ver} ${boot_dir}/uInitrd
+else
+    # For Manjaro's initramfs.
+    /usr/local/bin/mkuird.bash /boot/initramfs-linux.img ${boot_dir}/uInitrd
+fi
+
 EOF
 )
 
@@ -852,7 +891,7 @@ else
 fi
 echo "Done."
 
-if [[ "$distro_name" == "Manjaro" ]]; then
+if [[ "$use_local_kern" == "yes" ]]; then
     echo -e ${i_msg}" Copying locally supplied kernel files to $tmpfile_dir..."
 
     cp ${krnfile_dir}/boot-${krnver_str}.tar.gz $tmpfile_dir
@@ -900,9 +939,6 @@ if [[ "$distro_name" == "Manjaro" ]]; then
     done
     echo " Done."
 fi
-
-# Pick up the kernel version here since it is used shortly (e.g. in grub.cfg).
-kernel_version=$(ls --format=single-column ${rootfs_mnt}/lib/modules)
 
 echo -n -e ${i_msg}" Setting up directory /boot/grub ..."
 mkdir -p -m 0755 ${rootfs_mnt}/boot/grub
@@ -997,6 +1033,13 @@ echo -n -e ${i_msg}" Writing instructions for rebuilding initramfs..."
 echo -e "$README_initramfs" >README_initramfs.txt
 echo " Done."
 
+# Pick up kernel version here, before the container is unmounted.
+# (Manjaro's kernels come with a directory named /lib/modules/extramodules-
+# and therefore we need to filter out only the main modules directory name.)
+lib_mod_strs=$(ls --format=single-column ${rootfs_mnt}/lib/modules)
+lib_mod_arr=($lib_mod_strs)
+kernel_version="${lib_mod_arr[0]}"
+
 cd $imgfile_dir
 
 echo -n -e ${i_msg}" Unmounting the container file..."
@@ -1010,15 +1053,11 @@ echo -n -e ${i_msg}" Disconnecting and removing the loop devices..."
 losetup -d $loop_dev 2>/dev/null 
 echo " Done."
 
-if [[ "$distro_name" == "Manjaro" ]]; then
-    imgfile_loc_full=$imgfile_loc
-else
-    imgfile_name_full=${distro_name}_${distro_edition}_${kernel_version}_${img_tag}.img
-    echo -n -e ${i_msg}" Renaming image file to $imgfile_name_full"
-    imgfile_loc_full=${imgfile_dir}/${imgfile_name_full}
-    mv $imgfile_loc $imgfile_loc_full
-    echo " Done."
-fi
+imgfile_name_full=${distro_name}_${distro_edition}_${kernel_version}_${img_tag}.img
+echo -n -e ${i_msg}" Renaming image file to $imgfile_name_full"
+imgfile_loc_full=${imgfile_dir}/${imgfile_name_full}
+mv $imgfile_loc $imgfile_loc_full
+echo " Done."
 
 if [[ "$compressed_img" == "yes" ]]; then
     echo -e ${i_msg}" Compressing the image using xz compression..."
