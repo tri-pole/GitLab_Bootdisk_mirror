@@ -6,8 +6,9 @@
 
 # Script to generate an Arch Linux ARM64 (CLI, "server") image using the
 # offical pre built tarball with rootfs (and kernel) from Arch Linux ARM, or
-# generate a Manjaro Linux ARM (CLI, "server") image using the official pre
-# built rootfs together with a locally supplied kernel, such as e.g. Ophub's.
+# generate a Manjaro Linux ARM (CLI, "server") image with the official rootfs.
+# In the latter case it is possible to use a locally supplied kernel, such as
+# Ophub's, the koop-3pole kernels, or Manjaro's native such as linux-lts.
 
 # The script must be executed (as root) on an Ubuntu/Debian type machine,
 # either natively on aarch64/ARM64 (e.g. Ubuntu Server Live booted via
@@ -103,7 +104,7 @@ if [[ "$distro_name" == "Manjaro" ]]; then
     # Use Manjaro native or locally provided kernel (see below).
     use_local_kern=no # {yes,no}
 
-    # Name of Manjaro kernel (when not using locally provided kernel below).
+    # Name of Manjaro kernel package (when not using locally provided kernel).
     mnjo_kern_name=linux-lts
 
     # Host name for image.
@@ -682,6 +683,13 @@ EOF
 )
 
 README_auxbootldr=$(cat <<"EOF"
+Note: It appears that Petitboot/u-root can not boot a kernel residing on the
+same medium as Petitboot/u-root, unless the medium is eMMC. (This behavior has
+been observed on Ugoos AM6 plus, Amlogic s922x SOC.) Therefore the procedure
+outlined below may only work if the image is installed to eMMC. (On this image
+there are no tools for installing to eMMC but it can be done easily by hand,
+see for instance the remarks in README_diy-bootdisk.md at Tripole's Gitlab.)
+
 It is easy to install Petitboot or u-root on this bootfs. With any of these two
 bootloaders/bootmanagers you can boot "generic" UEFI+grub (and more generally
 images with a valid grub config). If this image is installed on SD (so that it
