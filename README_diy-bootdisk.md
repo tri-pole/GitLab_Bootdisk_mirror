@@ -143,6 +143,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
   ├── dtbs
   │   └── amlogic
   │       └── meson-g12b-gtking-pro.dtb
+  ├── s905_autoscript
   ├── uEnv.ini
   ├── uInitrd
   └── uImage
