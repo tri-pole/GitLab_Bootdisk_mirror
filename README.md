@@ -89,8 +89,9 @@ Images built using this script can be downloaded from
 [here](https://mega.nz/folder/WVkjiY7Y#SReLKJnmRXOCgfGijuQMPg).
 
 __Trinjaro:__ With the script [`archlnx_mkimg.bash`](archlnx_mkimg.bash) it is
-also possible to produce Manjaro images with a locally provided kernel, for
-instance Ophubs's kernels or the `koop-3pole` kernels linked to above.
+also possible to produce Manjaro images with a Manjaro kernel or a locally
+provided kernel, for instance Ophubs's kernels or the `koop-3pole` kernels
+linked to above.
 An image built using this recipe with a `koop-3pole` kernel can be downloaded
 from [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
 (Note: These Trinjaro images are very crude compared to the polished high
