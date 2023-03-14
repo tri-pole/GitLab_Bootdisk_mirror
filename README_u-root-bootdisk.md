@@ -78,7 +78,7 @@ The actual bootdisk images are hosted outside of Gitlab, at the link below
 [u-root-bootdisk and u-root-bootdisk-nc](https://mega.nz/folder/SMt1VLSY#VTR2-eZv4jC7PH4hASp0tg)
 
 The version of `u-root` on the latest `u-root-bootdisk`(s) listed above is
-v0.10.0.
+v0.11.0.
 
 The bootdisks are released as tarballs since no special disk is needed, only
 a single FAT partition large enough to hold all the files.

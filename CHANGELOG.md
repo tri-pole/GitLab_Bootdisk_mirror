@@ -5,6 +5,11 @@ petit-bootdisk-nc
 
 # u-root-bootdisk:
 
+## [v0.33] - 23-03-14
+
+### Changed
+ - Updated u-root to v0.11.0
+
 ## [v0.32] - 22-10-22
 
 ### Changed
@@ -37,6 +42,11 @@ petit-bootdisk-nc
  - Three u-boot.ext files.
 
 # u-root-bootdisk-nc:
+
+## [v0.35] - 23-03-14
+
+### Changed
+ - Updated u-root to v0.11.0
 
 ## [v0.34] - 22-11-04
 

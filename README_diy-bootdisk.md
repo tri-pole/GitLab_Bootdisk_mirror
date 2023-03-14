@@ -330,7 +330,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   Our version of the `u-root` initramfs contains all the packages in the
   `u-root` package collections `core` and `boot`.
   The initramfs has been compiled from a `u-root` source release (tag) as
-  indicated in the initramfs name, the current version is v0.10.0.
+  indicated in the initramfs name, the current version is v0.11.0.
   
   __Petitboot:__ The initramfs for `Petitboot` has been compiled and assembled
   by following, largely, the instructions posted at
