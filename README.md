@@ -36,10 +36,12 @@ bootdisks.
 Instructions for recreating or adapting the bootdisks can be found in the file
 [`README_diy-bootdisk.md`](README_diy-bootdisk.md)
 
-### Making ARM64 Linux images
+### ARM64 Linux images
 
 This repo also contains scripts and information on how to create ARM64 Linux
 images (and there are downloads of the images available).
+The images can be booted using any of the bootdisks but also with `u-boot`
+(using the resident/vendor version installed on the TV-box/SBC).
 
 #### The easier way (with scripts)
 
@@ -50,8 +52,6 @@ scripts).
 All scripts can be run natively on an ARM64 Ubuntu/Debian machine but also on
 an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static) to generate an
 ARM64 image.
-The generated image can be booted using any of the bootdisks but also with
-`u-boot` (using the resident/vendor version installed on the TV-box/SBC).
 
 __Debuntu:__ Debian (Bullseye, Sid) and Ubuntu (Focal, Jammy, Kinetic, Lunar)
 images of "standard" type (with Debian/Ubuntu kernel) can be produced with the
@@ -75,9 +75,8 @@ __Tribuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
 also possible to produce Ubuntu images with a locally provided kernel, for
 instance mainline Linux with source from [kernel.org](https://kernel.org/) and
 kernel
-[configuration](https://github.com/ophub/amlogic-s9xxx-armbian/tree/main/compile-kernel/tools/config) from Ophub (with support for Amlogic, Rockchip and
-Allwinner).
-An image (Jammy) built according to this ("lean") recipe can be downloaded from
+[configuration](https://github.com/ophub/amlogic-s9xxx-armbian/tree/main/compile-kernel/tools/config) from Ophub.
+Images built according to this ("lean") recipe can be downloaded from
 [here](https://mega.nz/folder/KJdAwK4Q#r4HNsKQRkLgT7HTD2s1GLg).
 The `koop-3pole` line of kernels used on these images can be downloaded from
 [here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
@@ -94,7 +93,7 @@ provided kernel, for instance Ophubs's kernels or the `koop-3pole` kernels
 linked to above.
 An image built using this recipe with a `koop-3pole` kernel can be downloaded
 from [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
-(Note: These Trinjaro images are very crude compared to the polished high
+(Note: The Trinjaro images are very crude compared to the polished high
 quality images produced by [Manjaro ARM](https://github.com/manjaro-arm).
 The Trinjaro images are only meant as a proof of concept and for tinkering.)
 
