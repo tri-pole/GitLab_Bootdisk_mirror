@@ -8,8 +8,8 @@
 # (e.g. ophub/flippy/unifreq) for Amlogic TV-boxes/SBCs. The Ubuntu base system
 # is from daily builds of the rootfs of the Jammy, Focal, or Kinetic releases.
 # The script must be executed (as root) on an Ubuntu/Debian type machine,
-# either natively on aarch64/ARM64 (e.g. Ubuntu Server Live booted via
-# bootdisk) or virtualized (using qemu-aarch64-static) on x86_64/amd64.
+# either natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static)
+# on x86_64/amd64.
 # The generated image can be booted with resident/vendor u-boot (using the boot
 # scripts on the fat partition) or via bootdisk (using the grub.cfg file on the
 # rootfs partition). Another alternative is chainloader u-boot.ext (included).
@@ -114,10 +114,10 @@ compressed_img=yes # {yes,no}
 # For a list of currently available (stable) kernels, see
 # https://github.com/ophub/kernel/tree/main/pub/stable
 # (but note that the download path on Github is slightly different, see below).
-ophub_kvers="5.15.89" # version (number), e.g. 5.19.10
+ophub_kvers="5.15.98" # version (number), e.g. 5.19.10
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
-krnver_str=${ophub_kvers}"-flippy-81+o" # Kernel name/release str., plain text.
+krnver_str=${ophub_kvers}"-flippy-82+o" # Kernel name/release str., plain text.
 
 # Ophub repo w/ builds of flippy/unifreq kernels (incl. initramfs, thx. Ophub).
 ophub_repo_url="https://github.com/ophub"
@@ -137,7 +137,7 @@ socdtbs_list=("amlogic" "allwinner" "rockchip")
 # The packages (boot-,modules-,dtb-,header-) must have same form as Ophub's,
 # e.g. be the result of a kernel compilation using Ophob's build environment.
 use_local_kern=no # {yes,no}
-loc_krnver_str="5.15.94-koop-3pole" # Kernel name/release str., plain text.
+loc_krnver_str="5.15.98-koop-3pole" # Kernel name/release str., plain text.
 
 # Image tag and name.
 if [[ "$use_local_kern" == "yes" ]]; then
@@ -158,7 +158,7 @@ ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/
 uboot_list=(
     "u-boot-e900v22c.bin" "u-boot-gtking.bin" "u-boot-gtkingpro-rev-a.bin"
     "u-boot-gtkingpro.bin" "u-boot-n1.bin" "u-boot-odroid-n2.bin"
-    "u-boot-p201.bin" "u-boot-p212.bin" "u-boot-s905.bin"
+    "u-boot-p201.bin" "u-boot-p212.bin" "u-boot-r3300l.bin" "u-boot-s905.bin"
     "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin" "u-boot-sei510.bin"
     "u-boot-sei610.bin" "u-boot-skyworth-lb2004.bin" "u-boot-tx3-bz.bin"
     "u-boot-tx3-qz.bin" "u-boot-u200.bin" "u-boot-ugoos-x3.bin"
@@ -211,7 +211,7 @@ rootfs_type=ext4
 bootfs_label=UBNT_BOOT
 rootfs_label=UBNT_ROOT
 
-# These to parameters define the kernel memory load address and starting point,
+# These two parameters define the kernel memory load address and starting point,
 # respectively, for u-boot. They are used in the script mkuimg.bash below to
 # create uImage from Image. The values must be adapted to the box/SoC. For e.g
 # some Amlogic s922x SoC (GT King pro, Ugoos AM6) both values are 0x1080000
@@ -268,7 +268,7 @@ if [[ "$rootfs_type" == "ext4" ]]; then
 elif [[ "$rootfs_type" == "btrfs" ]]; then
     reqd_cmdlist=("${reqd_cmdlist[@]}" "mkfs.btrfs")
 else
-    echo -e "The fstype for the rootfs must be one of ext4 or btrfs, exiting."
+    echo -e ${e_msg}" The fstype for the rootfs must be one of ext4 or btrfs, exiting."
     exit 1
 fi
 
@@ -374,11 +374,13 @@ ubuntu_custom_inst=$(cat <<EOF
 
 apt-get update
 apt-get -y install apt-utils
-DEBIAN_FRONTEND=noninteractive apt-get -y install man-db kmod grub2-common network-manager ssh u-boot-tools
+DEBIAN_FRONTEND=noninteractive apt-get -y install man-db kmod grub2-common network-manager ssh initramfs-tools u-boot-tools
 DEBIAN_FRONTEND=noninteractive apt-get -y install dialog locales keyboard-configuration kbd
 DEBIAN_FRONTEND=noninteractive $ubuntu_custom_extra
 dpkg-reconfigure tzdata
 dpkg-reconfigure keyboard-configuration
+# To be able to boot kernels with old (e.g. vendor/resident) u-boot we use gzip.
+sed -i 's/COMPRESS=zstd/COMPRESS=gzip/g' /etc/initramfs-tools/initramfs.conf
 echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
 echo "Setting up boot (2 items):"
@@ -619,6 +621,10 @@ mkbootlinux=$(cat <<"EOF"
 # where kernel_release is e.g. 5.19.9-flippy-76+
 # and /path/to/bootpart/mount is e.g. /boot/aux (and is mounted).
 
+if [[ -f ${2}/uImage ]]; then
+    mv ${2}/uImage ${2}/uImage.bak
+fi
+
 /usr/local/bin/mkuimg.bash /boot/vmlinuz-${1} ${2}/uImage
 
 if [[ -f ${2}/uInitrd ]]; then
@@ -799,10 +805,10 @@ echo " Done."
 echo -e ${i_msg}" Downloading the root (base) file system tarball..."
 wget -P $tmpfile_dir -nv $distro_buildurl
 if [[ $? -ne 0 ]]; then
-    echo -e ${i_msg}" Unable to download the rootfs tarball, exiting."
+    echo -e ${e_msg}" Unable to download the rootfs tarball, exiting."
     exit 1
 fi
-echo "Done."
+echo -e ${k_msg}" Done."
 
 echo -n -e ${i_msg}" Unpacking the root (base) file system tarball..."
 tar -xf ${tmpfile_dir}/${distro_buildfile} -C $rootfs_mnt
@@ -869,29 +875,29 @@ if [[ "$use_local_kern" != "yes" ]]; then
 
     wget -P $tmpfile_dir -nv $ophub_kboot_url
     if [[ $? -ne 0 ]]; then
-        echo -e ${i_msg}" Unable to download the kernel boot files pkg., exiting."
+        echo -e ${e_msg}" Unable to download the kernel boot files pkg., exiting."
         exit 1
     fi
     wget -P $tmpfile_dir -nv $ophub_kmods_url
     if [[ $? -ne 0 ]]; then
-        echo -e ${i_msg}" Unable to download the kernel modules pkg., exiting."
+        echo -e ${e_msg}" Unable to download the kernel modules pkg., exiting."
         exit 1
     fi
     for socdtbs_name in ${socdtbs_list[*]}; do
         ophub_kdtbs_url=${ophub_krepo_url}/dtb-${socdtbs_name}-${krnver_str}.tar.gz
         wget -P $tmpfile_dir -nv $ophub_kdtbs_url
         if [[ $? -ne 0 ]]; then
-            echo -e ${i_msg}" Unable to download the $socdtbs_name dtb files pkg., exiting."
+            echo -e ${e_msg}" Unable to download the $socdtbs_name dtb files pkg., exiting."
             exit 1
         fi
     done
     wget -P $tmpfile_dir -nv $ophub_khedr_url
     if [[ $? -ne 0 ]]; then
-        echo -e ${i_msg}" Unable to download the kernel header files pkg., exiting."
+        echo -e ${e_msg}" Unable to download the kernel header files pkg., exiting."
         exit 1
     fi
 
-    echo "Done."
+    echo -e ${k_msg}" Done."
 
 else
 
@@ -899,24 +905,24 @@ else
 
     cp ${krnfile_dir}/boot-${krnver_str}.tar.gz $tmpfile_dir
     if [[ $? -ne 0 ]]; then
-        echo -e ${i_msg}" Unable to locate the kernel boot files pkg., exiting."
+        echo -e ${e_msg}" Unable to locate the kernel boot files pkg., exiting."
         exit 1
     fi
     cp ${krnfile_dir}/modules-${krnver_str}.tar.gz $tmpfile_dir
     if [[ $? -ne 0 ]]; then
-        echo -e ${i_msg}" Unable to locate the kernel modules pkg., exiting."
+        echo -e ${e_msg}" Unable to locate the kernel modules pkg., exiting."
         exit 1
     fi
     for socdtbs_name in ${socdtbs_list[*]}; do
         cp ${krnfile_dir}/dtb-${socdtbs_name}-${krnver_str}.tar.gz $tmpfile_dir
         if [[ $? -ne 0 ]]; then
-            echo -e ${i_msg}" Unable to locate the $socdtbs_name dtb files pkg., exiting."
+            echo -e ${e_msg}" Unable to locate the $socdtbs_name dtb files pkg., exiting."
             exit 1
         fi
     done
     cp ${krnfile_dir}/header-${krnver_str}.tar.gz $tmpfile_dir
     if [[ $? -ne 0 ]]; then
-        echo -e ${i_msg}" Unable to locate the kernel header files pkg., exiting."
+        echo -e ${e_msg}" Unable to locate the kernel header files pkg., exiting."
         exit 1
     fi
 
@@ -1005,7 +1011,7 @@ dtbfile_loc=$(find ${rootfs_mnt}/boot/dtbs -name ${dtbfile_name})
 if [[ -f $dtbfile_loc ]]; then
     cp $dtbfile_loc .
 else
-    echo -e ${i_msg}" Unable to find the dtb file ${dtbfile_name}, exiting."
+    echo -e ${e_msg}" Unable to find the dtb file ${dtbfile_name}, exiting."
     exit 1
 fi
 echo " Done."
@@ -1023,7 +1029,7 @@ for uboot_bin in ${uboot_list[*]}; do
         echo -e ${w_msg}" Unable to download $uboot_bin"
     fi
 done
-echo "Done."
+echo -e ${k_msg}" Done."
 
 # A small sales pitch for the bootdisk.
 echo -n -e ${i_msg}" Writing instructions for installing Petitboot/u-root..."

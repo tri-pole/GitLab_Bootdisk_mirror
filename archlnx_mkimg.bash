@@ -11,8 +11,8 @@
 # Ophub's, the koop-3pole kernels, or Manjaro's native such as linux-lts.
 
 # The script must be executed (as root) on an Ubuntu/Debian type machine,
-# either natively on aarch64/ARM64 (e.g. Ubuntu Server Live booted via
-# bootdisk) or virtualized (using qemu-aarch64-static) on x86_64/amd64.
+# either natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static)
+# on x86_64/amd64.
 # The generated image can be booted with resident/vendor u-boot (using the boot
 # scripts on the fat partition) or via bootdisk (using the grub.cfg file on the
 # rootfs partition). Another alternative is chainloader u-boot.ext (included).
@@ -195,7 +195,7 @@ boot_MiB=200
 root_MiB=5000
 rootfs_type=ext4
 
-# These to parameters define the kernel memory load address and starting point,
+# These two parameters define the kernel memory load address and starting point,
 # respectively, for u-boot. They are used in the script mkuimg.bash below to
 # create uImage from Image. The values must be adapted to the box/SoC. For e.g
 # some Amlogic s922x SoC (GT King pro, Ugoos AM6) both values are 0x1080000
@@ -853,7 +853,7 @@ if [[ $? -ne 0 ]]; then
     echo -e ${i_msg}" Unable to download the rootfs tarball, exiting."
     exit 1
 fi
-echo "Done."
+echo -e ${k_msg}" Done."
 
 echo -n -e ${i_msg}" Unpacking the root (base) file system tarball..."
 bsdtar -xpf ${tmpfile_dir}/${distro_buildfile} -C $rootfs_mnt
@@ -1024,7 +1024,7 @@ for uboot_bin in ${uboot_list[*]}; do
         echo -e ${w_msg}" Unable to download $uboot_bin"
     fi
 done
-echo "Done."
+echo -e ${k_msg}" Done."
 
 # A small sales pitch for the bootdisk.
 echo -n -e ${i_msg}" Writing instructions for installing Petitboot/u-root..."

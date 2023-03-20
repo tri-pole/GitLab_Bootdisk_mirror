@@ -9,8 +9,8 @@
 # for Amlogic TV-boxes/SBCs. The base system is obtained using the debootstrap
 # mechanism of either the Debian (Bullseye) or Ubuntu (Jamy) repositories.
 # The script must be executed (as root) on an Ubuntu/Debian type machine, either
-# natively on aarch64/ARM64 (e.g. Ubuntu Server Live booted via bootdisk) or
-# virtualized (using qemu-aarch64-static) on x86_64/amd64.
+# natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static) on
+# x86_64/amd64.
 # The generated image can be booted with resident/vendor u-boot (using the boot
 # scripts on the fat partition) or via bootdisk (using the grub.cfg file on the
 # rootfs partition). Another alternative is chainloader u-boot.ext (included).
@@ -55,7 +55,10 @@
 #   upgrading the kernel or rebuilding the initramfs these components have to
 #   be copied manually over to the bootfs (which us typically mounted under
 #   /boot/aux on the rootfs). The file grub.cfg can be updated using
-#   grub-mkimage or via scripts in /usr/local/bin
+#   grub-mkimage or via scripts in /usr/local/bin (If you boot using an older
+#   u-boot (e.g. resident/vendor u-boot) you might need to change the default
+#   compression method to "gzip" in /etc/initramfs-tools/initramfs.conf since
+#   older u-boot often cannot handle zstd which is the (newer) default.)
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 #   Another alternative is kubuntu-desktop.
@@ -88,7 +91,7 @@ ubuntu_release="$(tr [A-Z] [a-z] <<< "$ubuntu_edition")" # To lowercase.
 debian_release="$(tr [A-Z] [a-z] <<< "$debian_edition")" # To lowercase.
 
 # Host name for image.
-host_name=debnt
+host_name=debu
 
 # Compression (xz) takes some extra time.
 compressed_img=yes # {yes,no}
@@ -544,6 +547,11 @@ The meson64 and arm64 (generic) kernels work well with s922x SOC.
 
 Ophub's kernels can be installed manually and come with pre built initramfs
 https://github.com/ophub/amlogic-s9xxx-armbian
+
+Note: If you boot using an older u-boot (e.g. resident/vendor u-boot) you might
+need to change the default compression method to "gzip" in
+/etc/initramfs-tools/initramfs.conf since older u-boot often cannot handle zstd
+which is the (newer) default.)
 EOF
 )
 
@@ -616,7 +624,9 @@ README_auxbootldr=$(cat <<"EOF"
 Note: It appears that Petitboot/u-root can not boot a kernel residing on the
 same medium as Petitboot/u-root, unless the medium is eMMC. (This behavior has
 been observed on Ugoos AM6 plus, Amlogic s922x SOC.) Therefore the procedure
-outlined below may only work if the image is installed to eMMC.
+outlined below may only work if the image is installed to eMMC. (On this image
+there are no tools for installing to eMMC but it can be done easily by hand,
+see for instance the remarks in README_diy-bootdisk.md at Tripole's Gitlab.)
 
 It is easy to install Petitboot or u-root on this bootfs. With any of these two
 bootloaders/bootmanagers you can boot "generic" UEFI+grub (and more generally
@@ -960,6 +970,7 @@ for uboot_bin in ${uboot_list[*]}; do
         echo -e ${w_msg}" Unable to download $uboot_bin"
     fi
 done
+echo -e ${k_msg}" Done."
 
 if [[ -f ${imgfile_dir}/${uboot_ext_local} ]]; then
     echo -n -e ${i_msg}" Found $uboot_ext_local, installing it as default u-boot.ext ..."

@@ -79,7 +79,7 @@ kernel
 Images built according to this ("lean") recipe can be downloaded from
 [here](https://mega.nz/folder/KJdAwK4Q#r4HNsKQRkLgT7HTD2s1GLg).
 The `koop-3pole` line of kernels used on these images can be downloaded from
-[here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
+[here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw) (see also below).
 
 __Arch Linux:__ An image of Arch Linux ARM64 can be produced with the script
 [`archlnx_mkimg.bash`](archlnx_mkimg.bash) which uses the official Arch Linux
@@ -110,6 +110,12 @@ described in [`README_ubuntu_inst.md`](README_ubuntu_inst.md) and
 [`README_debian_inst.md`](README_debian_inst.md), respectively
 (the latter also covers Devuan).
 All the images so created can be booted with the bootdisks.
+
+### ARM64 Linux kernel
+
+The script [`arm64_kbuild.bash`](arm64_kbuild.bash) can be used to produce the
+`koop-3pole` line of ARM64 kernels mentioned above (on a x86_64 Ubuntu Focal
+host or natively on an ARM64 Ubuntu Jammy host).
 
 ## Screenshots
 
