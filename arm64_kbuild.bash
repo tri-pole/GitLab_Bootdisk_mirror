@@ -23,7 +23,11 @@
 # It is possible to use both the GNU toolchain and the Clang/LLVM toolchain.
 # (It is assumed that the appropriate one is downloaded and installed, see
 # below.) Apart from the toolchain, a standard build environment is required
-# along with a few standard Linux commands (see below).
+# along with a few standard Linux commands (see below). (A basic build
+# environment is provided with the package build-essential but it is also
+# required to have tools such as flex, bison, libncurses-dev (for menuconfig)
+# and, if applicable, cross compiling tools such as gcc-aarch64-linux-gnu.
+# The Linux kernel also requires (depending on config) things as libssl-dev.)
 
 # The script has been tested on x86_64 Ubuntu Focal (in qemu-system-x86_64) and
 # ARM64 Jammy (in qemu-system-aarch64). This script should be considered as a
@@ -39,10 +43,7 @@
 # Q: Which parameters do I (really) need to edit?
 # A: Well, as always, "it depends". (Best to browse through them all, I guess.)
 
-# See the field VERSION_CODENAME in /etc/os_release
-host_release=focal # {focal,jammy} (small caps)
-
-# Kernel name/number/url for kernel source from kernel.org
+# Kernel name/number/url for kernel source from kernel.org.
 kern_ver_num=6.1.20
 kern_url_base="https://cdn.kernel.org/pub/linux/kernel/v6.x"
 kern_txz_name=linux-${kern_ver_num}.tar.xz
@@ -102,24 +103,28 @@ k_entry_addr=0x1080000
 
 targ_arch="arm64"
 
-# Two examples of working parameter settings (use one, comment out the other).
+# A few examples of working parameter settings (use one, comment out the other).
+
+# For an Ubuntu Jammy x86_64 host with GNU toolchain from Ubuntu stable repos
+# the following settings can be used (tested with kernel 5.15.103 and 6.1.20):
+kern_make_opts=" ARCH=$targ_arch CROSS_COMPILE=aarch64-linux-gnu- LOCALVERSION=$kern_tag_str "
+
+# For an Ubuntu Jammy aarch64 host with GNU toolchain from Ubuntu stable repos
+# the following settings can be used (tested with kernel 5.15.103 and 6.1.20):
+# kern_make_opts=" ARCH=$targ_arch LOCALVERSION=$kern_tag_str "
 
 # For an Ubuntu Focal x86_64 host with external clang+llvm toolchain from
 # https://github.com/llvm/llvm-project/releases
-# the following settings can be used:
-clangllvm_tchain_dir=/usr/local/toolchain/clang+llvm-13.0.0-x86_64-linux-gnu-ubuntu-20.04
-cc_str="${clangllvm_tchain_dir}/bin/clang"
-ld_str="${clangllvm_tchain_dir}/bin/ld.lld"
-export PATH=${clangllvm_tchain_dir}/bin:${PATH}
-kern_make_opts=" ARCH=$targ_arch CC=$cc_str LD=$ld_str LLVM=1 LLVM_IAS=1 LOCALVERSION=$kern_tag_str "
-
-# For an Ubuntu Jammy aarch64 host with GNU toolchain from Ubuntu stable repos
-# the following settings can be used:
-# kern_make_opts=" ARCH=$targ_arch LOCALVERSION=$kern_tag_str "
+# the following settings can be used (tested with kernel 5.15.103 and 6.1.20):
+#clangllvm_tchain_dir=/usr/local/toolchain/clang+llvm-13.0.0-x86_64-linux-gnu-ubuntu-20.04
+#cc_str="${clangllvm_tchain_dir}/bin/clang"
+#ld_str="${clangllvm_tchain_dir}/bin/ld.lld"
+#export PATH=${clangllvm_tchain_dir}/bin:${PATH}
+#kern_make_opts=" ARCH=$targ_arch CC=$cc_str LD=$ld_str LLVM=1 LLVM_IAS=1 LOCALVERSION=$kern_tag_str "
 
 # Number of threads for kernel compilation (set to 0 for automatic selection).
 compile_ncores=0
-    
+
 #-----------------------------------------------------------------------
 
 # Some (but not all) commands used below to create the image.
@@ -238,7 +243,7 @@ if [[ $# -eq 1 ]] ; then
         echo -e ${w_msg}" The suggested kernel config file $kconfig_file does not exist!"
     fi
 fi
-    
+
 #----------------------------------- code -----------------------------------
 
 echo -e "\n\033[92m -- Making kernel package $kern_out_str -- \033[0m"
@@ -359,7 +364,7 @@ cd ${kern_src_dir}/linux-${kern_ver_num}
 # in the Linux kernel source tree.
 
 # Make header source file list.
-hdr_list_file=${kern_out_dir}/headers/hdr_file_list.txt
+hdr_list_file=${kern_out_dir}/hdr_file_list.txt
 touch $hdr_list_file
 find . arch/$targ_arch -maxdepth 1 -name Makefile\* > $hdr_list_file
 find include scripts -type f -o -type l >> $hdr_list_file
@@ -367,7 +372,7 @@ find arch/$targ_arch -name Kbuild.platforms -o -name Platform >> $hdr_list_file
 find $(find arch/$targ_arch -name include -o -name scripts -type d) -type f >> $hdr_list_file
 
 # Make header object file list.
-obj_list_file=${kern_out_dir}/headers/obj_file_list.txt
+obj_list_file=${kern_out_dir}/obj_file_list.txt
 touch $obj_list_file
 find arch/$targ_arch/include Module.symvers include scripts -type f >> $obj_list_file
 grep "CONFIG_OBJTOOL=y" include/config/auto.conf
