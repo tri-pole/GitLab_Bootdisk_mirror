@@ -31,9 +31,9 @@
 
 # Typical usage: Edit the parameters below and run the script from a temp dir.
 # (the image as well as all temporary files will be created in this dir.).
-# (If the file u-boot.bin-gtkp-pb is in this dir, it will be used as u-boot.ext
-# but there is also a number of u-boot.bins from Ophub that are installed and
-# can possibly be used if booting is done via chainloading u-boot.ext)
+# (If the file specified by $uboot_ext_local is in this dir, it will be used as
+# u-boot.ext but there are also several u-boot.bins from Ophub installed that
+# may be used if booting is done via chainloading u-boot.ext)
 
 # This script is heavily inspired by the script ubuntu_mkimg.bash at my Gitlab
 # bootdisk repo (and that script is in turn inspired by some others).
@@ -47,28 +47,29 @@
 #   often via (a recent) chainloader (uboot.ext, using the configuration file
 #   extlinux/extlinux.conf on the bootfs). However, it will likely not boot via
 #   vendor u-boot (loading uImage and uInitrd via boot scripts), unless the
-#   vendor u-boot is very recent. The reason is (I think) that Ubuntu now uses
-#   zstd compression for the initramfs and support for zstd compressed images
-#   was only recently (2020) added in u-boot.
+#   vendor u-boot is very recent. (One reason for this may be that the standard
+#   compression method for initramfs (in /etc/initramfs-tools/initramfs.conf)
+#   is zstd, but older u-boot (pre 2020) can only do gzip (easy to fix, though).
+#   However, a second reason is that some (old) u-boot don't (even) support
+#   gzip compressed kernels (which is a little bit more cumbersome to fix).
 # - The kernel and initramfs files on the bootfs are not automatically updated
 #   when the kernel is upgraded or the initramfs is rebuilt. Therefore, when
 #   upgrading the kernel or rebuilding the initramfs these components have to
-#   be copied manually over to the bootfs (which us typically mounted under
-#   /boot/aux on the rootfs). The file grub.cfg can be updated using
-#   grub-mkimage or via scripts in /usr/local/bin (If you boot using an older
-#   u-boot (e.g. resident/vendor u-boot) you might need to change the default
-#   compression method to "gzip" in /etc/initramfs-tools/initramfs.conf since
-#   older u-boot often cannot handle zstd which is the (newer) default.)
+#   be copied manually over to the bootfs (which is typically mounted under
+#   /boot/aux on the rootfs). The file grub.cfg can be updated by using
+#   grub-mkimage or via scripts in /usr/local/bin (e.g. mkgrubcfg_simple.bash).
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 #   Another alternative is kubuntu-desktop.
+# - The snap system can cause trouble (so; apt remove snapd && apt autoremove).
 # - The package linux-firmware is installed but firmware for e.g. a specific
 #   WiFi or Bluethooth chip might not be included and thus have to be sought
 #   elsewhere.
 # - On some boxes it is necessary to run (as user) the script g12_sound.sh to
 #   get sound working. (Afterwards, check for soundcards with e.g. aplay -L)
-# - Run time for this script is about 20m or less (on a modern computer with
-#   good network connectivity). Try this to check: time ./ubuntu_mkimg.bash
+# - Run time for this script, for Debian, is about 25m (incl. compression, on
+#   a modern computer with good network connectivity). For Ubuntu, it can take
+#   almost three times that. To check do: time ./debuntu_dbstrap.bash debian
 # - You will be asked to configure three things at runtime (near the end):
 #   time zone, keyboard and root password.
 # - Basic configuration: You might want to configure zram (and optionally set
@@ -86,9 +87,6 @@ ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
 ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic, Lunar
 debian_name=Debian      # Used for the image name and in grub.cfg
 debian_edition=Bullseye # Tested with Bullseye, Bookworm, Sid
-
-ubuntu_release="$(tr [A-Z] [a-z] <<< "$ubuntu_edition")" # To lowercase.
-debian_release="$(tr [A-Z] [a-z] <<< "$debian_edition")" # To lowercase.
 
 # Host name for image.
 host_name=debu
@@ -277,6 +275,10 @@ fi
 
 # Full kernel command line.
 kernel_cmdline="root=UUID=${rootfs_UUID} "${kernel_cmdline_opts}
+
+# For processing in the here-docs below.
+ubuntu_release="$(tr [A-Z] [a-z] <<< "$ubuntu_edition")" # To lowercase.
+debian_release="$(tr [A-Z] [a-z] <<< "$debian_edition")" # To lowercase.
 
 # ------------------------------- here-docs ----------------------------------
 
@@ -547,11 +549,8 @@ The meson64 and arm64 (generic) kernels work well with s922x SOC.
 
 Ophub's kernels can be installed manually and come with pre built initramfs
 https://github.com/ophub/amlogic-s9xxx-armbian
-
-Note: If you boot using an older u-boot (e.g. resident/vendor u-boot) you might
-need to change the default compression method to "gzip" in
-/etc/initramfs-tools/initramfs.conf since older u-boot often cannot handle zstd
-which is the (newer) default.)
+and so do the kernels built by Tripole
+https://gitlab.com/tripole-inc/bootdisk
 EOF
 )
 
@@ -970,7 +969,7 @@ for uboot_bin in ${uboot_list[*]}; do
         echo -e ${w_msg}" Unable to download $uboot_bin"
     fi
 done
-echo -e ${k_msg}" Done."
+echo -e ${k_msg}" Done setting up chainloader u-boot.ext."
 
 if [[ -f ${imgfile_dir}/${uboot_ext_local} ]]; then
     echo -n -e ${i_msg}" Found $uboot_ext_local, installing it as default u-boot.ext ..."

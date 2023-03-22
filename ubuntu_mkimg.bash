@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ubuntu_mkimg.bash (a.k.a. opbuntu_mkimg.bash)
+# ubuntu_mkimg.bash (a.k.a. {op,tri}buntu_mkimg.bash)
 # 23-02-18: v0.23
 # Author: Tripole
 
@@ -55,27 +55,25 @@
 #   (e.g. using bootdisk) it is assumed that a dtb file is loaded by other
 #   means (e.g. by the bootdisk software; see the bootdisk documantation).
 # - The uImage and uInitrd (u-boot tagged) versions of the kernel and initramfs
-#   that are on the fat partition (for booting via vendor u-boot) are created
+#   that are on the boot partition (for booting via vendor u-boot) are created
 #   by the mkbootlinux.bash script (see below). Therefore, when updating the
 #   kernel or initramfs the uImage uInitrd have to be recreated "manually"
 #   using this script (unless you rely on grub booting, then only grub.cfg on
 #   the rootfs partition has to be updated; see the scripts in /usr/local/bin).
-# - Some kernel versions may not boot using vendor u-boot and the installed
-#   boot scripts (this can be due to patches; mainline kernel is typically OK).
-#   Alternate kernels using kernel.org source that seem to boot and work well
-#   can be found at
+# - Alternate kernels built with source directly from kernel.org can be found at
 #   https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw
-#   (These kernels are built using Ophub's build framework and can be installed
-#   using the local kernel install method, see below.)
+#   (For these kernels the local kernel install method can be used, see below.)
+# - The installed kernel package files are saved also in /var/cache/kernel.pkg
 # - The standard Ubuntu kernel linux-image-generic can also be installed (after
 #   unminizing). It is then recommended to first install the dependency package
 #   linux-firmware (ca 900M) and then the package linux-image-generic.
 #   (This is to avoid problems with the package linux-firmware not being fully
 #   configured which can apparently happen otherwise.) The installation scripts
 #   for linux-image-generic will automatically generate a new valid grub.cfg
-#   which will include also an entry for the ophub/flippy/unifreq kernel
-#   (albeit without the desired kernel command line parameters).
-# - The installed kernel package files are saved also in /var/cache/kernel.pkg
+#   which will include also an entry for the Ophub/local kernel (albeit with
+#   the Ubuntu generic kernel command line parameters). (Alternatively, there
+#   is the script /usr/local/bin/mkgrubcfg_simple.bash which creates a simple
+#   grub.cfg for all kernels with a different command line; check it out.)
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 #   Another alternative is kubuntu-desktop (nice and polished but larger).
@@ -137,7 +135,7 @@ socdtbs_list=("amlogic" "allwinner" "rockchip")
 # The packages (boot-,modules-,dtb-,header-) must have same form as Ophub's,
 # e.g. be the result of a kernel compilation using Ophob's build environment.
 use_local_kern=no # {yes,no}
-loc_krnver_str="5.15.98-koop-3pole" # Kernel name/release str., plain text.
+loc_krnver_str="5.15.103-koop-3pole" # Kernel name/release str., plain text.
 
 # Image tag and name.
 if [[ "$use_local_kern" == "yes" ]]; then
@@ -364,6 +362,9 @@ EOF
 # (The double quotes around the limit string EOF prevents command substitution.)
 ubuntu_custom_extra=$(cat <<"EOF"
 apt-get -y install nano less aptitude usbutils zram-tools sudo linux-firmware
+# To be able to boot with old (e.g. vendor/resident) u-boot we can use gzip
+# compression instead for the initramfs (which, however, will become bigger).
+sed -i 's/COMPRESS=zstd/COMPRESS=gzip/g' /etc/initramfs-tools/initramfs.conf
 EOF
 )
 
@@ -379,8 +380,6 @@ DEBIAN_FRONTEND=noninteractive apt-get -y install dialog locales keyboard-config
 DEBIAN_FRONTEND=noninteractive $ubuntu_custom_extra
 dpkg-reconfigure tzdata
 dpkg-reconfigure keyboard-configuration
-# To be able to boot kernels with old (e.g. vendor/resident) u-boot we use gzip.
-sed -i 's/COMPRESS=zstd/COMPRESS=gzip/g' /etc/initramfs-tools/initramfs.conf
 echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
 echo "Setting up boot (2 items):"
@@ -567,7 +566,7 @@ mkuimg_p1=$(cat <<EOF
 # Takes an ARM64 kernel Image and produces a u-boot tagged uImage from it.
 # Usage: /usr/local/bin/mkuimg /path/to/Image /path/to/uImage
 
-# Note: ARM64 vmlinuz kernels (e.g. flippy's) are often in fact in Image format.
+# Note: ARM64 vmlinuz kernels are often in fact in (uncompressed) Image format.
 
 # To make also a uInitrd from a initrd.img do like so
 # mkimage -A arm64 -O linux -T ramdisk -C gzip -d initrd.img uInitrd
