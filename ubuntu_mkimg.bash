@@ -112,7 +112,7 @@ compressed_img=yes # {yes,no}
 # For a list of currently available (stable) kernels, see
 # https://github.com/ophub/kernel/tree/main/pub/stable
 # (but note that the download path on Github is slightly different, see below).
-ophub_kvers="5.15.98" # version (number), e.g. 5.19.10
+ophub_kvers="5.15.103" # version (number), e.g. 5.19.10
 
 # Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
 krnver_str=${ophub_kvers}"-flippy-82+o" # Kernel name/release str., plain text.
@@ -919,7 +919,7 @@ else
             exit 1
         fi
     done
-    cp ${krnfile_dir}/header-${krnver_str}.tar.gz $tmpfile_dir
+    cp ${krnfile_dir}/head*-${krnver_str}.tar.gz $tmpfile_dir
     if [[ $? -ne 0 ]]; then
         echo -e ${e_msg}" Unable to locate the kernel header files pkg., exiting."
         exit 1
@@ -936,7 +936,7 @@ cp ${tmpfile_dir}/modules-${krnver_str}.tar.gz $opsave_dir
 for socdtbs_name in ${socdtbs_list[*]}; do
     cp ${tmpfile_dir}/dtb-${socdtbs_name}-${krnver_str}.tar.gz $opsave_dir
 done
-cp ${tmpfile_dir}/header-${krnver_str}.tar.gz $opsave_dir
+cp ${tmpfile_dir}/head*-${krnver_str}.tar.gz $opsave_dir
 echo " Done."
 
 echo -n -e ${i_msg}" Installing kernel, initramfs, modules and dtb files..."
