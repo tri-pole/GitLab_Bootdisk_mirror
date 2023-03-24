@@ -29,9 +29,10 @@
 # and, if applicable, cross compiling tools such as gcc-aarch64-linux-gnu.
 # The Linux kernel also requires (depending on config) things as libssl-dev.)
 
-# The script has been tested on x86_64 Ubuntu Focal (in qemu-system-x86_64) and
-# ARM64 Jammy (in qemu-system-aarch64). This script should be considered as a
-# template or proof-of-concept, nothing more (so please fork it, improve it).
+# The script has been tested on x86_64 VMs (running in qemu-system-x86_64) with
+# Ubuntu Focal and Jammy, respectively and on ARM64 Jammy (qemu-system-aarch64).
+# This script should be considered as a template or proof-of-concept, nothing
+# more (so please fork it, adapt it, improve it).
 
 # Inspiration taken from:
 # https://www.kernel.org/doc/html/latest/index.html
