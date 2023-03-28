@@ -45,12 +45,15 @@
 # A: Well, as always, "it depends". (Best to browse through them all, I guess.)
 
 # Kernel name/number/url for kernel source from kernel.org.
-kern_ver_num=6.1.20
+kern_ver_num=6.2.5
 kern_url_base="https://cdn.kernel.org/pub/linux/kernel/v6.x"
 kern_txz_name=linux-${kern_ver_num}.tar.xz
 kern_txz_url=${kern_url_base}/${kern_txz_name}
 
 # Name for compiled (output) kernel and packages (tarballs).
+# Note: In the config file you should have these two settings
+# CONFIG_LOCALVERSION=""
+# CONFIG_LOCALVERSION_AUTO is not set
 kern_tag_str="-koop-3pole"
 kern_out_str=${kern_ver_num}${kern_tag_str}
 
@@ -107,12 +110,17 @@ targ_arch="arm64"
 # A few examples of working parameter settings (use one, comment out the other).
 
 # For an Ubuntu Jammy x86_64 host with GNU toolchain from Ubuntu stable repos
-# the following settings can be used (tested with kernel 5.15.103 and 6.1.20):
+# the following settings can be used (tested with kernel 5.15.y, 6.1.y, 6.2.y):
 kern_make_opts=" ARCH=$targ_arch CROSS_COMPILE=aarch64-linux-gnu- LOCALVERSION=$kern_tag_str "
 
-# For an Ubuntu Jammy aarch64 host with GNU toolchain from Ubuntu stable repos
-# the following settings can be used (tested with kernel 5.15.103 and 6.1.20):
-# kern_make_opts=" ARCH=$targ_arch LOCALVERSION=$kern_tag_str "
+# For an Ubuntu Jammy x86_64 host with external ARM GNU toolchain from
+# https://developer.arm.com the
+# following settings can be used (tested with kernel 6.2.5):
+# toolchain_dir=/opt/toolchain
+# gnu_arm_tchain_name=arm-gnu-toolchain-12.2.rel1-x86_64-aarch64-none-linux-gnu
+# xcompile_str="${toolchain_dir}/${gnu_arm_tchain_name}/bin/aarch64-none-linux-gnu-"
+# export PATH=${xcompile_str}/bin:${PATH}
+# kern_make_opts=" ARCH=$targ_arch CROSS_COMPILE=$xcompile_str LOCALVERSION=$kern_tag_str "
 
 # For an Ubuntu Focal x86_64 host with external clang+llvm toolchain from
 # https://github.com/llvm/llvm-project/releases
@@ -140,6 +148,9 @@ tmpfile_dir=${work_dir}/temp_files
 # Location of unpacked kernel source and the output files produced by the build.
 kern_src_dir=${work_dir}/kern_src
 kern_out_dir=${work_dir}/kern_out
+
+# Location of local patches to be applied
+patch_src_dir=${work_dir}/my_patches
 
 # Approximate max usage of kernel sources (unpacked), object files and rootfs
 # (not including toolchain). The number grows slowly with kernel versions.
@@ -308,8 +319,17 @@ mkdir -p ${kern_out_dir}/modules
 mkdir -p ${kern_out_dir}/${kern_out_str}
 echo " Done."
 
-echo -e ${i_msg}" Preparing for menuconfig..."
 cd ${kern_src_dir}/linux-${kern_ver_num}
+
+if [ ! -z "$(ls -A $patch_src_dir)" ]; then
+    echo -e {$i_msg}" Applying patches..."
+        for my_patch_file in $(ls -A ${patch_src_dir}/*.patch) ; do
+            patch -N -p1 < $my_patch_file
+        done
+    echo " Done."
+fi
+
+echo -e ${i_msg}" Preparing for menuconfig..."
 make $kern_make_opts mrproper
 if [[ ! -z $kconfig_file ]] ; then
    cp $kconfig_file ${kern_src_dir}/linux-${kern_ver_num}/.config
@@ -335,7 +355,7 @@ echo -e ${i_msg}" Compilation options: $kern_make_opts"
 sleep 3
 
 if [[ $compile_ncores -eq 0 ]] ; then
-    ncores=$(lscpu | grep -E "^CPU\(s\):" | tr -d "[:space:]" | cut -d ":" -f2)
+    ncores=$(nproc)
     if [[ ncores -le 2 ]] ; then
        compile_ncores=1
     else

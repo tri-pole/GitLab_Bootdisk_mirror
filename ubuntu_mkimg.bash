@@ -1,18 +1,21 @@
 #!/bin/bash
 
 # ubuntu_mkimg.bash (a.k.a. {op,tri}buntu_mkimg.bash)
-# 23-02-18: v0.23
+# 23-03-28: v0.25
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
-# (e.g. ophub/flippy/unifreq) for Amlogic TV-boxes/SBCs. The Ubuntu base system
-# is from daily builds of the rootfs of the Jammy, Focal, or Kinetic releases.
+# (e.g. ophub or 3pole) for Amlogic TV-boxes/SBCs. The Ubuntu base system is
+# from daily builds of the rootfs of the Jammy, Focal, or Kinetic releases.
 # The script must be executed (as root) on an Ubuntu/Debian type machine,
 # either natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static)
 # on x86_64/amd64.
 # The generated image can be booted with resident/vendor u-boot (using the boot
 # scripts on the fat partition) or via bootdisk (using the grub.cfg file on the
 # rootfs partition). Another alternative is chainloader u-boot.ext (included).
+
+# Prerequisites: A donwloaded an unpacked tarball of Ophub's or Tripole's
+# kernel (into sub-tarballs) in the local kernel directory (specified below).
 
 # Usage: ./ubuntu_mkimg.bash
 #        (i.e. no arguments, but check the parameters/options below)
@@ -38,6 +41,14 @@
 # https://github.com/manjaro-arm/am6-plus-images/releases
 
 # Notes:
+# - The kernel files in the local kernel direectory (see below) should be the
+#   same as the sub-tarballs found in Ophub's and Tripole's main tarball, like
+#   boot-<krnver_str>-tar.gz ,
+#   modules-<krnver_str>-tar.gz ,
+#   header-<krnver_str>-tar.gz or headers-<krnver_str>-tar.gz ,
+#   dtb-amlogic-<krnver_str>-tar.gz ,
+#   dtb-allwinner-<krnver_str>-tar.gz ,
+#   dtb-rockchip-<krnver_str>-tar.gz .
 # - The Ubuntu rootfs comes in a "minimized" state (see e.g. Ubuntu Wiki) for
 #   most packages and therefore it is advisable to run the command unminimize
 #   (and reboot) to restore the system into normal state at the first boot.
@@ -60,10 +71,9 @@
 #   kernel or initramfs the uImage uInitrd have to be recreated "manually"
 #   using this script (unless you rely on grub booting, then only grub.cfg on
 #   the rootfs partition has to be updated; see the scripts in /usr/local/bin).
-# - Alternate kernels built with source directly from kernel.org can be found at
+# - Tripole kernels built with source directly from kernel.org can be found at
 #   https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw
-#   (For these kernels the local kernel install method can be used, see below.)
-# - The installed kernel package files are saved also in /var/cache/kernel.pkg
+# - The installed kernel pkg. files are saved also in /var/cache/kernel.pkg
 # - The standard Ubuntu kernel linux-image-generic can also be installed (after
 #   unminizing). It is then recommended to first install the dependency package
 #   linux-firmware (ca 900M) and then the package linux-image-generic.
@@ -79,7 +89,7 @@
 #   Another alternative is kubuntu-desktop (nice and polished but larger).
 # - On some boxes it is necessary to run (as user) the script g12_sound.sh to
 #   get sound working. (Afterwards, check for soundcards with e.g. aplay -L)
-# - Run time for this script (ex. compression) is less than 10m (on a modern
+# - Run time for this script (excl. compression) is less than 10m (on a modern
 #   computer with good network connectivity). Check: time ./ubuntu_mkimg.bash
 # - You will be asked to configure three things at runtime (near the end):
 #   time zone, keyboard and root password.
@@ -89,7 +99,7 @@
 #   Also, you can remove/disable unnecessary packages/functionality, e.g.
 #   # systemctl disable spice-vdagent.service --now
 #   # apt remove snapd && apt autoremove
-# - Pro tip: Generate the image cheaply, say 2G rootfs (so that burn to SD/USB
+# - Pro tip: Generate the image cheaply, say 3G rootfs (so that burn to SD/USB
 #   goes quickly). Then, (before first boot) enlarge the rootfs partition on
 #   SD/USB to desired size, e.g. with (100% here uses all of the SD/USB):
 #   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
@@ -100,7 +110,7 @@
 # A: Well, as always, "it depends". (Best to browse through them all, I guess.)
 
 distro_name=Ubuntu   # Used for the image name and in grub.cfg
-distro_edition=Jammy # Tested with Focal, Jammy, Kinetic, Lunar
+distro_edition=Lunar # Tested with Focal, Jammy, Kinetic, Lunar
 
 # Host name for image.
 host_name=opbu
@@ -108,21 +118,16 @@ host_name=opbu
 # Compression (xz) takes some extra time (beyond the estimate above).
 compressed_img=yes # {yes,no}
 
-# Ophub kernel (for locally supplied alternative kernel, see below).
-# For a list of currently available (stable) kernels, see
-# https://github.com/ophub/kernel/tree/main/pub/stable
-# (but note that the download path on Github is slightly different, see below).
-ophub_kvers="5.15.103" # version (number), e.g. 5.19.10
+# Name and tag for resulting disk image (uncomment and edit to taste).
+# Example for Ophub/Flippy kernel.
+# krnver_str="6.1.21-flippy-82+" # Kernel name/release str., plain text.
+# Example for koop-3pole kernel.
+krnver_str="6.1.21-koop-3pole" # Kernel name/release str., plain text.
 
-# Name string as in grub entries etc. w/ spec. chars. (e.g. 5.19.10-flippy-77+).
-krnver_str=${ophub_kvers}"-flippy-82+o" # Kernel name/release str., plain text.
-
-# Ophub repo w/ builds of flippy/unifreq kernels (incl. initramfs, thx. Ophub).
-ophub_repo_url="https://github.com/ophub"
-ophub_krepo_url=${ophub_repo_url}/kernel/raw/main/pub/stable/${ophub_kvers}
-ophub_kboot_url=${ophub_krepo_url}/boot-${krnver_str}.tar.gz
-ophub_kmods_url=${ophub_krepo_url}/modules-${krnver_str}.tar.gz
-ophub_khedr_url=${ophub_krepo_url}/header-${krnver_str}.tar.gz
+# This is the name used on the container file during image creation.
+# Before exit of this script, the kernel version is inserted into the name.
+img_tag=${krnver_str}_$(date +"%y%m%d") # Edit to your liking.
+imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
 
 # List of names for the SoC vendors for which you wish to download and install
 # the dtb package (the selected dtb below must be in one of these packages).
@@ -131,25 +136,11 @@ ophub_khedr_url=${ophub_krepo_url}/header-${krnver_str}.tar.gz
 # ${ophub_krepo_url}/dtb-${socdtbs_name}-${krnver_str_url}.tar.gz)
 socdtbs_list=("amlogic" "allwinner" "rockchip")
 
-# Locally provided kernel (to be be used instead of Ophub kernel defined above).
-# The packages (boot-,modules-,dtb-,header-) must have same form as Ophub's,
-# e.g. be the result of a kernel compilation using Ophob's build environment.
-use_local_kern=no # {yes,no}
-loc_krnver_str="5.15.103-koop-3pole" # Kernel name/release str., plain text.
-
-# Image tag and name.
-if [[ "$use_local_kern" == "yes" ]]; then
-    krnver_str=$loc_krnver_str
-    img_tag=${krnver_str}_$(date +"%y%m%d") # Edit to your liking.
-else
-    img_tag=${krnver_str}_3pole-$(date +"%y%m%d") # Edit to your liking.
-fi
-imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
-
 # dtb name in uEnv.ini/extlinux.conf (dtb must be in boot-*.tar.gz pkg).
 dtbfile_name=meson-g12b-gtking-pro.dtb
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
+ophub_repo_url="https://github.com/ophub"
 ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/u-boot/amlogic/overload"
 
 # u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
@@ -224,7 +215,7 @@ k_entry_addr=0x1080000
 imgfile_dir=$PWD
 tmpfile_dir=${imgfile_dir}/temp_files
 
-# Location of local kernel pkg. files (if applicable).
+# Location of local kernel package files (sub-tarballs, see notes above).
 krnfile_dir=${imgfile_dir}/my_kernel
 
 # Temporary mount points (dirs) used during image creation.
@@ -715,7 +706,7 @@ imgfile_loc=${imgfile_dir}/${imgfile_name}
 imgfile_MiB=$((gap_MiB +boot_MiB +root_MiB))
 desired_MiB=$((14*${imgfile_MiB}/10)) # Approx. space for imgfile +imgfile.xz
 
-echo -e "\n\033[92m -- Making image for $distro_name $distro_edition -- \033[0m\n"
+echo -e "\n\033[92m -- Making image for $distro_name $distro_edition with kernel $krnver_str -- \033[0m\n"
 
 echo -e "The image container file will be at:"
 echo $imgfile_loc
@@ -841,8 +832,8 @@ if [[ $? -ne 0 ]]; then
 else
     cp ${tmpfile_dir}/g12_sound.sh ${rootfs_mnt}/usr/local/bin
     chmod 0755 ${rootfs_mnt}/usr/local/bin/g12_sound.sh
+    echo -e ${k_msg}" Done."
 fi
-echo "Done."
 
 echo -n -e ${i_msg}" Setting up directory /boot/grub ..."
 mkdir -p -m 0755 ${rootfs_mnt}/boot/grub
@@ -868,84 +859,24 @@ echo -e "$mkbootlinux" >${rootfs_mnt}/usr/local/bin/mkbootlinux.bash
 chmod 0755 ${rootfs_mnt}/usr/local/bin/mkbootlinux.bash
 echo " Done."
 
-if [[ "$use_local_kern" != "yes" ]]; then
-
-    echo -e ${i_msg}" Downloading Ophub/Flippy/Unifreq kernel files..."
-
-    wget -P $tmpfile_dir -nv $ophub_kboot_url
-    if [[ $? -ne 0 ]]; then
-        echo -e ${e_msg}" Unable to download the kernel boot files pkg., exiting."
-        exit 1
-    fi
-    wget -P $tmpfile_dir -nv $ophub_kmods_url
-    if [[ $? -ne 0 ]]; then
-        echo -e ${e_msg}" Unable to download the kernel modules pkg., exiting."
-        exit 1
-    fi
-    for socdtbs_name in ${socdtbs_list[*]}; do
-        ophub_kdtbs_url=${ophub_krepo_url}/dtb-${socdtbs_name}-${krnver_str}.tar.gz
-        wget -P $tmpfile_dir -nv $ophub_kdtbs_url
-        if [[ $? -ne 0 ]]; then
-            echo -e ${e_msg}" Unable to download the $socdtbs_name dtb files pkg., exiting."
-            exit 1
-        fi
-    done
-    wget -P $tmpfile_dir -nv $ophub_khedr_url
-    if [[ $? -ne 0 ]]; then
-        echo -e ${e_msg}" Unable to download the kernel header files pkg., exiting."
-        exit 1
-    fi
-
-    echo -e ${k_msg}" Done."
-
-else
-
-    echo -e ${i_msg}" Copying locally supplied kernel files to $tmpfile_dir..."
-
-    cp ${krnfile_dir}/boot-${krnver_str}.tar.gz $tmpfile_dir
-    if [[ $? -ne 0 ]]; then
-        echo -e ${e_msg}" Unable to locate the kernel boot files pkg., exiting."
-        exit 1
-    fi
-    cp ${krnfile_dir}/modules-${krnver_str}.tar.gz $tmpfile_dir
-    if [[ $? -ne 0 ]]; then
-        echo -e ${e_msg}" Unable to locate the kernel modules pkg., exiting."
-        exit 1
-    fi
-    for socdtbs_name in ${socdtbs_list[*]}; do
-        cp ${krnfile_dir}/dtb-${socdtbs_name}-${krnver_str}.tar.gz $tmpfile_dir
-        if [[ $? -ne 0 ]]; then
-            echo -e ${e_msg}" Unable to locate the $socdtbs_name dtb files pkg., exiting."
-            exit 1
-        fi
-    done
-    cp ${krnfile_dir}/head*-${krnver_str}.tar.gz $tmpfile_dir
-    if [[ $? -ne 0 ]]; then
-        echo -e ${e_msg}" Unable to locate the kernel header files pkg., exiting."
-        exit 1
-    fi
-
-    echo "Done."
-fi
-
 echo -n -e ${i_msg}" Saving kernel pkg. files to /var/cache/kernel.pkg ..."
 opsave_dir=${rootfs_mnt}/var/cache/kernel.pkg
 mkdir $opsave_dir
-cp ${tmpfile_dir}/boot-${krnver_str}.tar.gz $opsave_dir
-cp ${tmpfile_dir}/modules-${krnver_str}.tar.gz $opsave_dir
+cp ${krnfile_dir}/boot-${krnver_str}.tar.gz $opsave_dir
+cp ${krnfile_dir}/modules-${krnver_str}.tar.gz $opsave_dir
 for socdtbs_name in ${socdtbs_list[*]}; do
-    cp ${tmpfile_dir}/dtb-${socdtbs_name}-${krnver_str}.tar.gz $opsave_dir
+    cp ${krnfile_dir}/dtb-${socdtbs_name}-${krnver_str}.tar.gz $opsave_dir
 done
-cp ${tmpfile_dir}/head*-${krnver_str}.tar.gz $opsave_dir
+cp ${krnfile_dir}/head*-${krnver_str}.tar.gz $opsave_dir
 echo " Done."
 
 echo -n -e ${i_msg}" Installing kernel, initramfs, modules and dtb files..."
-tar -xzf ${tmpfile_dir}/boot-${krnver_str}.tar.gz -C ${rootfs_mnt}/boot
+tar -xzf ${krnfile_dir}/boot-${krnver_str}.tar.gz -C ${rootfs_mnt}/boot
 mkdir -p -m 0744 ${rootfs_mnt}/lib/modules
-tar -xzf ${tmpfile_dir}/modules-${krnver_str}.tar.gz -C ${rootfs_mnt}/lib/modules
+tar -xzf ${krnfile_dir}/modules-${krnver_str}.tar.gz -C ${rootfs_mnt}/lib/modules
 for socdtbs_name in ${socdtbs_list[*]}; do
     mkdir -p -m 0755 ${rootfs_mnt}/boot/dtbs/${socdtbs_name}
-    tar -xzf ${tmpfile_dir}/dtb-${socdtbs_name}-${krnver_str}.tar.gz -C ${rootfs_mnt}/boot/dtbs/${socdtbs_name}
+    tar -xzf ${krnfile_dir}/dtb-${socdtbs_name}-${krnver_str}.tar.gz -C ${rootfs_mnt}/boot/dtbs/${socdtbs_name}
 done
 echo " Done."
 
@@ -1021,14 +952,20 @@ mkdir extlinux
 echo -e "$extlinux_conf" >extlinux/extlinux.conf
 mkdir u-boot
 echo -e "$README_uboot" >u-boot/README_u-boot.txt
+have_all_uboots=yes
 for uboot_bin in ${uboot_list[*]}; do
     uboot_bin_url=${ophub_uboot_url}/${uboot_bin}
     wget -nv -P u-boot $uboot_bin_url
     if [[ $? -ne 0 ]]; then
         echo -e ${w_msg}" Unable to download $uboot_bin"
+        have_all_uboots=no
     fi
 done
-echo -e ${k_msg}" Done."
+if [[ "$have_all_uboots" == "yes" ]] ; then
+    echo -e ${k_msg}" Done."
+else
+    echo -e ${w_msg}" Could not download all u-boot.bin files."
+fi
 
 # A small sales pitch for the bootdisk.
 echo -n -e ${i_msg}" Writing instructions for installing Petitboot/u-root..."

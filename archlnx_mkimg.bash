@@ -129,7 +129,7 @@ if [[ "$distro_name" == "Manjaro" ]]; then
     # Locally provided kernel.
     # The packages (boot-,modules-,dtb-,header-) must have same form as Ophub's,
     # e.g. be the result of a kernel compil. using Ophob's build environment.
-    krnver_str="5.15.98-koop-3pole" # Kernel name/release str., plain text.
+    krnver_str="5.15.104-koop-3pole" # Kernel name/release str., plain text.
 
     bootfs_label=MNJO_BOOT
     rootfs_label=MNJO_ROOT
@@ -226,6 +226,7 @@ name_server_1=1.1.1.1
 name_server_2=8.8.8.8
 
 # Some (but not all) commands used below to create the image.
+# On Ubuntu, the command bsdtar is bundled with libarchive-tools
 reqd_cmdlist=("blkid" "bsdtar" "dd" "losetup" "mkfs.vfat" "mkimage"
               "systemd-nspawn" "tar" "xz" "wget"
 )
@@ -919,7 +920,7 @@ if [[ "$use_local_kern" == "yes" ]]; then
             exit 1
         fi
     done
-    cp ${krnfile_dir}/header-${krnver_str}.tar.gz $tmpfile_dir
+    cp ${krnfile_dir}/head*-${krnver_str}.tar.gz $tmpfile_dir
     if [[ $? -ne 0 ]]; then
         echo -e ${i_msg}" Unable to locate the kernel header files pkg., exiting."
         exit 1
@@ -934,7 +935,7 @@ if [[ "$use_local_kern" == "yes" ]]; then
     for socdtbs_name in ${socdtbs_list[*]}; do
         cp ${tmpfile_dir}/dtb-${socdtbs_name}-${krnver_str}.tar.gz $opsave_dir
     done
-    cp ${tmpfile_dir}/header-${krnver_str}.tar.gz $opsave_dir
+    cp ${tmpfile_dir}/head*-${krnver_str}.tar.gz $opsave_dir
     echo " Done."
 
     echo -n -e ${i_msg}" Installing kernel, initramfs, modules and dtb files..."
