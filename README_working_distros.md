@@ -72,12 +72,10 @@ The ARM64 live iso images can be run as-is.
 The Fedora 37 Generic ARM64 images can be booted and run as-is.
 The images can be found e.g. [here](https://alt.fedoraproject.org/alt/).
 
-Note: Kernel 6.2.y on Fedora cannot currently be booted with the bootdisks.
-
-Note: After package upgrades the graphical login may not function properly
-(this problem was present also on Fedora 36). A simple workaround is to switch
-to e.g. VT3 (Ctrl-Alt-F3) and login there and execute the command (as root/via
-sudo) `systemctl restart display-manager`.
+Note: On some releases the graphical login may not function properly after
+some package upgrades (this problem was present also on Fedora 36). A simple
+workaround is to switch to e.g. VT3 (Ctrl-Alt-F3) and login there and execute
+the command (as root/via sudo) `systemctl restart display-manager`.
 
 ### Debian
 

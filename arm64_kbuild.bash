@@ -45,7 +45,7 @@
 # A: Well, as always, "it depends". (Best to browse through them all, I guess.)
 
 # Kernel name/number/url for kernel source from kernel.org.
-kern_ver_num=6.2.5
+kern_ver_num=6.1.24
 kern_url_base="https://cdn.kernel.org/pub/linux/kernel/v6.x"
 kern_txz_name=linux-${kern_ver_num}.tar.xz
 kern_txz_url=${kern_url_base}/${kern_txz_name}
@@ -321,8 +321,8 @@ echo " Done."
 
 cd ${kern_src_dir}/linux-${kern_ver_num}
 
-if [ ! -z "$(ls -A $patch_src_dir)" ]; then
-    echo -e {$i_msg}" Applying patches..."
+if [[ ! -z "$(ls -A $patch_src_dir)" ]]; then
+    echo -e ${i_msg}" Applying patches..."
         for my_patch_file in $(ls -A ${patch_src_dir}/*.patch) ; do
             patch -N -p1 < $my_patch_file
         done

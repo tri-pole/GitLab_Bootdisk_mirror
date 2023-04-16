@@ -897,8 +897,8 @@ if [[ $? -ne 0 ]]; then
 else
     cp ${tmpfile_dir}/g12_sound.sh ${rootfs_mnt}/usr/local/bin
     chmod 0755 ${rootfs_mnt}/usr/local/bin/g12_sound.sh
+    echo -e ${k_msg}" Done."
 fi
-echo "Done."
 
 if [[ "$use_local_kern" == "yes" ]]; then
     echo -e ${i_msg}" Copying locally supplied kernel files to $tmpfile_dir..."
