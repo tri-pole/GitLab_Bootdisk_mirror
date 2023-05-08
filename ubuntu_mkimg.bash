@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ubuntu_mkimg.bash (a.k.a. {op,tri}buntu_mkimg.bash)
-# 23-03-28: v0.25
+# 23-05-08: v0.25
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
@@ -120,9 +120,9 @@ compressed_img=yes # {yes,no}
 
 # Name and tag for resulting disk image (uncomment and edit to taste).
 # Example for Ophub/Flippy kernel.
-# krnver_str="6.1.21-flippy-82+" # Kernel name/release str., plain text.
+krnver_str="6.1.27-ophub" # Kernel name/release str., plain text.
 # Example for koop-3pole kernel.
-krnver_str="6.1.21-koop-3pole" # Kernel name/release str., plain text.
+# krnver_str="6.1.27-koop-3pole" # Kernel name/release str., plain text.
 
 # This is the name used on the container file during image creation.
 # Before exit of this script, the kernel version is inserted into the name.
@@ -163,8 +163,9 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # (3) Daily build of an LTS release (e.g. Focal, Jammy).
 case "$distro_release" in
     "lunar")
-        distro_buildfile=${distro_release}-base-arm64.tar.gz
-        distro_buildurl=${distro_urlbase}/daily/current/${distro_buildfile}
+        distro_buildfile=ubuntu-base-23.04-base-arm64.tar.gz
+        distro_urlbase=$distro_urlbase/releases
+        distro_buildurl=${distro_urlbase}/lunar/release/${distro_buildfile}
     ;;
     "kinetic")
         distro_buildfile=ubuntu-base-22.10-base-arm64.tar.gz
@@ -680,7 +681,7 @@ available at
 https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw
 EOF
 )
-		    
+
 README_initramfs=$(cat <<"EOF"
 We have not imlemented any mechanism for automatic rebuilding of the initramfs
 when the kernel is updated. (However, the ordinary triggers for rebuilding of
@@ -997,7 +998,7 @@ sync && sleep 2
 echo " Done."
 
 echo -n -e ${i_msg}" Disconnecting and removing the loop devices..."
-losetup -d $loop_dev 2>/dev/null 
+losetup -d $loop_dev 2>/dev/null
 echo " Done."
 
 if [[ "$compressed_img" == "yes" ]]; then
@@ -1011,7 +1012,7 @@ if [[ "$docleanup_after" == "yes" ]]; then
     echo -n -e ${i_msg}" Doing final cleanup of build area..."
     rm -rf $tmpfile_dir
     rmdir $rootfs_mnt
-    echo " Done."    
+    echo " Done."
 fi
 
 echo -e "\n\033[92m -- Finished -- \033[0m\n"
