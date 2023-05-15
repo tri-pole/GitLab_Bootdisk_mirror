@@ -77,6 +77,10 @@ some package upgrades (this problem was present also on Fedora 36). A simple
 workaround is to switch to e.g. VT3 (Ctrl-Alt-F3) and login there and execute
 the command (as root/via sudo) `systemctl restart display-manager`.
 
+Note: Fedora kernels newer than 6.1.y don't seem to be bootable with the
+bootdisks. (The kexec load command complains that the kernel format is not
+recognized e.g. for kernel 6.2.y that comes with Fedora 38.)
+
 ### Debian
 
 Debian ARM64 can be installed and run using the debootstrap procedure
