@@ -72,6 +72,14 @@
 #   goes quickly). Then, (before first boot) enlarge the rootfs partition on
 #   SD/USB to desired size, e.g. with (100% here uses all of the SD/USB):
 #   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
+#   Finally, to make sure that the resized partition will be recognized also as
+#   a valid GPT partition, repair it with gdisk as follows. First, start gdisk;
+#   gdisk /dev/sdX
+#   and gdisk will tell you that it has found a valid MBR and a corrupt GPT,
+#   and it will ask you which one to use. You should chose to use the MBR.
+#   At the gdisk prompt then enter the command "r" and you will be taken to the
+#   recovery and transformation options. There, enter the command "f" to load
+#   the MBR and build a fresh GPT from it. At last, exit gdisk with "w" (write).
 # -- ArchLinux --
 # - The root password is "root" and there is a default user "alarm" set up.
 #   Therefore, on first boot (as root) change the passwords for root and alarm.
