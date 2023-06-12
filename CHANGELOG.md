@@ -161,6 +161,11 @@ petit-bootdisk-nc
 
 # debuntu_dbstrap.bash:
 
+## [v0.13] 23-06-12
+
+### Changed
+ - Names of wired network interfaces and non-free repos.
+
 ## [v0.12] 22-11-22
 
 ### Changed

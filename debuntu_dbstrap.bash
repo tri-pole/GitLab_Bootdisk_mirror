@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # debuntu_dbstrap.bash
-# 23-02-18: v0.12
+# 23-06-12: v0.13
 # Author: Tripole
 
 # - Introduction -
@@ -171,7 +171,7 @@ bootfs_mnt=${rootfs_mnt}/${bootfs_dir}
 docleanup_after=yes # {yes,no}
 
 # Not used by Ubuntu.
-name_server_1=192.168.1.2 # Set to your router's IP address.
+name_server_1=192.168.0.1 # Set to your router's IP address.
 name_server_2=8.8.8.8     # Set to your backup DNS (8.8.8.8 is dns.google).
 
 # Some (but not all) commands used below to create the image.
@@ -216,6 +216,13 @@ case $1 in
     keyring_file=/usr/share/keyrings/debian-archive-keyring.gpg
     bootfs_label=DEBN_BOOT
     rootfs_label=DEBN_ROOT
+    if [[ "$debian_edition" == "Bullseye" ]] ; then
+        nonfree_list="non-free"
+        iface_name="eth0"
+    else
+        nonfree_list="non-free non-free-firmware"
+        iface_name="end0"
+    fi
     ;;
 *)
     echo "Usage: debuntu_inst.bash distro"
@@ -265,7 +272,7 @@ for chk_cmd in ${chk_cmdlist[*]}; do
     cmd_loc=$(which $chk_cmd)
     if [[ -z $cmd_loc ]]; then
         echo -e "The required command $chk_cmd is \033[91mmissing \033[0m"
-	have_all_cmds=no
+        have_all_cmds=no
     fi
 done
 if [[ "$have_all_cmds" == "no" ]]; then
@@ -298,10 +305,10 @@ UUID=$rootfs_UUID  /  $rootfs_type   errors=remount-ro  0  1
 EOF
 )
 
-debian_interfaces_file=$(cat <<"EOF"
-allow-hotplug eth0
-auto eth0
-iface eth0 inet dhcp
+debian_interfaces_file=$(cat <<EOF
+allow-hotplug $iface_name
+auto $iface_name
+iface $iface_name inet dhcp
 EOF
 )
 
@@ -412,10 +419,10 @@ EOF
 ubuntu_custom_inst="${ubuntu_custom_inst_p1}""${ubuntu_custom_inst_p2}"
 
 debian_repo_list=$(cat <<EOF
-deb http://deb.debian.org/debian $debian_release main contrib non-free
-deb http://deb.debian.org/debian ${debian_release}-updates main contrib non-free
-# deb http://deb.debian.org/debian ${debian_release}-backports main contrib non-free
-deb http://security.debian.org/debian-security/ ${debian_release}-security main contrib non-free
+deb http://deb.debian.org/debian $debian_release main contrib $nonfree_list
+deb http://deb.debian.org/debian ${debian_release}-updates main contrib $nonfree_list
+# deb http://deb.debian.org/debian ${debian_release}-backports main contrib $nonfree_list
+deb http://security.debian.org/debian-security/ ${debian_release}-security main contrib $nonfree_list
 EOF
 )
 
