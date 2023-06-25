@@ -98,10 +98,10 @@ quality images produced by [Manjaro ARM](https://github.com/manjaro-arm).
 The Trinjaro images are only meant as a proof of concept and for tinkering.)
 
 __Tridora:__ To enable booting of recent Fedora images with petit-bootdisk we
-have created a script [`tridora_mkimg.bash`] which can be used to install a
-`koop-3pole` kernel onto a vanilla Fedora ARM64 raw image. (The script
-automates a procedure outlined by JFL on the Beelink forums.) An image built
-with this script can be found
+have created a script [`tridora_mkimg.bash`](tridora_mkimg.bash) which can be
+used to install a `koop-3pole` kernel onto a vanilla Fedora ARM64 raw image.
+(The script automates a procedure outlined by JFL on the Beelink forums.)
+An image built with this script can be found
 [here](https://mega.nz/folder/OR1RjaqC#RDRz4yjmgvRvKS_--QoGzQ).
 The Tridora images are only meant for experimenting.
 
