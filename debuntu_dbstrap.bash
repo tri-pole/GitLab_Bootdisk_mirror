@@ -81,8 +81,8 @@
 #   Finally, to make sure that the resized partition will be recognized also as
 #   a valid GPT partition, repair it with gdisk as follows. First, start gdisk;
 #   gdisk /dev/sdX
-#   and gdisk will tell you that it has found a valid MBR and a corrupt GPT,
-#   and it will ask you which one to use. You should chose to use the MBR.
+#   and gdisk may tell you that it has found a valid MBR and a corrupt GPT,
+#   and it will then ask you which one to use. You should chose to use the MBR.
 #   At the gdisk prompt then enter the command "r" and you will be taken to the
 #   recovery and transformation options. There, enter the command "f" to load
 #   the MBR and build a fresh GPT from it. At last, exit gdisk with "w" (write).

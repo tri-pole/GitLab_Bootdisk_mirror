@@ -282,3 +282,10 @@ petit-bootdisk-nc
 
 ### Added
  - First commit.
+
+# tridora_mkimg.bash:
+
+## [v0.1] 23-06-25
+
+### Added
+ - First commit.
