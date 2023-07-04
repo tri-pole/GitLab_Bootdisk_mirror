@@ -122,8 +122,10 @@ All the images so created can be booted with the bootdisks.
 ### ARM64 Linux kernel
 
 The script [`arm64_kbuild.bash`](arm64_kbuild.bash) can be used to produce the
-`koop-3pole` line of ARM64 kernels mentioned above (on a x86_64 Ubuntu Focal
-or Jammy host, or natively on an ARM64 Ubuntu Jammy host).
+`koop-3pole` line of ARM64
+[kernels](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw)
+mentioned above (on a x86_64 Ubuntu Focal or Jammy host, or natively on an
+ARM64 Ubuntu Jammy host).
 
 ## Screenshots
 
