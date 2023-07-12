@@ -10,16 +10,16 @@ Tumbleweed).
 A good use case for TV-boxes is to have the bootdisk installed on SD and have
 several Linux distros installed on USBs to choose from.
 
-All the bootdisks employ a chainloading mechanism based on the Linux
-[`kexec`](https://en.wikipedia.org/wiki/Kexec)
-[system call](https://wiki.archlinux.org/title/Kexec) and the bootdisks come in
-two variants; one pair of disks based on the
-[`Petitboot`](https://open-power.github.io/petitboot/) boot loader and another
-pair based on the [`u-root`](https://u-root.org/) boot loader.
+The bootdisks are built around the two boot loaders
+[`Petitboot`](https://open-power.github.io/petitboot/)
+and [`u-root`](https://u-root.org/).
+Both `Petitboot` and `u-root` employ a chainloading mechanism based on the
+Linux [`kexec`](https://en.wikipedia.org/wiki/Kexec)
+[system call](https://wiki.archlinux.org/title/Kexec).
 The `Petitboot` boot loader provides a somewhat nicer UI and can boot
 [grub](https://wiki.archlinux.org/title/GRUB) configurations defined in
-`grub.cfg` whereas the `u-root` boot loader can boot grub configurations as
-well as a subset of
+`grub.cfg` whereas the `u-root` boot loader can boot (simple) grub
+configurations as well as a subset of
 [syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
 configurations,
 [including](https://github.com/u-root/u-root/blob/main/pkg/boot/syslinux/syslinux.go)
