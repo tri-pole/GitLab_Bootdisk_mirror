@@ -45,7 +45,7 @@ The images can be booted using any of the bootdisks but also with `u-boot`
 
 #### The easier way (with scripts)
 
-There are three scripts available to generate images.
+There are several scripts available to generate images.
 The images are CLI/server images but is it easy to add a graphical desktop;
 typically it can be installed with a single command (see comments inside the
 scripts).
