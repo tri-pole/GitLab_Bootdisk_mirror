@@ -65,7 +65,7 @@ __Devuan:__  Images of Devuan (a Debian derivative with classic init system)
 can be created using debootstrap with the script
 [`devuan_dbstrap.bash`](devuan_dbstrap.bash).
 The releases of Devuan tracks those of Debian and the script can be used to
-produce images of e.g. the Chimaera (Bullseye) and Daedalus (Bookworm) releases.
+produce images of e.g. Chimaera (Bullseye) and Daedalus (Bookworm).
 Images built using this script can be downloaded from
 [here](https://mega.nz/folder/3AUj0RKB#hpWS6VSQUfIZshvVR04PJg).
 
