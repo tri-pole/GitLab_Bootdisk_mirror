@@ -53,11 +53,13 @@
 #   However, a second reason is that some (old) u-boot don't (even) support
 #   gzip compressed kernels (which is a little bit more cumbersome to fix).
 # - The kernel and initramfs files on the bootfs are not automatically updated
-#   when the kernel is upgraded or the initramfs is rebuilt. Therefore, when
-#   upgrading the kernel or rebuilding the initramfs these components have to
-#   be copied manually over to the bootfs (which is typically mounted under
-#   /boot/aux on the rootfs). The file grub.cfg can be updated by using
-#   grub-mkimage or via scripts in /usr/local/bin (e.g. mkgrubcfg_simple.bash).
+#   when the kernel is upgraded or the initramfs is rebuilt. Therefore, if you
+#   are booting using u-boot and bootfs, when upgrading the kernel or
+#   rebuilding the initramfs these components have to be copied manually over
+#   to the bootfs (which is typically mounted under /boot/aux on the rootfs).
+#   If you are booting via grub.cfg on rootfs (e.g. using bootdisk) you only
+#   need to update grub.cfg and this cane can be done by using grub-mkimage or
+#   via scripts in /usr/local/bin (e.g. mkgrubcfg_simple.bash).
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 #   Another alternative is kubuntu-desktop.
@@ -94,7 +96,7 @@
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
 ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic, Lunar
 debian_name=Debian      # Used for the image name and in grub.cfg
-debian_edition=Bullseye # Tested with Bullseye, Bookworm, Sid
+debian_edition=Bookworm # Tested with Bullseye, Bookworm, Sid
 
 # Host name for image.
 host_name=debu
@@ -249,7 +251,8 @@ fi
 if [[ "$1" == "debian" ]]; then
 deb_keyring_isinst=$(dpkg -l | awk '/debian-keyring/ {print }' | wc -l)
     if [[ $deb_keyring_isinst -eq 0 ]]; then
-        echo 
+        echo ${e_msg}" The Debian keyring is not installed, exiting."
+        exit 1
     fi
 fi
 
@@ -781,9 +784,10 @@ if ! mount ${loop_dev}p1 $bootfs_mnt ; then
 fi
 echo " Done."
 
-echo -e ${i_msg}" Debootstrapping "${distro_name}" system to ${rootfs_mnt}"
+echo -e ${i_msg}" Debootstrapping ${distro_name} system to ${rootfs_mnt}"
 debootstrap --arch arm64 --keyring $keyring_file \
 $distro_release $rootfs_mnt $distro_repourl
+echo "Done."
 
 echo -n -e ${i_msg}" Setting up the fstab file..."
 echo -e "$fstab_file" >${rootfs_mnt}/etc/fstab
@@ -801,12 +805,12 @@ echo " Done."
 echo -e ${i_msg}" Installing script at /usr/local/bin/g12_sound.sh ..."
 wget -P $tmpfile_dir -nv $g12_sound_url
 if [[ $? -ne 0 ]]; then
-    echo -e ${w_msg}" Unable to download the scrip g12_sound.sh"
+    echo -e ${w_msg}" Unable to download the script g12_sound.sh"
 else
     cp ${tmpfile_dir}/g12_sound.sh ${rootfs_mnt}/usr/local/bin
     chmod 0755 ${rootfs_mnt}/usr/local/bin/g12_sound.sh
+    echo -e ${k_msg}" Done."
 fi
-echo "Done."
 
 echo -n -e ${i_msg}" Setting up directory /boot/grub ..."
 mkdir -p -m 0755 ${rootfs_mnt}/boot/grub
@@ -938,7 +942,7 @@ case $1 in
     rm ${rootfs_mnt}/root/debian_custom_inst.bash
     sleep 2 # Just to be able to read some of the messages.
     echo "Done."
-    
+
     if [[ $arch_str != "aarch64" ]]; then
         echo -n -e ${i_msg}" Removing local qemu-aarch64-static binary..."
         rm ${rootfs_mnt}/usr/bin/qemu-aarch64-static

@@ -61,6 +61,14 @@ system.
 Images built using this script can be downloaded from
 [here](https://mega.nz/folder/CBM0hCTD#GDw2iXQpfeoqgWJ45E2Seg).
 
+__Devuan:__  Images of Devuan (a Debian derivative with classic init system)
+can be created using debootstrap with the script
+[`devuan_dbstrap.bash`](devuan_dbstrap.bash).
+The releases of Devuan tracks those of Debian and the script can be used to
+produce images of e.g. the Chimaera (Bullseye) and Daedalus (Bookworm) releases.
+Images built using this script can be downloaded from
+[here](https://mega.nz/folder/3AUj0RKB#hpWS6VSQUfIZshvVR04PJg).
+
 __Opbuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
 easy to produce an Ubuntu image (Focal, Jammy, Kinetic, Lunar) with
 [Ophub/Flippy kernel.](https://github.com/ophub/kernel/tree/main/pub/stable)
@@ -97,7 +105,7 @@ from [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
 quality images produced by [Manjaro ARM](https://github.com/manjaro-arm).
 The Trinjaro images are only meant as a proof of concept and for tinkering.)
 
-__Tridora:__ To enable booting of recent Fedora images with petit-bootdisk we
+__Tridora:__ To enable booting of recent Fedora images with `petit-bootdisk` we
 have created a script [`tridora_mkimg.bash`](tridora_mkimg.bash) which can be
 used to install a `koop-3pole` kernel onto a vanilla Fedora ARM64 raw image.
 (The script automates a procedure outlined by JFL on the Beelink forums.)
