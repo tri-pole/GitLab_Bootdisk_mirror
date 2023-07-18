@@ -78,10 +78,10 @@ e.g. for kernel 6.2.y that comes with Fedora 38.) However, a `koop-3pole`
 kernel can be added to the image and it is then possible to boot and run e.g.
 Fedora 38, see [`README.md`](README.md).
 
-Note: On some releases the graphical login may not function properly after
-some package upgrades (this problem was present also on Fedora 36). A simple
-workaround is to switch to e.g. VT3 (Ctrl-Alt-F3) and login there and execute
-the command (as root/via sudo) `systemctl restart display-manager`.
+Note: On some (older) releases the graphical login may not function properly
+after some package upgrades (this problem was present also on Fedora 36).
+A simple workaround is to switch to e.g. VT3 (Ctrl-Alt-F3) and login there, and
+then execute the command (as root/via sudo) `systemctl restart display-manager`.
 
 ### Debian
 

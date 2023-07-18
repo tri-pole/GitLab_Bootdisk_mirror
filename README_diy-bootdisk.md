@@ -270,9 +270,12 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   On e.g. `u-root-bootdisk` there are several kernels to choose from which
   should work with Amlogic, Allwinner or Rockchip SoCs (see the `config-` files
   on e.g. `u-root-bootdisk`).
-  These kernels are compiled using [Unifreq's](https://github.com/unifreq)
-  version of the Linux kernel source by employing
+  On older versions of the bootdisks these kernels are compiled using
+  [Unifreq's](https://github.com/unifreq) version of the Linux kernel source
+  by employing
   [Ophub's](https://github.com/ophub/amlogic-s9xxx-armbian) build framework.
+  On newer versions of the bootdisks the kernels are from our own line
+  `koop-3pole` of kernels (cf. [README.md](README.md)).
   A few extra options have been enabled over the default kernel config such
   as kexec and support for btrfs and iso file systems, see the `config-` files
   on the bootdisks.
