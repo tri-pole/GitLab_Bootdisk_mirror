@@ -119,6 +119,17 @@ password is "linux".
 Devuan ARM64 can be installed using the debootstrap method described and the
 end of [`README_debian_inst.md`](README_debian_inst.md).
 
+### Gentoo
+
+The Gento installation CD for ARM64 can be booted with e.g. petit-bootdisk and
+it contains a live CD system from which Gentoo (e.g. 17.1) can be installed.
+The Gentoo handbook does not have a chapter for ARM64 but the instructions for
+x86_64 can be used with some small obvious modifications. (Remember to set root
+password before exting the chroot jail during the installation!) For instance,
+by following the handbook instructions for an EFI system and installing a
+precompiled version of the 6.1.38 kernel a fully functioning Gentoo system can
+straightforwardly be obtained. (This system can be booted with Petitboot.)
+
 ### Armbian
 
 The Armbian Generic ARM64 images can be booted and run as-is.
