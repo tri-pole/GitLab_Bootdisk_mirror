@@ -28,12 +28,12 @@
 #   for it in grub, in the Fedora way: You need to create a new text file in
 #   /boot/loader/entries on the bootfs (partition 2) with a name like
 #   <32randchardecnumber>-<kernelname>.aarch64.conf
-#   with contents of the form (cf. existing entries in /boot/loader/entries)
+#   with contents of the form (cf. existing entries in /boot/loader/entries):
 #
-#   title Fedora Linux (6.1.35-koop-3pole) 38 (Thirty Eight)
-#   version 6.1.35-koop-3pole
-#   linux /vmlinuz-6.1.35-koop-3pole
-#   initrd /initramfs-6.1.35-koop-3pole.img
+#   title Fedora Linux (6.1.38-zrle-koop-3pole) 38 (Thirty Eight)
+#   version 6.1.38-zrle-koop-3pole
+#   linux /vmlinuz-6.1.38-zrle-koop-3pole
+#   initrd /initramfs-6.1.38-zrle-koop-3pole.img
 #   # devicetree /meson-g12b-gtking-pro.dtb # <- for now, this is commented out
 #   options root=UUID=4d6b4931-164a-4c35-9a78-1ac5a17f4cfa rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1
 #   grub_users $grub_users
@@ -48,6 +48,17 @@
 #   to use u-root (e.g. via u-root bootdisk) you must write a grub.cfg that
 #   u-root understands with "simple" menu entries (listing kernel image,
 #   initramfs and kernel command line; examples are easy to find by search).
+# - Since the initramfs that comes with the koop-3pole kernels is built using a
+#   bare-bones Ubuntu rootfs as template, it is advisable to regenerate the
+#   initramfs for the koop-3pole kernel on first boot (to better match the
+#   Fedora system). For e.g. kernel 6.1.38-zrle-koop-3pole the initramfs can be
+#   regenerated like so (first make a backup of the old initramfs):
+#
+#   dracut -f --kver 6.1.38-zrle-koop-3pole
+#
+#   It is advisable to do the intramfs regeneration each time after upgrading
+#   "system important" packages (immediately after upgrade, before rebooting),
+#   unless this is done by the native Fedora scripts triggered by the upgrade.
 
 # -------------------------------- Parameters ---------------------------------
 
@@ -60,7 +71,7 @@ fedora_release="38 (Thirty Eight)" # Only used to tag grub loader entries.
 
 # Kernel tag used in resulting disk image name (uncomment and edit to taste).
 # Example for koop-3pole kernel.
-krnver_str="6.1.35-koop-3pole" # Kernel name/release str., plain text.
+krnver_str="6.1.38-zrle-koop-3pole" # Kernel name/release str., plain text.
 
 # Keep the compressed (xz) original Fedora ARM64 image file?
 keep_orig_img=yes # {yes,no}
