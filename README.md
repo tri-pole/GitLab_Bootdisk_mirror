@@ -70,12 +70,12 @@ Images built using this script can be downloaded from
 [here](https://mega.nz/folder/3AUj0RKB#hpWS6VSQUfIZshvVR04PJg).
 
 __Opbuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
-easy to produce an Ubuntu image (Focal, Jammy, Kinetic, Lunar) with
-[Ophub/Flippy kernel.](https://github.com/ophub/kernel/tree/main/pub/stable)
+easy to produce an Ubuntu image (Focal, Jammy, Kinetic, Lunar) with an
+[Ophub kernel](https://github.com/ophub/kernel/tree/main/pub/stable).
 This kernel is adapted for Amlogic TV-boxes but has support also for Rockchip
 and Allwinner.
 The script uses a daily official build of the Ubuntu
-[rootfs](https://cdimage.ubuntu.com/ubuntu-base) as a base.
+[rootfs](https://cdimage.ubuntu.com/ubuntu-base) as a base for the OS.
 Images built using this script can be downloaded from
 [here](https://mega.nz/folder/XEckCbSL#sC0UVeOI9PGRJ8Zxm4FiPw).
 
@@ -97,8 +97,8 @@ Images built using this script can be downloaded from
 
 __Trinjaro:__ With the script [`archlnx_mkimg.bash`](archlnx_mkimg.bash) it is
 also possible to produce Manjaro images with a Manjaro kernel or a locally
-provided kernel, for instance Ophubs's kernels or the `koop-3pole` kernels
-linked to above.
+provided kernel, for instance an Ophub kernel or the one of the `koop-3pole`
+kernels linked to above.
 An image built using this recipe with a `koop-3pole` kernel can be downloaded
 from [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
 (Note: The Trinjaro images are very crude compared to the polished high
