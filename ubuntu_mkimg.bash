@@ -128,17 +128,17 @@ compressed_img=yes # {yes,no}
 
 # Name and tag for resulting disk image (uncomment and edit to taste).
 # Example for Ophub/Flippy kernel.
-# krnver_str="6.1.27-ophub" # Kernel name/release str., plain text.
+krnver_str="6.1.38-ophub" # Kernel name/release str., plain text.
 # Example for koop-3pole kernel.
-krnver_str="6.1.33-koop-3pole" # Kernel name/release str., plain text.
+#krnver_str="5.15.120-koop-3pole" # Kernel name/release str., plain text.
 
 # This is the name used on the container file during image creation.
 # Before exit of this script, the kernel version is inserted into the name.
 img_tag=${krnver_str}_$(date +"%y%m%d") # Edit to your liking.
 imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
 
-# List of names for the SoC vendors for which you wish to download and install
-# the dtb package (the selected dtb below must be in one of these packages).
+# List of names for the SoC vendors for which you wish to install the dtb
+# package (the selected dtb below must be in one of these packages).
 # Ophub packages dtbs for amlogic, allwinner and rockchip w/ his kernels.
 # (The paths to the dtb packages (defined below) are of the form
 # ${ophub_krepo_url}/dtb-${socdtbs_name}-${krnver_str_url}.tar.gz)
@@ -305,7 +305,12 @@ kernel_cmdline="root=UUID=${rootfs_UUID} "${kernel_cmdline_opts}
 # (For swap we only add a stub, see https://help.ubuntu.com/community/SwapFaq)
 fstab_file=$(cat <<EOF
 UUID=$rootfs_UUID  /  $rootfs_type   errors=remount-ro  0  1
-#/swapfile        none  swap        defaults  0  0
+# zram is normally handled by systemd, so the next line should be commented out
+# /dev/zram0      none       swap   defaults,pri=100 0 0
+# A regular swap file can also be used (also together with zram). To use a swap
+# file follow the instructions in https://help.ubuntu.com/community/SwapFaq
+# and uncomment the next line
+#/swapfile        none  swap        defaults,pri=50  0  0
 EOF
 )
 
@@ -837,7 +842,7 @@ echo " Done."
 echo -e ${i_msg}" Installing script at /usr/local/bin/g12_sound.sh ..."
 wget -P $tmpfile_dir -nv $g12_sound_url
 if [[ $? -ne 0 ]]; then
-    echo -e ${w_msg}" Unable to download the scrip g12_sound.sh"
+    echo -e ${w_msg}" Unable to download the script g12_sound.sh"
 else
     cp ${tmpfile_dir}/g12_sound.sh ${rootfs_mnt}/usr/local/bin
     chmod 0755 ${rootfs_mnt}/usr/local/bin/g12_sound.sh
