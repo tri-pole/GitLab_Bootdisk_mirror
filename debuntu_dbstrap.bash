@@ -304,7 +304,12 @@ debian_release="$(tr [A-Z] [a-z] <<< "$debian_edition")" # To lowercase.
 # (For swap we only add a stub, see https://help.ubuntu.com/community/SwapFaq)
 fstab_file=$(cat <<EOF
 UUID=$rootfs_UUID  /  $rootfs_type   errors=remount-ro  0  1
-#/swapfile        none  swap        defaults  0  0
+# zram is normally handled by systemd, so the next line should be commented out
+# /dev/zram0      none       swap   defaults,pri=100 0 0
+# A regular swap file can also be used (also together with zram). To use a swap
+# file follow the instructions in https://help.ubuntu.com/community/SwapFaq
+# and uncomment the next line
+#/swapfile        none  swap        defaults,pri=50  0  0
 EOF
 )
 

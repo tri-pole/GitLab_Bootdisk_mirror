@@ -53,16 +53,16 @@ All scripts can be run natively on an ARM64 Ubuntu/Debian machine but also on
 an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static) to generate an
 ARM64 image.
 
-__Debuntu:__ Debian (Bullseye, Sid) and Ubuntu (Focal, Jammy, Kinetic, Lunar)
-images of "standard" type (with Debian/Ubuntu kernel) can be produced with the
-script [`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which employs the
-[debootstrap](https://wiki.debian.org/Debootstrap) mechanism to create the base
-system.
+__Debuntu:__ Debian (Bullseye, Bookworm, Sid) and Ubuntu (Focal, Jammy,
+Kinetic, Lunar) images of "standard" type (with Debian/Ubuntu kernel) can be
+produced with the script [`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which
+employs the [debootstrap](https://wiki.debian.org/Debootstrap) mechanism to
+create the base system.
 Images built using this script can be downloaded from
 [here](https://mega.nz/folder/CBM0hCTD#GDw2iXQpfeoqgWJ45E2Seg).
 
-__Devuan:__  Images of Devuan (a Debian derivative with classic init system)
-can be created using debootstrap with the script
+__Devuan:__  Images of Devuan (which is a Debian derived distro with
+classic init system) can be created using debootstrap with the script
 [`devuan_dbstrap.bash`](devuan_dbstrap.bash).
 The releases of Devuan tracks those of Debian and the script can be used to
 produce images of e.g. Chimaera (Bullseye) and Daedalus (Bookworm).
