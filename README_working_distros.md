@@ -72,14 +72,16 @@ The ARM64 live iso images can be run as-is.
 The Fedora 37 Generic ARM64 images can be booted and run as-is.
 The images can be found e.g. [here](https://dl.fedoraproject.org/pub/fedora/linux/releases/37/).
 
-Fedora kernels newer than 6.1.y don't seem to be bootable with the bootdisks.
-(The kexec load command complains that the kernel format is not recognized
-e.g. for kernel 6.2.y that comes with Fedora 38.) However, a `koop-3pole`
-kernel can be added to the image and it is then possible to boot and run e.g.
-Fedora 38, see [`README.md`](README.md).
+For Fedora 38 and onwards it is necessary to use the latest version of the
+initramfs containing Petitboot (to boot Fedora kernels newer than 6.1.y).
+As of this writing the latest version of the Petitboot initramfs is 0v25 and
+it can be found at the same place as the petit-bootdisks (see above). The new
+version of the initramfs (which contains a newer version of the kexec load
+command) can be used as a direct drop-in replacement to upgrade an already
+existing petit-bootdisk.
 
-Note: On some (older) releases the graphical login may not function properly
-after some package upgrades (this problem was present also on Fedora 36).
+Note: On some (older) Fedora releases the graphical login may not function
+properly after package upgrades (this problem was present also on Fedora 36).
 A simple workaround is to switch to e.g. VT3 (Ctrl-Alt-F3) and login there, and
 then execute the command (as root/via sudo) `systemctl restart display-manager`.
 
