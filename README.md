@@ -110,7 +110,10 @@ used to install a `koop-3pole` kernel onto a vanilla Fedora ARM64 raw image
 (along with the existing Fedora kernel).
 An image built with this script can be found
 [here](https://mega.nz/folder/OR1RjaqC#RDRz4yjmgvRvKS_--QoGzQ).
-The Tridora images are only meant for experimenting.
+Note: The latest initramfs for Petitboot can boot also the newer Fedora
+images, see [`README_working_distros.md`](README_working_distros.md), so this
+script is now obsolete.
+
 
 The script `debuntu_inst.bash` is an older (deprecated) script for image
 creation using debootstrap.
