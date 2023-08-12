@@ -75,8 +75,9 @@ The images can be found e.g. [here](https://dl.fedoraproject.org/pub/fedora/linu
 For Fedora 38 and onwards it is necessary to use the latest version of the
 initramfs containing Petitboot (to boot Fedora kernels newer than 6.1.y).
 As of this writing the latest version of the Petitboot initramfs is 0v25 and
-it can be found at the same place as the petit-bootdisks (see above). The new
-version of the initramfs (which contains a newer version of the kexec load
+it can be found at the same place as the petit-bootdisks, see
+[`README_petit-bootdisk.md`](README_petit-bootdisk.md).
+The new version of the initramfs (which has a newer version of the kexec load
 command) can be used as a direct drop-in replacement to upgrade an already
 existing petit-bootdisk.
 

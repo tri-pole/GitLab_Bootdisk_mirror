@@ -105,7 +105,7 @@ from [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
 quality images produced by [Manjaro ARM](https://github.com/manjaro-arm).
 The Trinjaro images are only meant as a proof of concept and for tinkering.)
 
-__Tridora:__ The script [`tridora_mkimg.bash`](tridora_mkimg.bash) which can be
+__Tridora:__ The script [`tridora_mkimg.bash`](tridora_mkimg.bash) can be
 used to install a `koop-3pole` kernel onto a vanilla Fedora ARM64 raw image
 (along with the existing Fedora kernel).
 An image built with this script can be found
