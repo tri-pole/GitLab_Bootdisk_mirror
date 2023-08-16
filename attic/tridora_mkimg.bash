@@ -5,10 +5,6 @@
 # Author: Tripole
 
 # Script to add a locally provided kernel to a recent Fedora ARM64 image.
-# This can be useful since recent Fedora kernels (e.g. on 38 and onwards)
-# cannot be booted using kexec(), and therefore not by Petitboot, but requires
-# proper EFI support (and an updated grub bootloader). For instance, the
-# koop-3pole kernels are bootable on recent Fedora images using Petitboot.
 
 # Acknowledgement: The idea for this script came from a post by JFL on the
 # Beelink forum describing how to manually install a Petitboot bootable kernel
