@@ -4,9 +4,9 @@ This repo contains information relating to
 [bootdisks](https://en.wikipedia.org/wiki/Boot_disk) for TV-boxes/SBCs based on
 the ARM64 architecture.
 With these bootdisks you can boot e.g. many ("generic") ARM64 Linux images
-from major distributions that have grub boot configurations, such as Fedora 36,
-Ubuntu (e.g. Jammy), Debian (e.g. Bullseye) and openSuse (Leap 15.4 and
-Tumbleweed).
+from major distributions that have grub boot configurations, such as Fedora
+37 and 38, Ubuntu (e.g. Jammy, Lunar), Debian (e.g. Bullseye, Bookworm) and
+openSuse (Leap 15.4 and Tumbleweed).
 A good use case for TV-boxes is to have the bootdisk installed on SD and have
 several Linux distros installed on USBs to choose from.
 
@@ -104,19 +104,6 @@ from [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
 (Note: The Trinjaro images are very crude compared to the polished high
 quality images produced by [Manjaro ARM](https://github.com/manjaro-arm).
 The Trinjaro images are only meant as a proof of concept and for tinkering.)
-
-__Tridora:__ The script [`tridora_mkimg.bash`](tridora_mkimg.bash) can be
-used to install a `koop-3pole` kernel onto a vanilla Fedora ARM64 raw image
-(along with the existing Fedora kernel).
-An image built with this script can be found
-[here](https://mega.nz/folder/OR1RjaqC#RDRz4yjmgvRvKS_--QoGzQ).
-Note: The latest initramfs for Petitboot can boot also the newer Fedora
-images, see [`README_working_distros.md`](README_working_distros.md), so this
-script is now obsolete.
-
-
-The script `debuntu_inst.bash` is an older (deprecated) script for image
-creation using debootstrap.
 
 #### The harder way (with bare hands)
 
