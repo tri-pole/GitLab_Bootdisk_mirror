@@ -5,8 +5,8 @@ This repo contains information relating to
 the ARM64 architecture.
 With these bootdisks you can boot e.g. many ("generic") ARM64 Linux images
 from major distributions that have grub boot configurations, such as Fedora
-37 and 38, Ubuntu (e.g. Jammy, Lunar), Debian (e.g. Bullseye, Bookworm) and
-openSuse (Leap 15.4 and Tumbleweed).
+(e.g. 37, 38), Ubuntu (e.g. Jammy, Lunar), Debian (e.g. Bullseye, Bookworm) and
+openSuse (e.g. Leap 15.4 and Tumbleweed).
 A good use case for TV-boxes is to have the bootdisk installed on SD and have
 several Linux distros installed on USBs to choose from.
 
@@ -41,7 +41,7 @@ Instructions for recreating or adapting the bootdisks can be found in the file
 This repo also contains scripts and information on how to create ARM64 Linux
 images (and there are downloads of the images available).
 The images can be booted using any of the bootdisks but also with `u-boot`
-(using the resident/vendor version installed on the TV-box/SBC).
+(using the resident/vendor version of `u-boot` installed on the TV-box/SBC).
 
 #### The easier way (with scripts)
 
