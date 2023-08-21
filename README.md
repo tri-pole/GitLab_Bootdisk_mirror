@@ -107,7 +107,7 @@ The Trinjaro images are only meant as a proof of concept and for tinkering.)
 
 __Related project:__ There is a set of image builder tools available at
 [debian-image-builder](https://github.com/pyavitz/debian-image-builder) with
-which you can build an image of Debeian, Devuan or Ubuntu for several well
+which you can build an image of Debian, Devuan or Ubuntu for several well
 known families of SoCs, including `meson64` (cf. the `defconfig` folder there).
 
 #### The harder way (with bare hands)
