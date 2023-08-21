@@ -128,9 +128,9 @@ compressed_img=yes # {yes,no}
 
 # Name and tag for resulting disk image (uncomment and edit to taste).
 # Example for Ophub/Flippy kernel.
-krnver_str="6.1.38-ophub" # Kernel name/release str., plain text.
+# krnver_str="6.1.38-ophub" # Kernel name/release str., plain text.
 # Example for koop-3pole kernel.
-#krnver_str="5.15.120-koop-3pole" # Kernel name/release str., plain text.
+krnver_str="5.15.127-koop-3pole" # Kernel name/release str., plain text.
 
 # This is the name used on the container file during image creation.
 # Before exit of this script, the kernel version is inserted into the name.
@@ -149,7 +149,7 @@ dtbfile_name=meson-g12b-gtking-pro.dtb
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
 ophub_repo_url="https://github.com/ophub"
-ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/u-boot/amlogic/overload"
+ophub_uboot_url=${ophub_repo_url}"/u-boot/blob/main/u-boot/amlogic/overload"
 
 # u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
 uboot_list=(
@@ -492,11 +492,14 @@ EOF
 )
 
 README_uboot=$(cat <<"EOF"
-The files in this directory are intended to be used as chainloader when booting
-via this method. (The default boot methods are grub.cfg and boot script.)
-Usage: Find a binary here (u-boot-*) which matches your box and copy it to the
-name u-boot.ext at the top level on the boot (fat) partition. Then edit the
-file extlinux/extlinux.conf according to the instructions inside that file.
+The files in this directory are intended to be used as chainloader (i.e. last
+stage) of u-boot, when booting via the chainloading method (on an Amlogic SoC).
+(The default boot methods are grub.cfg and boot script.) Usage: Find here a
+binary u-boot-* which matches your box and copy it to the name u-boot.ext at
+the top level on the boot (fat) partition. Then edit extlinux/extlinux.conf
+according to the instructions inside that file. The files here are from
+Ophub's repo at https://github.com/ophub/u-boot where also suitable candidates
+for u-boot.ext for other platforms (e.g. Allwinner, Rockchip) can be found.
 EOF
 )
 

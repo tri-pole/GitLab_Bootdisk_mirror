@@ -105,6 +105,11 @@ from [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
 quality images produced by [Manjaro ARM](https://github.com/manjaro-arm).
 The Trinjaro images are only meant as a proof of concept and for tinkering.)
 
+__Related project:__ There is a set of image builder tools available at
+[https://github.com/pyavitz/debian-image-builder](debian-image-builder) with
+which you can build an image of Debeian, Devuan or Ubuntu for several well
+known families of SoCs, including `meson64` (cf. the `defconfig` folder).
+
 #### The harder way (with bare hands)
 
 A working Ubuntu desktop image for a TV-box can also be obtained by a
