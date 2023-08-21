@@ -137,7 +137,7 @@ if [[ "$distro_name" == "Manjaro" ]]; then
     # Locally provided kernel.
     # The packages (boot-,modules-,dtb-,header-) must have same form as Ophub's,
     # e.g. be the result of a kernel compil. using Ophob's build environment.
-    krnver_str="6.1.28-koop-3pole" # Kernel name/release str., plain text.
+    krnver_str="6.1.46-koop-3pole" # Kernel name/release str., plain text.
 
     bootfs_label=MNJO_BOOT
     rootfs_label=MNJO_ROOT
@@ -173,7 +173,7 @@ fi
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
 ophub_repo_url="https://github.com/ophub"
-ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/u-boot/amlogic/overload"
+ophub_uboot_url=${ophub_repo_url}"/u-boot/blob/main/u-boot/amlogic/overload"
 
 # u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
 uboot_list=(
@@ -464,11 +464,14 @@ EOF
 )
 
 README_uboot=$(cat <<"EOF"
-The files in this directory are intended to be used as chainloader when booting
-via this method. (The default boot methods are grub.cfg and boot script.)
-Usage: Find a binary here (u-boot-*) which matches your box and copy it to the
-name u-boot.ext at the top level on the boot (fat) partition. Then edit the
-file extlinux/extlinux.conf.bak according to the instructions inside that file.
+The files in this directory are intended to be used as chainloader (i.e. last
+stage) of u-boot, when booting via the chainloading method (on an Amlogic SoC).
+(The default boot methods are grub.cfg and boot script.) Usage: Find here a
+binary u-boot-* which matches your box and copy it to the name u-boot.ext at
+the top level on the boot (fat) partition. Then edit extlinux/extlinux.conf
+according to the instructions inside that file. The files here are from
+Ophub's repo at https://github.com/ophub/u-boot where also suitable candidates
+for u-boot.ext for other platforms (e.g. Allwinner, Rockchip) can be found.
 EOF
 )
 
@@ -774,7 +777,11 @@ desired_MiB=$((14*${imgfile_MiB}/10)) # Approx. space for imgfile +imgfile.xz
 
 echo -e "\n\033[92m -- Making image for $distro_name ($distro_edition) -- \033[0m\n"
 
-echo -e "The image container file will be at:"
+if [[  "$use_local_kern" == "yes" ]] ; then
+    echo -e "Using locally provided kernel: ${krnver_str}\n"
+fi
+
+echo "The image container file will be at:"
 echo $imgfile_loc
 
 if [[ "$compressed_img" == "no" ]]; then

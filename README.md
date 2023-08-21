@@ -105,9 +105,9 @@ from [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
 quality images produced by [Manjaro ARM](https://github.com/manjaro-arm).
 The Trinjaro images are only meant as a proof of concept and for tinkering.)
 
-__Related project:__ There is a set of image builder tools available at
-[debian-image-builder](https://github.com/pyavitz/debian-image-builder) with
-which you can build an image of Debian, Devuan or Ubuntu for several well
+__Related project:__ With the tools provided by
+[debian-image-builder](https://github.com/pyavitz/debian-image-builder)
+you can build an image of Debian, Devuan or Ubuntu for several well
 known families of SoCs, including `meson64` (cf. the `defconfig` folder there).
 
 #### The harder way (with bare hands)

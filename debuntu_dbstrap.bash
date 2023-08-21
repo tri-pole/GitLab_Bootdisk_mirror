@@ -113,7 +113,7 @@ img_tag=3pole-$(date +"%y%m%d")
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
 ophub_repo_url="https://github.com/ophub"
-ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/u-boot/amlogic/overload"
+ophub_uboot_url=${ophub_repo_url}"/u-boot/blob/main/u-boot/amlogic/overload"
 
 # u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
 # Note: Some of these may not be able to boot newer Ubuntu kernels or initramfs
@@ -536,14 +536,15 @@ EOF
 )
 
 README_uboot_ophub=$(cat <<EOF
-The files in this directory are from $ophub_uboot_url
-They are intended to be used as chainloader (u-boot.ext) when booting via this
-method.
-Usage: Find a binary here (u-boot-*) which matches your box and copy it to the
-name u-boot.ext at the top level on the boot (fat) partition. Then edit the
-file extlinux/extlinux.conf according to the instructions inside that file.
-
-Note that some chainloaders can not boot newer kernels/initrfamfs.
+The files in this directory are intended to be used as chainloader (i.e. last
+stage) of u-boot, when booting via the chainloading method (on an Amlogic SoC).
+(The default boot methods are grub.cfg and boot script.) Usage: Find here a
+binary u-boot-* which matches your box and copy it to the name u-boot.ext at
+the top level on the boot (fat) partition. Then edit extlinux/extlinux.conf
+according to the instructions inside that file. The files here are from
+Ophub's repo at https://github.com/ophub/u-boot where also suitable candidates
+for u-boot.ext for other platforms (e.g. Allwinner, Rockchip) can be found.
+Note: Some chainloaders here can not boot newer kernels/initrfamfs.
 EOF
 )
 
