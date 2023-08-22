@@ -84,7 +84,7 @@ also possible to produce Ubuntu images with a locally provided kernel, for
 instance mainline Linux with source from [kernel.org](https://kernel.org/) and
 kernel
 [configuration](https://github.com/ophub/amlogic-s9xxx-armbian/tree/main/compile-kernel/tools/config) from Ophub.
-Images built according to this ("lean") recipe can be downloaded from
+Images built according to this concept can be downloaded from
 [here](https://mega.nz/folder/KJdAwK4Q#r4HNsKQRkLgT7HTD2s1GLg).
 The `koop-3pole` line of kernels used on these images can be downloaded from
 [here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw) (see also below).
@@ -108,7 +108,8 @@ The Trinjaro images are only meant as a proof of concept and for tinkering.)
 __Related project:__ With the tools provided by
 [debian-image-builder](https://github.com/pyavitz/debian-image-builder)
 you can build an image of Debian, Devuan or Ubuntu for several well
-known families of SoCs, including `meson64` (cf. the `defconfig` folder there).
+known families of SoCs/boards (cf. the `defconfig` and `lib/boards` folders
+there).
 
 #### The harder way (with bare hands)
 
