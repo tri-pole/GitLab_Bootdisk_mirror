@@ -85,7 +85,8 @@ target kernel and initramfs.
 Instead, the dtb residing on the `petit-bootdisk` (and used by the kernel
 running `Petitboot`) is inherited.
 This seems to be a design decision and some reasons therefore are hinted at
-[here.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
+[here](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
+(see also [this post](https://github.com/open-power/petitboot/issues/84)).
 
 - Our build of `Petitboot` is set up to have only USB, DISK and OPTICAL as
 default boot target types. Despite this, `Petitboot` sets up network interfaces

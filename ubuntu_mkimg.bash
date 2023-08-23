@@ -118,7 +118,7 @@
 # A: Well, as always, "it depends". (Best to browse through them all, I guess.)
 
 distro_name=Ubuntu   # Used for the image name and in grub.cfg
-distro_edition=Jammy # Tested with Focal, Jammy, Kinetic, Lunar
+distro_edition=Jammy # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
 
 # Host name for image.
 host_name=opbu
@@ -130,7 +130,7 @@ compressed_img=yes # {yes,no}
 # Example for Ophub/Flippy kernel.
 # krnver_str="6.1.38-ophub" # Kernel name/release str., plain text.
 # Example for koop-3pole kernel.
-krnver_str="5.15.127-koop-3pole" # Kernel name/release str., plain text.
+krnver_str="6.1.46-koop-3pole" # Kernel name/release str., plain text.
 
 # This is the name used on the container file during image creation.
 # Before exit of this script, the kernel version is inserted into the name.
@@ -170,6 +170,11 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # (2) Release build of a non LTS release (e.g. Kinetic).
 # (3) Daily build of an LTS release (e.g. Focal, Jammy).
 case "$distro_release" in
+    "mantic")
+        distro_buildfile=mantic-base-arm64.tar.gz
+        distro_urlbase=$distro_urlbase/daily
+        distro_buildurl=${distro_urlbase}/current/${distro_buildfile}
+    ;;
     "lunar")
         distro_buildfile=ubuntu-base-23.04-base-arm64.tar.gz
         distro_urlbase=$distro_urlbase/releases

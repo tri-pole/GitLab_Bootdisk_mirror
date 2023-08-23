@@ -94,7 +94,7 @@
 # ------------------------------- parameters ---------------------------------
 
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
-ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic, Lunar
+ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
 debian_name=Debian      # Used for the image name and in grub.cfg
 debian_edition=Bookworm # Tested with Bullseye, Bookworm, Sid
 
