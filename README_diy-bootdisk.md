@@ -423,6 +423,12 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   This concept has been tested and verified on Ugoos Am6 plus, both with
   resident/vendor `u-boot` and mainline (GTK pro) `u-boot` on eMMC.
 
+  If you already have a Linux installation on eMMC you can also easily adapt
+  that so that the first kernel/initramfs pair that is booted is one that runs
+  `Petitboot` or `u-root` from one of the bootdisks.
+  With such a setup, you have a general bootloader configuration that can boot
+  not only the kernels/initramfs on eMMC but also e.g. UEFI images on SD/USB.
+
   A note on eMMC and booting: The eMMC chips used in TV-boxes come pre
   partitioned according to the (JEDEC) standard mobile eMMC partition scheme;
   one large user partition (e.g. 8G, 16G, 32G), one
