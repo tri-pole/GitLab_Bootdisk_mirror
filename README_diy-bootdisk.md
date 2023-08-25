@@ -432,9 +432,10 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
 
   `find /etc/ -type f -exec grep -l UUID '{}' \;`
 
-  This concept has been tested and verified on Ugoos Am6 plus, both with
-  resident/vendor `u-boot` and mainline (GTK pro) `u-boot` on eMMC, and with
-  the rootfs contents of several different Linux images copied over to eMMC.
+  This concept has been tested and verified on Ugoos Am6 plus with
+  `Petitboot` on eMMC, both with resident/vendor `u-boot` and mainline
+  (GTK pro) `u-boot` installed on eMMC, and with the rootfs contents of
+  several different Linux images copied over to separate partitions eMMC.
 
   If you already have a Linux installation on eMMC you can also easily adapt
   that so that the first kernel/initramfs pair that is booted is one that runs
