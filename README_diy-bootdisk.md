@@ -421,9 +421,10 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   binary `u-boot.ext` must be renamed to `u-boot.emmc`.)
 
   With either `Petitboot` or `u-boot` on eMMC you can boot an installation
-  image of a Linux distribution and intstall to the rest of eMMC or you can
-  just transfer (e.g. using the `rsync` command) the contents of the rootfs of
-  a working Linux image on SD/USB (e.g. made with the scripts we provide).
+  image of a Linux distribution on SD/USB and install to available space on
+  eMMC or you can just transfer (e.g. using the `rsync` command) the contents
+  of the rootfs of s working Linux image on SD/USB (e.g. made with the scripts
+  we provide).
   The only adaptations likely needed then after transfer to eMMC of the rootfs
   are updating the UUID of the rootfs in `/etc/fstab` and `grub.cfg`.
 
