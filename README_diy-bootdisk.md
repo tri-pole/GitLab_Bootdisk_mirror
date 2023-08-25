@@ -420,8 +420,16 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   (If the starting point is instead a chainloaded disk then the chainloader
   binary `u-boot.ext` must be renamed to `u-boot.emmc`.)
 
+  With either `Petitboot` or `u-boot` on eMMC you can boot an installation
+  image of a Linux distribution and intstall to the rest of eMMC or you can
+  just transfer (e.g. using the `rsync` command) the contents of the rootfs of
+  a working Linux image on SD/USB (e.g. made with the scripts we provide).
+  The only adaptations likely needed then after transfer to eMMC of the rootfs
+  are updating the UUID of the rootfs in `/etc/fstab` and `grub.cfg`.
+
   This concept has been tested and verified on Ugoos Am6 plus, both with
-  resident/vendor `u-boot` and mainline (GTK pro) `u-boot` on eMMC.
+  resident/vendor `u-boot` and mainline (GTK pro) `u-boot` on eMMC, and with
+  the rootfs contents of several different Linux images copied over to eMMC.
 
   If you already have a Linux installation on eMMC you can also easily adapt
   that so that the first kernel/initramfs pair that is booted is one that runs
