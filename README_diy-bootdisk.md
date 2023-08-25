@@ -427,9 +427,10 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   we provide).
   The only adaptations likely needed then after transfer to eMMC of the rootfs
   are updating the UUID of the rootfs in `/etc/fstab` and `grub.cfg`.
-  (Possibly the file `/etc/initramfs-tools/conf.d/resume` needs as well, but
+  Possibly the file `/etc/initramfs-tools/conf.d/resume` needs as well, but
   you can also search for files that need edits using e.g. the command
-  `find /etc/ -type f -exec grep -l UUID '{}' \;`)
+
+  `find /etc/ -type f -exec grep -l UUID '{}' \;`
 
   This concept has been tested and verified on Ugoos Am6 plus, both with
   resident/vendor `u-boot` and mainline (GTK pro) `u-boot` on eMMC, and with
