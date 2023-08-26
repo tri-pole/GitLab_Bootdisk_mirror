@@ -91,6 +91,11 @@
 
 # ToDo: Check Debian network setup (in particular the resolver setup).
 
+# A note on variable/parameter checks: In the parameters section below we do
+# some rudimentary checks of parameters regarding (only) format and scope.
+# In the following preparations/checks section we also check if the parameters
+# are appropriate/admisssible for the platform/installation we are running on.
+
 # ------------------------------- parameters ---------------------------------
 
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
@@ -556,6 +561,8 @@ with gtk pro defconf and usb_start added as preboot command.
 For more info about $uboot_ext_local and downloads of similar files see
 $uboot_ext_local_url1
 $uboot_ext_local_url2
+Finally, an excellent exposition of the boot flow for Amlogic can be found at
+https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
 EOF
 )
 
@@ -644,41 +651,46 @@ EOF1
 mkgrubcfg_simple="${mkgrubcfg_simple_p1}""${mkgrubcfg_simple_p2}"
 
 README_auxbootldr=$(cat <<"EOF"
-Note: It appears that Petitboot/u-root can not boot a kernel residing on the
-same medium as Petitboot/u-root, unless the medium is eMMC. (This behavior has
-been observed on Ugoos AM6 plus, Amlogic s922x SOC.) Therefore the procedure
-outlined below may only work if the image is installed to eMMC. (On this image
-there are no tools for installing to eMMC but it can be done easily by hand,
-see for instance the remarks in README_diy-bootdisk.md at Tripole's Gitlab.)
+Petitboot and u-root
+--------------------
 
-It is easy to install Petitboot or u-root on this bootfs. With any of these two
-bootloaders/bootmanagers you can boot "generic" UEFI+grub (and more generally
-images with a valid grub config). If this image is installed on SD (so that it
-is first in the boot chain, as defined by aml_autoscript), the bootloader will
-start and scan the SD and other attached USB devices for bootable configurations
-which can be conveniently selected and booted via a text based UI. For more
-info on such "bootdisk" booting, see https://gitlab.com/tripole-inc/bootdisk
+It is easy to install the bootmanager/bootloader Petitboot or u-root onto this
+bootfs and use the bootloader/bootmanager as a middle stage in the booting
+process. With such an installation it is possible to have multiple kernels
+installed to choose from at the bootmanager prompt. It is also possible to boot
+kernels (and Linux OSes) installed on other attached removable media.
 
-To install e.g. Petitboot on this bootfs (same for u-root), do the following:
+To install e.g. Petitboot onto this bootfs, do the following:
+(For locations of the downloads, see https://gitlab.com/tripole-inc/bootdisk)
 
-(1) Download the latest tarball with Petitboot in the chainloaded version,
-    e.g. petit-bootdisk-0v24.tgz
-(2) Unpack the tarball in some temporary directory.
-(3) Copy the existing vmlinuz and initrd.img on the bootfs to some backup
-    location.
-(4) Copy one of the vmlinuz-* kernel images from the tarball to vmlinuz on the
-    bootfs and copy the initramfs-petitboot-*.cpio.gz (w/ Petitboot) from the
-    tarball to initrd.img on the bootfs.
-(5) Reboot into Petitboot.
+(1) Get the latest initramfs which contains Petitboot (currently this is
+    initramfs-petitboot-0v25.cpio.gz).
+(2) Get a recent vmlinuz version of the kernels in the koop-3pole series.
+(3) Copy the vmlinuz and initramfs-petitboot to the top level on the bootfs.
+(4) Add a default entry in extlinux.conf corresponding to vmlinuz/initramfs
+(5) Reboot into Petitboot
 
 The procedure is similar when using a bootdisk with the u-root bootloader.
 
+The above will (most likely) work when the Linux image with Petitboot/u-root is
+on SD but might not work on USB (or the opposite might hold); this depends on
+the boot order set in the u-boot environment variables (and possibly on the
+kernel configuration and patches applied). It should work also when the Linux
+image is installed on eMMC. (The cases with installation on SD and eMMC have
+been tested with recent versions of the Petitboot initramfs and recent
+koop-3pole kernels, and u-root has also been verified to work on eMMC. On this
+Linux image there are no tools for copying the Linux system onto eMMC but it is
+not difficult to do by hand, see e.g. README_diy-bootdisk.md at Gitlab).
+
+Hidden bootloader
+-----------------
+
 To boot this disk image with u-boot requires a working resident/vendor u-boot
 bootloader but this restriction can be removed if a "hidden" bootloader, i.e.
-u-boot, is installed in the gap leading up to the first partition. With such a
-bootloader properly installed, the disk will always boot from SD or USB on
-Amlogic devices, regardless of the state of the resident/vendor u-boot. More
-inforomation about this can be found in README_diy-bootdisk.md at Gitlab.
+u-boot, is installed in the "gap" leading up to the first partition. With such
+a hidden bootloader properly installed, the disk will always boot from SD or
+USB on Amlogic devices, regardless of the state of the resident/vendor u-boot.
+More inforomation about this can be found in README_diy-bootdisk.md at Gitlab.
 EOF
 )
 

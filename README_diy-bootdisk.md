@@ -369,6 +369,62 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   docs.).
   It is easy to introduce further customizations like this.
 
+  ## Adding `Petitboot` or `u-root` onto an existing Linux system
+
+  ### Install to SD
+
+  If you have a Linux image on SD with either a normal vfat boot partition or
+  an efi partition you can add a `u-boot.ext` chainloader, some boot script
+  files (e.g. `s905_autoscript`), a kernel and the initramfs with `Petitboot`.
+  Then, specify this kernel/initramfs pair in `extlinux/extlinux.conf` as the
+  first kernel/initramfs pair to be booted.
+  Since the SD normally is the first device to be searched by vendor/resident
+  `u-boot` the kernel/initramfs pair with `Petitboot` will be loaded and booted
+  by `u-boot.ext`.
+  From `Petitboot` you can then laod and execute (at least) all kernels on the
+  rootfs on SD.
+  This has been tested as working on Ugoos AM6 plus with a recent `u-boot.ext`
+  compiled for Beelink GTK pro together with a recent `Petitboot` initramfs
+  (e.g. initramfs-petitboot-0v25.cpio.gz) and a recent `koop-3pole` kernel.
+
+  ### Install to eMMC
+
+  It is straightforward to install the contents of e.g. either
+  `petit-bootdisk-nc` or `u-root-bootdisk-nc` to a vfat partition on eMMC.
+  With such an installation, the TV-box/SBC has a boot manager that can
+  handle booting of Linux from eMMC and also from removable media SD and USB.
+  The only thing that needs to be changed, compared to an installation on
+  SD/USB, is that a bootscript `emmc_autoscript` has to be addded.
+  (A version of the script `emmc_autoscript` is outlined in the file
+  `ubuntu_mking.bash` for generating Opbuntu images and a copy of the script
+  appears on the images generated.)
+  (If the starting point is instead a chainloaded disk then the chainloader
+  binary `u-boot.ext` must be renamed to `u-boot.emmc`.)
+
+  With either `Petitboot` or `u-boot` on eMMC you can boot an installation
+  image of a Linux distribution on SD/USB and install to available space on
+  eMMC or you can just transfer (e.g. using the `rsync` command) the contents
+  of the rootfs of a working Linux image on SD/USB (e.g. made with the scripts
+  we provide).
+  In the latter case, the only adaptations likely needed after transfer to
+  eMMC of the rootfs are updating the UUID of the rootfs in `/etc/fstab` and
+  `grub.cfg`.
+  Possibly the file `/etc/initramfs-tools/conf.d/resume` needs as well, but
+  you can also search for files that need edits using e.g. the command
+
+  `find /etc/ -type f -exec grep -l UUID '{}' \;`
+
+  This concept has been tested and verified on Ugoos AM6 plus with
+  `Petitboot` on eMMC, both with resident/vendor `u-boot` and mainline
+  (GTK pro) `u-boot` installed on eMMC, and with the rootfs contents of
+  several different Linux images copied over to separate partitions eMMC.
+
+  If you already have a Linux installation on eMMC you can also easily adapt
+  that so that the first kernel/initramfs pair that is booted is one that runs
+  `Petitboot` or `u-root` from one of the bootdisks.
+  With such a setup, you have a general bootloader configuration that can boot
+  not only the kernels/initramfs on eMMC but also e.g. UEFI images on SD/USB.
+
   ## Some notes relating to `u-boot`
 
   The following is not needed to set up a bootdisk but might help understand
@@ -405,43 +461,6 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   the bootloader signature/bootstrap code in the first part of sector 0 (MBR)
   and then the body of the bootloader code in sector 1 and onward in the gap
   before first partition.
-
-  #### Install to eMMC
-
-  It is straightforward to install the contents of e.g. either
-  `petit-bootdisk-nc` or `u-root-bootdisk-nc` to a vfat partition on eMMC.
-  With such an installation, the TV-box/SBC has a boot manager that can
-  handle booting of Linux from eMMC and also from removable media SD and USB.
-  The only thing that needs to be changed, compared to an installation on
-  SD/USB, is that a bootscript `emmc_autoscript` has to be addded.
-  (A version of the script `emmc_autoscript` is outlined in the file
-  `ubuntu_mking.bash` for generating Opbuntu images and a copy of the script
-  appears on the images generated.)
-  (If the starting point is instead a chainloaded disk then the chainloader
-  binary `u-boot.ext` must be renamed to `u-boot.emmc`.)
-
-  With either `Petitboot` or `u-boot` on eMMC you can boot an installation
-  image of a Linux distribution on SD/USB and install to available space on
-  eMMC or you can just transfer (e.g. using the `rsync` command) the contents
-  of the rootfs of a working Linux image on SD/USB (e.g. made with the scripts
-  we provide).
-  The only adaptations likely needed then after transfer to eMMC of the rootfs
-  are updating the UUID of the rootfs in `/etc/fstab` and `grub.cfg`.
-  Possibly the file `/etc/initramfs-tools/conf.d/resume` needs as well, but
-  you can also search for files that need edits using e.g. the command
-
-  `find /etc/ -type f -exec grep -l UUID '{}' \;`
-
-  This concept has been tested and verified on Ugoos Am6 plus with
-  `Petitboot` on eMMC, both with resident/vendor `u-boot` and mainline
-  (GTK pro) `u-boot` installed on eMMC, and with the rootfs contents of
-  several different Linux images copied over to separate partitions eMMC.
-
-  If you already have a Linux installation on eMMC you can also easily adapt
-  that so that the first kernel/initramfs pair that is booted is one that runs
-  `Petitboot` or `u-root` from one of the bootdisks.
-  With such a setup, you have a general bootloader configuration that can boot
-  not only the kernels/initramfs on eMMC but also e.g. UEFI images on SD/USB.
 
   A note on eMMC and booting: The eMMC chips used in TV-boxes come pre
   partitioned according to the (JEDEC) standard mobile eMMC partition scheme;
