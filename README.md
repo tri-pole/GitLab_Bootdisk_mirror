@@ -86,8 +86,8 @@ kernel
 [configuration](https://github.com/ophub/amlogic-s9xxx-armbian/tree/main/compile-kernel/tools/config) from Ophub.
 Images built according to this concept can be downloaded from
 [here](https://mega.nz/folder/KJdAwK4Q#r4HNsKQRkLgT7HTD2s1GLg).
-The `koop-3pole` line of kernels used on these images can be downloaded from
-[here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw) (see also below).
+(A download link for `koop-3pole` line of kernels used on these images is given
+below.)
 
 __Arch Linux:__ An image of Arch Linux ARM64 can be produced with the script
 [`archlnx_mkimg.bash`](archlnx_mkimg.bash) which uses the official Arch Linux
@@ -98,7 +98,7 @@ Images built using this script can be downloaded from
 __Trinjaro:__ With the script [`archlnx_mkimg.bash`](archlnx_mkimg.bash) it is
 also possible to produce Manjaro images with a Manjaro kernel or a locally
 provided kernel, for instance an Ophub kernel or the one of the `koop-3pole`
-kernels linked to above.
+kernels mentioned above.
 An image built using this recipe with a `koop-3pole` kernel can be downloaded
 from [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
 (Note: The Trinjaro images are very crude compared to the polished high
@@ -125,10 +125,13 @@ All the images so created can be booted with the bootdisks.
 ### ARM64 Linux kernel
 
 The script [`arm64_kbuild.bash`](arm64_kbuild.bash) can be used to produce the
-`koop-3pole` line of ARM64
-[kernels](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw)
-mentioned above (on a x86_64 Ubuntu Focal or Jammy host, or natively on an
-ARM64 Ubuntu Jammy host).
+`koop-3pole` line of ARM64 kernels mentioned above (on a x86_64 Ubuntu Focal
+or Jammy host, or natively on an ARM64 Ubuntu Jammy host).
+The script can also be used to produce the `koma-3pole` line of kernels (with
+source from `kernel.org` and kernal config and patch set for the kernel
+[Manjaro ARM linux-aml](https://gitlab.manjaro.org/manjaro-arm/packages/core/linux-aml).
+Precompiled packages of the `koop-3pole` and `koma-3pole` kernels can be found
+[here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
 ## Screenshots
 

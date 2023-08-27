@@ -268,8 +268,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   `vmlinuz` file.)
 
   On e.g. `u-root-bootdisk` there are several kernels to choose from which
-  should work with Amlogic, Allwinner or Rockchip SoCs (see the `config-` files
-  on e.g. `u-root-bootdisk`).
+  should work with Amlogic, Allwinner or Rockchip SoCs (see the `config-*`
+  files on e.g. `u-root-bootdisk`).
   On older versions of the bootdisks these kernels are compiled using
   [Unifreq's](https://github.com/unifreq) version of the Linux kernel source
   by employing
@@ -369,23 +369,33 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   docs.).
   It is easy to introduce further customizations like this.
 
-  ## Adding `Petitboot` or `u-root` onto an existing Linux system
+  ## Adding `Petitboot` or `u-root` to an existing Linux system
 
   ### Install to SD
 
-  If you have a Linux image on SD with either a normal vfat boot partition or
-  an efi partition you can add a `u-boot.ext` chainloader, some boot script
-  files (e.g. `s905_autoscript`), a kernel and the initramfs with `Petitboot`.
-  Then, specify this kernel/initramfs pair in `extlinux/extlinux.conf` as the
-  first kernel/initramfs pair to be booted.
+  An existing Linux image on SD with a vfat (e.g. efi) boot partition can
+  easily be modified to host `Petitboot`.
+  For the chainloading case, all that is needed then is to add a `u-boot.ext`
+  chainloader, some boot script files (at least `s905_autoscript`), a kernel
+  to boot the initramfs with `Petitboot`, and a properly configured
+  `extlinux.conf` file.
+  The kernel/initramfs pair that corresponds to `Petitboot` should be the
+  default entry.
   Since the SD normally is the first device to be searched by vendor/resident
-  `u-boot` the kernel/initramfs pair with `Petitboot` will be loaded and booted
-  by `u-boot.ext`.
-  From `Petitboot` you can then laod and execute (at least) all kernels on the
-  rootfs on SD.
-  This has been tested as working on Ugoos AM6 plus with a recent `u-boot.ext`
-  compiled for Beelink GTK pro together with a recent `Petitboot` initramfs
-  (e.g. initramfs-petitboot-0v25.cpio.gz) and a recent `koop-3pole` kernel.
+  `u-boot` the kernel/initramfs pair with `Petitboot` will then be loaded and
+  booted by the chainloader `u-boot.ext`.
+  From `Petitboot` it is possible to load and execute (at least) all kernels
+  on the rootfs on SD.
+
+  This concept has been tested as working on Ugoos AM6 plus with a recent
+  `u-boot.ext` compiled for Beelink GTK pro together with a recent `Petitboot`
+  initramfs (e.g. initramfs-petitboot-0v25.cpio.gz) and a recent `koop-3pole`
+  kernel.
+  (The Linux image used was Fedora 38 minimal.)
+  The procedure is easy to adapt for the non chainloaded case (i.e. when not
+  using `u-boot.ext`, only boot scripts).
+  It may or may not work on USB (or it may only work on USB); this depends on
+  the combination of box and kernel.
 
   ### Install to eMMC
 
@@ -412,18 +422,15 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   Possibly the file `/etc/initramfs-tools/conf.d/resume` needs as well, but
   you can also search for files that need edits using e.g. the command
 
-  `find /etc/ -type f -exec grep -l UUID '{}' \;`
+  `find /etc -type f -exec grep -l UUID '{}' \;`
 
-  This concept has been tested and verified on Ugoos AM6 plus with
-  `Petitboot` on eMMC, both with resident/vendor `u-boot` and mainline
-  (GTK pro) `u-boot` installed on eMMC, and with the rootfs contents of
-  several different Linux images copied over to separate partitions eMMC.
+  This concept has been tested and verified on Ugoos AM6 plus with `Petitboot`
+  on eMMC, both with resident/vendor `u-boot` and mainline (GTK pro) `u-boot`
+  installed on eMMC, and with the rootfs contents of several different Linux
+  images copied over to separate partitions eMMC.
 
-  If you already have a Linux installation on eMMC you can also easily adapt
-  that so that the first kernel/initramfs pair that is booted is one that runs
-  `Petitboot` or `u-root` from one of the bootdisks.
-  With such a setup, you have a general bootloader configuration that can boot
-  not only the kernels/initramfs on eMMC but also e.g. UEFI images on SD/USB.
+  If you already have a Linux installation on eMMC you can of course also adapt
+  that, as outlined above, to host also `Petitboot` or `u-root`.
 
   ## Some notes relating to `u-boot`
 
