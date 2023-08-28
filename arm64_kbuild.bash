@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # arm64_kbuild.bash
-# 23-03-20: v0.1
+# 23-08-27: v0.11
 # Author: Tripole
 
 # Script to compile the Linux kernel for ARM64 and package the result (together
@@ -45,8 +45,22 @@
 # A: Well, as always, "it depends". (Best to browse through them all, I guess.)
 
 # Kernel name/number/url for kernel source from kernel.org.
-kern_ver_num=6.1.24
-kern_url_base="https://cdn.kernel.org/pub/linux/kernel/v6.x"
+kern_ver_num=6.1.47
+
+kern_series_major=$(cut -b1 <<< $kern_ver_num)
+case $kern_series_major in
+    "5")
+        kern_series="v5.x"
+    ;;
+    "6")
+        kern_series="v6.x"
+    ;;
+    *)
+    echo "The kernel series ${kern_series_major}.x.y is not supported, exiting."
+    exit 1
+esac
+
+kern_url_base="https://cdn.kernel.org/pub/linux/kernel/${kern_series}"
 kern_txz_name=linux-${kern_ver_num}.tar.xz
 kern_txz_url=${kern_url_base}/${kern_txz_name}
 
@@ -56,6 +70,9 @@ kern_txz_url=${kern_url_base}/${kern_txz_name}
 # CONFIG_LOCALVERSION_AUTO is not set
 kern_tag_str="-koop-3pole"
 kern_out_str=${kern_ver_num}${kern_tag_str}
+
+# Path to local patch dir (see $patch_src_dir below).
+loc_patch_dir=dummy_dir
 
 # List of names for SoC vendor for which you want to create a dtb package
 # (tarball). (All of these SoCs must be enabled in the kernel config.)
@@ -70,6 +87,11 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # (2) Release build of a non LTS release (e.g. Kinetic).
 # (3) Daily build of an LTS release (e.g. Focal, Jammy).
 case "$distro_release" in
+    "mantic")
+        distro_buildfile=mantic-base-arm64.tar.gz
+        distro_urlbase=$distro_urlbase/daily
+        distro_buildurl=${distro_urlbase}/current/${distro_buildfile}
+    ;;
     "lunar")
         distro_buildfile=${distro_release}-base-arm64.tar.gz
         distro_buildurl=${distro_urlbase}/daily/current/${distro_buildfile}
@@ -109,15 +131,19 @@ targ_arch="arm64"
 
 # A few examples of working parameter settings (use one, comment out the other).
 
+# For an Ubuntu Jammy aarch64 host with GNU toolchain from Ubuntu stable repos
+# the following settings can be used (tested with kernel 6.4.11).
+# kern_make_opts=" ARCH=$targ_arch LOCALVERSION=$kern_tag_str "
+
 # For an Ubuntu Jammy x86_64 host with GNU toolchain from Ubuntu stable repos
-# the following settings can be used (tested with kernel 5.15.y, 6.1.y, 6.2.y):
+# the following settings can be used (tested with kernel 5.15.y, 6.{1,2,4}.y):
 kern_make_opts=" ARCH=$targ_arch CROSS_COMPILE=aarch64-linux-gnu- LOCALVERSION=$kern_tag_str "
 
 # For an Ubuntu Jammy x86_64 host with external ARM GNU toolchain from
 # https://developer.arm.com the
 # following settings can be used (tested with kernel 6.2.5):
 # toolchain_dir=/opt/toolchain
-# gnu_arm_tchain_name=arm-gnu-toolchain-12.2.rel1-x86_64-aarch64-none-linux-gnu
+# gnu_arm_tchain_name=arm-gnu-toolchain-12.3.rel1-x86_64-aarch64-none-linux-gnu
 # xcompile_str="${toolchain_dir}/${gnu_arm_tchain_name}/bin/aarch64-none-linux-gnu-"
 # export PATH=${xcompile_str}/bin:${PATH}
 # kern_make_opts=" ARCH=$targ_arch CROSS_COMPILE=$xcompile_str LOCALVERSION=$kern_tag_str "
@@ -125,11 +151,11 @@ kern_make_opts=" ARCH=$targ_arch CROSS_COMPILE=aarch64-linux-gnu- LOCALVERSION=$
 # For an Ubuntu Focal x86_64 host with external clang+llvm toolchain from
 # https://github.com/llvm/llvm-project/releases
 # the following settings can be used (tested with kernel 5.15.103 and 6.1.20):
-#clangllvm_tchain_dir=/usr/local/toolchain/clang+llvm-13.0.0-x86_64-linux-gnu-ubuntu-20.04
-#cc_str="${clangllvm_tchain_dir}/bin/clang"
-#ld_str="${clangllvm_tchain_dir}/bin/ld.lld"
-#export PATH=${clangllvm_tchain_dir}/bin:${PATH}
-#kern_make_opts=" ARCH=$targ_arch CC=$cc_str LD=$ld_str LLVM=1 LLVM_IAS=1 LOCALVERSION=$kern_tag_str "
+# clangllvm_tchain_dir=/usr/local/toolchain/clang+llvm-13.0.0-x86_64-linux-gnu-ubuntu-20.04
+# cc_str="${clangllvm_tchain_dir}/bin/clang"
+# ld_str="${clangllvm_tchain_dir}/bin/ld.lld"
+# export PATH=${clangllvm_tchain_dir}/bin:${PATH}
+# kern_make_opts=" ARCH=$targ_arch CC=$cc_str LD=$ld_str LLVM=1 LLVM_IAS=1 LOCALVERSION=$kern_tag_str "
 
 # Number of threads for kernel compilation (set to 0 for automatic selection).
 compile_ncores=0
@@ -150,11 +176,12 @@ kern_src_dir=${work_dir}/kern_src
 kern_out_dir=${work_dir}/kern_out
 
 # Location of local patches to be applied
-patch_src_dir=${work_dir}/my_patches
+patch_src_dir=${work_dir}/${loc_patch_dir}
 
 # Approximate max usage of kernel sources (unpacked), object files and rootfs
-# (not including toolchain). The number grows slowly with kernel versions.
-required_MiB=5500
+# (not including toolchain) w/o debugging symbols (grows slowly w/ versions).
+# (Memory requirements are not large, 4G is sufficient.)
+required_MiB=6000
 
 # Temporary mount points (dirs) used during image creation.
 rootfs_dir=${work_dir}/rootfs_tmp
@@ -199,7 +226,7 @@ echo " Done."
 EOF
 )
 
-README_koop_3pole=$(cat <<EOF
+README_kernels=$(cat <<EOF
 The files in the tar.gz packages here are produced by the script
 $calling_cmd_name
 from https://gitlab.com/tripole-inc/bootdisk
@@ -325,6 +352,9 @@ if [[ ! -z "$(ls -A $patch_src_dir)" ]]; then
     echo -e ${i_msg}" Applying patches..."
         for my_patch_file in $(ls -A ${patch_src_dir}/*.patch) ; do
             patch -N -p1 < $my_patch_file
+            if [[ $? -ne 0 ]]; then
+                echo -e ${w_msg}" Patch was not applied cleanly!"
+            fi
         done
     echo " Done."
 fi
@@ -481,7 +511,7 @@ sha256sum * >sha256sums-${kern_out_str}
 echo " Done."
 
 echo -n -e ${i_msg}" Adding README file..."
-echo -n -e "$README_koop_3pole" >README_koop-3pole.txt
+echo -n -e "$README_kernels" >README_kernels.txt
 echo " Done."
 
 echo -n -e ${i_msg}" Packing up the final tarball with everything in it..."
