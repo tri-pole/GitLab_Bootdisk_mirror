@@ -112,6 +112,11 @@
 #   recovery and transformation options. There, enter the command "f" to load
 #   the MBR and build a fresh GPT from it. At last, exit gdisk with "w" (write).
 
+# A note on variable/parameter checks: In the parameters section below we do
+# some rudimentary checks of parameters regarding (only) format and scope.
+# In the following preparations/checks section we also check if the parameters
+# are appropriate/admisssible for the platform/installation we are running on.
+
 # ------------------------------- parameters ---------------------------------
 
 # Q: Which parameters do I (really) need to edit?
@@ -130,7 +135,12 @@ compressed_img=yes # {yes,no}
 # Example for Ophub/Flippy kernel.
 # krnver_str="6.1.38-ophub" # Kernel name/release str., plain text.
 # Example for koop-3pole kernel.
-krnver_str="6.1.46-koop-3pole" # Kernel name/release str., plain text.
+krnver_str="6.1.49-koop-3pole" # Kernel name/release str., plain text.
+
+# The selected zram compression method here must match what the kernel supports
+# (if unsure, set to "zstd"). See /etc/default/zramswap
+zram_compression=zstd # {zstd,lzo}
+zram_percent=35 # Amount of RAM to be used for zram.
 
 # This is the name used on the container file during image creation.
 # Before exit of this script, the kernel version is inserted into the name.
@@ -374,6 +384,7 @@ ubuntu_custom_extra=$(cat <<"EOF"
 apt-get -y install nano less aptitude usbutils zram-tools sudo linux-firmware
 # To be able to boot with old (e.g. vendor/resident) u-boot we can use gzip
 # compression instead for the initramfs (which, however, will become bigger).
+# (We need to edit this here since the initramfs is rebuilt in chroot jail.)
 sed -i 's/COMPRESS=zstd/COMPRESS=gzip/g' /etc/initramfs-tools/initramfs.conf
 EOF
 )
@@ -505,6 +516,8 @@ the top level on the boot (fat) partition. Then edit extlinux/extlinux.conf
 according to the instructions inside that file. The files here are from
 Ophub's repo at https://github.com/ophub/u-boot where also suitable candidates
 for u-boot.ext for other platforms (e.g. Allwinner, Rockchip) can be found.
+Finally, an excellent exposition of the boot flow for Amlogic can be found at
+https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
 EOF
 )
 
@@ -932,6 +945,11 @@ if [[ $arch_str != "aarch64" ]]; then
     rm ${rootfs_mnt}/usr/bin/qemu-aarch64-static
     echo " Done."
 fi
+
+echo -n -e ${i_msg}" Setting up /etc/default/zramswap ..."
+sed -i "s/.*ALGO=.*/ALGO=${zram_compression}/g" ${rootfs_mnt}/etc/default/zramswap
+sed -i "s/.*PERCENT=.*/PERCENT=${zram_percent}/g" ${rootfs_mnt}/etc/default/zramswap
+echo " Done."
 
 echo -n -e ${i_msg}" Installing Network Manager configuration files for eth0 ..."
 nm_conf_dir=${rootfs_mnt}/etc/NetworkManager

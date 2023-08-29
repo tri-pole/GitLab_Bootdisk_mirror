@@ -42,10 +42,25 @@
 # ------------------------------- parameters ---------------------------------
 
 # Q: Which parameters do I (really) need to edit?
-# A: Well, as always, "it depends". (Best to browse through them all, I guess.)
+# A: Well, as always, "it depends". (The ones you most often need to change
+# (if you (re)compile one kernel series often) are collected near the top.)
 
 # Kernel name/number/url for kernel source from kernel.org.
-kern_ver_num=6.1.47
+kern_ver_num=6.1.49
+
+# Name for compiled (output) kernel and packages (tarballs).
+# Note: In the config file you should have these two settings
+# CONFIG_LOCALVERSION=""
+# CONFIG_LOCALVERSION_AUTO is not set
+kern_tag_str="-koop-3pole"
+kern_out_str=${kern_ver_num}${kern_tag_str}
+
+# Path to local patch dir (see $patch_src_dir below).
+loc_patch_dir=dummy_dir
+
+# List of names for SoC vendor for which you want to create a dtb package
+# (tarball). (All of these SoCs must be enabled in the kernel config.)
+socdtbs_list=("amlogic" "allwinner" "rockchip")
 
 kern_series_major=$(cut -b1 <<< $kern_ver_num)
 case $kern_series_major in
@@ -63,20 +78,6 @@ esac
 kern_url_base="https://cdn.kernel.org/pub/linux/kernel/${kern_series}"
 kern_txz_name=linux-${kern_ver_num}.tar.xz
 kern_txz_url=${kern_url_base}/${kern_txz_name}
-
-# Name for compiled (output) kernel and packages (tarballs).
-# Note: In the config file you should have these two settings
-# CONFIG_LOCALVERSION=""
-# CONFIG_LOCALVERSION_AUTO is not set
-kern_tag_str="-koop-3pole"
-kern_out_str=${kern_ver_num}${kern_tag_str}
-
-# Path to local patch dir (see $patch_src_dir below).
-loc_patch_dir=dummy_dir
-
-# List of names for SoC vendor for which you want to create a dtb package
-# (tarball). (All of these SoCs must be enabled in the kernel config.)
-socdtbs_list=("amlogic" "allwinner" "rockchip")
 
 # Official Ubuntu rootfs tarball (used to make the initramfs).
 # (Pick a release that "is close" to what you intend to run the kernel on.)
