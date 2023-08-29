@@ -127,11 +127,9 @@ All the images so created can be booted with the bootdisks.
 The script [`arm64_kbuild.bash`](arm64_kbuild.bash) can be used to produce the
 `koop-3pole` line of ARM64 kernels mentioned above (on a x86_64 Ubuntu Focal
 or Jammy host, or natively on an ARM64 Ubuntu Jammy host).
-The script can also be used to produce the `koma-3pole` line of kernels (with
-source from `kernel.org` and kernel config and patch set for the
-[Manjaro ARM linux-aml](https://gitlab.manjaro.org/manjaro-arm/packages/core/linux-aml)
-kernel).
-Compiled packages of the `koop-3pole` and `koma-3pole` kernels can be found
+The script can also be used to produce the `kode-3pole` line of kernels, with
+source from `kernel.org` (6.4.y series) and kernel config from Debian.
+Compiled packages of the `koop-3pole` and `kode-3pole` kernels can be found
 [here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
 ## Screenshots
