@@ -45,15 +45,15 @@
 
 ## Prerequisites
 
-- Materials: The simplest is to start with either `u-root-bootdisk` or
-  `petit-bootdisk` (for a chainloaded bootdisk), or `u-root-bootdisk-nc` or
-  `petit-bootdisk-nc` (for a non chainloaded bootdisk).
+- Materials: The simplest is to start with either `petit-bootdisk` or
+  `u-root-bootdisk` (for a chainloaded bootdisk), or `petit-bootdisk-nc` or
+  `u-root-bootdisk-nc` (for a non chainloaded bootdisk).
   The files most likely to need customization for other TV-boxes/SBCs are the
   the kernel, the dtb file and the chainloader (if applicable).
-  The requirements for the kernel are straightforward; it must be able to
-  recognize and read the block devices and file systems, including (perhaps)
-  btrfs and iso, and to have the kexec functionality enabled (kexec crash
-  kernel functionality is not required).
+  The requirements for the kernel on a bootdisk are straightforward; it must
+  be able to recognize and read the block devices and file systems, including
+  (perhaps) btrfs and iso, and to have the kexec functionality enabled (kexec
+  crash kernel functionality is not required).
   However, any combination of kernel, dtb (and chainloader) that works to boot
   the box otherwise will also work for the bootdisk.
 
