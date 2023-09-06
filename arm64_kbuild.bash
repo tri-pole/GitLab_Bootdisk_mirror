@@ -46,7 +46,7 @@
 # (if you (re)compile one kernel series often) are collected near the top.)
 
 # Kernel name/number/url for kernel source from kernel.org.
-kern_ver_num=6.1.49
+kern_ver_num=6.1.51
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
@@ -57,7 +57,6 @@ kern_out_str=${kern_ver_num}${kern_tag_str}
 
 # Path to local patch dir (see $patch_src_dir below).
 loc_patch_dir=dummy_dir
-
 # List of names for SoC vendor for which you want to create a dtb package
 # (tarball). (All of these SoCs must be enabled in the kernel config.)
 socdtbs_list=("amlogic" "allwinner" "rockchip")
@@ -230,7 +229,8 @@ EOF
 README_kernels=$(cat <<EOF
 The files in the tar.gz packages here are produced by the script
 $calling_cmd_name
-from https://gitlab.com/tripole-inc/bootdisk
+from https://gitlab.com/tripole-inc/bootdisk where also more info about this
+kernel package can be found.
 
 Notes:
 The vmlinuz file is an uncompressed ARM64 kernel (i.e. an Image).
@@ -239,7 +239,8 @@ The uImage is made with load address and entry point set as
 load_address=$k_load_addr
 entry_point=$k_entry_addr
 
-The initrd.imd is based on a daily build of the offical Ubuntu rootfs (on ext4).
+The initrd.imd is based on a daily build of the offical Ubuntu rootfs from
+the release $distro_release
 EOF
 )
 
@@ -277,10 +278,11 @@ fi
 if [[ $# -eq 1 ]] ; then
     kconfig_file=$1
     if [[ -f $kconfig_file ]] ; then
+        kconfig_file_full=$(readlink -f $kconfig_file)
         echo -e ${i_msg}" Using kernel config file"
-        echo "         $kconfig_file"
+        echo "         $kconfig_file_full"
     else
-        echo -e ${w_msg}" The suggested kernel config file $kconfig_file does not exist!"
+        echo -e ${w_msg}" The suggested kernel config file $kconfig_file_full does not exist!"
     fi
 fi
 
@@ -362,10 +364,7 @@ fi
 
 echo -e ${i_msg}" Preparing for menuconfig..."
 make $kern_make_opts mrproper
-if [[ ! -z $kconfig_file ]] ; then
-   cp $kconfig_file ${kern_src_dir}/linux-${kern_ver_num}/.config
-fi
-make $kern_make_opts menuconfig
+make KCONFIG_DEFCONFIG_LIST=$kconfig_file_full $kern_make_opts menuconfig
 
 # For kernels 5.12 and above we enable clang LTO (it can offer some advantages).
 # https://www.phoronix.com/review/clang-lto-kernel
