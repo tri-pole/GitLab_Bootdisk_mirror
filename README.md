@@ -124,12 +124,14 @@ All the images so created can be booted with the bootdisks.
 
 ### ARM64 Linux kernel
 
-The script [`arm64_kbuild.bash`](arm64_kbuild.bash) can be used to produce the
-`koop-3pole` line of ARM64 kernels mentioned above (on a x86_64 Ubuntu Focal
-or Jammy host, or natively on an ARM64 Ubuntu Jammy host).
-The script can also be used to produce the `kode-3pole` line of ARM64 kernels,
-with source from `kernel.org` (6.4.y series) and kernel config from Debian.
-Compiled packages of the `koop-3pole` and `kode-3pole` kernels can be found
+The script [`arm64_kbuild.bash`](arm64_kbuild.bash) can be used to produce
+(build and pack) kernels with source from `kernel.org` and with kernel config
+and patches provided locally.
+For instance, it can be used to produce the `koop-3pole` line of ARM64 kernels
+mentioned above (on a x86_64 Ubuntu Focal or Jammy host, or natively on an
+ARM64 Ubuntu Jammy host).
+Compiled packages of of the `koop-3pole` series of kernels (and a few more)
+can be found
 [here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
 ## Screenshots
