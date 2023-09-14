@@ -46,7 +46,7 @@
 # (if you (re)compile one kernel series often) are collected near the top.)
 
 # Kernel name/number/url for kernel source from kernel.org.
-kern_ver_num=6.1.51
+kern_ver_num=6.1.53
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
@@ -80,7 +80,7 @@ kern_txz_url=${kern_url_base}/${kern_txz_name}
 
 # Official Ubuntu rootfs tarball (used to make the initramfs).
 # (Pick a release that "is close" to what you intend to run the kernel on.)
-distro_release=jammy # {focal,jammy,kinetic,luna} (small caps)
+distro_release=jammy # {focal,jammy,kinetic,lunar} (small caps)
 distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # At cdimage.ubuntu.com, three different formats for URLs seem to be used:
 # (1) Daily build of a development edition (e.g. Lunar).
@@ -93,8 +93,9 @@ case "$distro_release" in
         distro_buildurl=${distro_urlbase}/current/${distro_buildfile}
     ;;
     "lunar")
-        distro_buildfile=${distro_release}-base-arm64.tar.gz
-        distro_buildurl=${distro_urlbase}/daily/current/${distro_buildfile}
+        distro_buildfile=ubuntu-base-23.04-base-arm64.tar.gz
+        distro_urlbase=$distro_urlbase/releases
+        distro_buildurl=${distro_urlbase}/lunar/release/${distro_buildfile}
     ;;
     "kinetic")
         distro_buildfile=ubuntu-base-22.10-base-arm64.tar.gz

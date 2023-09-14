@@ -130,9 +130,8 @@ and patches provided locally.
 For instance, it can be used to produce the `koop-3pole` line of ARM64 kernels
 mentioned above (on a x86_64 Ubuntu Focal or Jammy host, or natively on an
 ARM64 Ubuntu Jammy host).
-Compiled packages of of the `koop-3pole` series of kernels (and a few more)
-can be found
-[here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
+Compiled packages of the `koop-3pole` series of kernels (and a few more) can
+be found [here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
 ## Screenshots
 
