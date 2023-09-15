@@ -88,8 +88,8 @@
 #   At the gdisk prompt then enter the command "r" and you will be taken to the
 #   recovery and transformation options. There, enter the command "f" to load
 #   the MBR and build a fresh GPT from it. At last, exit gdisk with "w" (write).
-
-# ToDo: Check Debian network setup (in particular the resolver setup).
+#   - Domain name resolution is now handled (also on Debian) by systemd, see
+#   e.g. sec 2.1 in https://wiki.archlinux.org/title/Systemd-resolved
 
 # A note on variable/parameter checks: In the parameters section below we do
 # some rudimentary checks of parameters regarding (only) format and scope.
@@ -99,9 +99,9 @@
 # ------------------------------- parameters ---------------------------------
 
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
-ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
+ubuntu_edition=Lunar    # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
 debian_name=Debian      # Used for the image name and in grub.cfg
-debian_edition=Bookworm # Tested with Bullseye, Bookworm, Sid
+debian_edition=Bullseye # Tested with Bullseye, Bookworm, Sid
 
 # Host name for image.
 host_name=debu
@@ -177,9 +177,9 @@ bootfs_mnt=${rootfs_mnt}/${bootfs_dir}
 # Do we want to clean up all temporary files and directories afterwards?
 docleanup_after=yes # {yes,no}
 
-# Not used by Ubuntu.
-name_server_1=192.168.0.1 # Set to your router's IP address.
-name_server_2=8.8.8.8     # Set to your backup DNS (8.8.8.8 is dns.google).
+# Not used by Ubuntu. Only used by Debian with manual setup of /etc/resolv.conf
+# name_server_1=192.168.0.1 # Set to your router's IP address.
+# name_server_2=8.8.8.8     # Set to your backup DNS (8.8.8.8 is dns.google).
 
 # Some (but not all) commands used below to create the image.
 reqd_cmdlist=("blkid" "dd" "debootstrap" "losetup" "mkfs.vfat" "mkimage" 
@@ -325,11 +325,11 @@ iface $iface_name inet dhcp
 EOF
 )
 
-debian_resolver_file=$(cat <<EOF
-nameserver $name_server_1
-nameserver $name_server_2
-EOF
-)
+# debian_resolver_file=$(cat <<EOF
+# nameserver $name_server_1
+# nameserver $name_server_2
+# EOF
+# )
 
 ubuntu_hosts_file=$(cat <<EOF
 127.0.0.1    localhost
@@ -981,12 +981,13 @@ case $1 in
         echo $dtbfile_dir
     fi
 
-    echo -n -e ${i_msg}" Setting up /etc/resolv.conf ..."
-    if [[ -f ${rootfs_mnt}/etc/resolv.conf ]]; then
-        rm ${rootfs_mnt}/etc/resolv.conf
-    fi
-    echo -e "$debian_resolver_file" >${rootfs_mnt}/etc/resolv.conf
-    echo " Done."
+    # Only used with manual setup of resolv.conf
+    # echo -n -e ${i_msg}" Setting up /etc/resolv.conf ..."
+    # if [[ -f ${rootfs_mnt}/etc/resolv.conf ]]; then
+    #     rm ${rootfs_mnt}/etc/resolv.conf
+    # fi
+    # echo -e "$debian_resolver_file" >${rootfs_mnt}/etc/resolv.conf
+    # echo " Done."
 
     ;;
 esac
