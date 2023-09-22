@@ -199,6 +199,11 @@ petit-bootdisk-nc
 
 # ubuntu_mkimg.bash:
 
+## [v0.26] 23-09-22
+
+### Added
+ - devicetree statement in grub.cfg 
+
 ## [v0.23] 22-11-19
 
 ### Added

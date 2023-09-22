@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ubuntu_mkimg.bash (a.k.a. {op,tri}buntu_mkimg.bash)
-# 23-05-08: v0.25
+# 23-09-22: v0.26
 # Author: Tripole
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
@@ -135,10 +135,10 @@ compressed_img=yes # {yes,no}
 # Example for Ophub/Flippy kernel.
 # krnver_str="6.1.38-ophub" # Kernel name/release str., plain text.
 # Example for koop-3pole kernel.
-krnver_str="6.1.49-koop-3pole" # Kernel name/release str., plain text.
+krnver_str="6.1.54-koop-3pole" # Kernel name/release str., plain text.
 
 # The selected zram compression method here must match what the kernel supports
-# (if unsure, set to "zstd"). See /etc/default/zramswap
+# (if unsure, set to zstd). See /etc/default/zramswap
 zram_compression=zstd # {zstd,lzo}
 zram_percent=35 # Amount of RAM to be used for zram.
 
@@ -405,9 +405,9 @@ echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
 echo "Setting up boot (2 items):"
 echo "(1) Creating /boot/grub/grub.cfg"
-/usr/local/bin/mkgrubcfg_simple.bash
+/usr/local/bin/mkgrubcfg_simple.bash /root/dtbfile_link
 echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, uInitrd)."
-/usr/local/bin/mkbootlinux.bash ${krnver_str} ${bootfs_dir} >/dev/null
+/usr/local/bin/mkbootlinux.bash $krnver_str $bootfs_dir >/dev/null
 EOF
 )
 
@@ -491,7 +491,7 @@ extlinux_conf=$(cat <<EOF
 # kernel and initrfamfs, such as Image/zImage, vmlinuz and initrd.img
 #
 # For an assortment of chainloaders u-boot.ext suitable for TV-boxes, see
-# https://github.com/ophub/amlogic-s9xxx-armbian).
+# https://github.com/ophub/amlogic-s9xxx-armbian
 
 MENU TITLE <UBUNTU-BOOT>
 DEFAULT UBNT_DEFAULT
@@ -545,19 +545,29 @@ mkgrubcfg_simple_p1=$(cat <<EOF
 #!/bin/bash
 
 # Scans for vmlinuz-* in /boot and makes a simple grub.cfg in /boot/grub
-# Usage: /usr/local/bin/mkgrubcfg_simple.bash
+# Usage: /usr/local/bin/mkgrubcfg_simple.bash [path-to-dtb-file]
+# If a dtb file is specified as the first argument, it is inserted together
+# with a line specifying devicetree in each menu entry created.
 
 distro_name_=$distro_name
 distro_edition_=$distro_edition
 kernel_cmdline_="$kernel_cmdline"
-dtbfile_name_=$dtbfile_name
 
 EOF
 )
 
 mkgrubcfg_simple_p2=$(cat <<"EOF1"
 
+if [[ "$#" -eq 1 ]]; then
+    dtbfile_full=$(readlink -f $1)
+    devicetree_str="devicetree $dtbfile_full"
+    echo "Using dtb file: $dtbfile_full"
+else
+    devicetree_str="# devicetree /path/to/dtbfile # not used currently"
+fi
+
 cd /boot
+
 if [[ -f grub/grub.cfg ]]; then
     mv grub/grub.cfg grub/grub.cfg.bak
 fi
@@ -575,7 +585,7 @@ for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
 	
 	linux  $kernel_path $kernel_cmdline_
 	initrd $initrd_path
-	# devicetree /boot/dtbs/amlogic/${dtbfile_name_} # not used currently
+	$devicetree_str
 	
 	}
 	
@@ -672,7 +682,7 @@ info on such "bootdisk" booting, see https://gitlab.com/tripole-inc/bootdisk
 To install e.g. Petitboot on this bootfs (same for u-root), do the following:
 
 (1) Download the latest tarball with Petitboot in the non chainloaded version,
-    e.g. petit-bootdisk-nc_0v24.tgz
+    e.g. petit-bootdisk-nc_0v25.tgz
 (2) Unpack the tarball in some temporary directory.
 (3) Copy the existing Image and uInitrd on the bootfs to some backup location.
 (4) Copy the Image (or zImage; it is an Image) from the tarball to Image on the
@@ -915,6 +925,18 @@ for socdtbs_name in ${socdtbs_list[*]}; do
 done
 echo " Done."
 
+echo -n -e ${i_msg}" Setting up dtb file on bootfs..."
+dtbfile_loc=$(find ${rootfs_mnt}/boot/dtbs -name ${dtbfile_name})
+if [[ -f $dtbfile_loc ]]; then
+    cp $dtbfile_loc ${bootfs_mnt}
+    dtbfile_rootfs=${dtbfile_loc#${rootfs_mnt}}
+    ln -s $dtbfile_rootfs ${rootfs_mnt}/root/dtbfile_link
+else
+    echo -e ${e_msg}" Unable to find the dtb file ${dtbfile_name}, exiting."
+    exit 1
+fi
+echo " Done."
+
 # The flash-kernel package causes problems on systems w/o flash storage (when
 # installing Ubuntu kernels) so it is good to block to aviod future problems.
 echo -n -e ${i_msg}" Preventing apt from installing the package flash-kernel..."
@@ -937,6 +959,7 @@ echo -e ${i_msg}" Entering chroot jail. Installing some pkgs., running some scri
 systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
                /root/ubuntu_custom_inst.bash
 rm ${rootfs_mnt}/root/ubuntu_custom_inst.bash
+rm ${rootfs_mnt}/root/dtbfile_link
 sleep 2 # Just to be able to read some of the messages.
 echo "Done."
 
@@ -965,7 +988,7 @@ echo " Done."
 
 cd ${bootfs_mnt}
 
-echo -n -e ${i_msg}" Setting up script files and dtb on boot partition..."
+echo -n -e ${i_msg}" Setting up script files on boot partition..."
 touch aml_autoscript.zip
 echo -e "$aml_autoscript" >aml_autoscript.txt
 echo -e "$s905_autoscript" >s905_autoscript.txt
@@ -977,13 +1000,6 @@ mkimage -A arm -O linux -T script -C none \
 mkimage -A arm -O linux -T script -C none \
         -d emmc_autoscript.txt emmc_autoscript >/dev/null
 echo -e "$uEnv" >uEnv.ini
-dtbfile_loc=$(find ${rootfs_mnt}/boot/dtbs -name ${dtbfile_name})
-if [[ -f $dtbfile_loc ]]; then
-    cp $dtbfile_loc .
-else
-    echo -e ${e_msg}" Unable to find the dtb file ${dtbfile_name}, exiting."
-    exit 1
-fi
 echo " Done."
 
 # Only as a backup, in case vendor u-boot cannot boot via bootscripts.

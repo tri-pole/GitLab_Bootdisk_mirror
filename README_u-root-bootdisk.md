@@ -6,6 +6,8 @@ Linux images on ARM64 single board computers (SBC) and TV-boxes with a resident
 Booting is done via chainloading of another bootloader, based on `u-root`,
 which is located on `u-root-bootdisk` and acts as a middle stage in the
 booting process.
+(`u-root` is implemented in the form of an initramfs which is run by a Linux
+kernel which has the `kexec()` warm boot functionality enabled.)
 When booting a SBC/TV-box with a `u-root-bootdisk` attached, the boot process
 pauses at the `u-root` boot menu where a list of bootable devices is displayed.
 After selection of a boot menu entry, the new boot configuration (kernel and
