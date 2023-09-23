@@ -6,13 +6,13 @@
 
 # Script to generate an Ubuntu ARM64 (CLI, "server") image with a custom kernel
 # (e.g. ophub or 3pole) for Amlogic TV-boxes/SBCs. The Ubuntu base system is
-# from daily builds of the rootfs of the Jammy, Focal, or Kinetic releases.
+# from daily builds of the rootfs of e.g. the Jammy, Focal, or Lunar releases.
 # The script must be executed (as root) on an Ubuntu/Debian type machine,
 # either natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static)
 # on x86_64/amd64.
 # The generated image can be booted with resident/vendor u-boot (using the boot
 # scripts on the fat partition) or via bootdisk (using the grub.cfg file on the
-# rootfs partition). Another alternative is chainloader u-boot.ext (included).
+# rootfs partition). Another alternative is chainloader u-boot.ext.
 
 # Prerequisites: A donwloaded an unpacked tarball of Ophub's or Tripole's
 # kernel (into sub-tarballs) in the local kernel directory (specified below).
@@ -62,28 +62,22 @@
 #   (non bootable) USB sticks attached. When using grub booting (e.g. with a
 #   bootdisk on SD) having other USB sticks attached is not a problem. There
 #   are also links to alternate boot scripts in a README file on bootfs.
-# - The dtb file is only used when booting via u-boot. When booting via grub
-#   (e.g. using bootdisk) it is assumed that a dtb file is loaded by other
-#   means (e.g. by the bootdisk software; see the bootdisk documantation).
 # - The uImage and uInitrd (u-boot tagged) versions of the kernel and initramfs
 #   that are on the boot partition (for booting via vendor u-boot) are created
 #   by the mkbootlinux.bash script (see below). Therefore, when updating the
 #   kernel or initramfs the uImage uInitrd have to be recreated "manually"
 #   using this script (unless you rely on grub booting, then only grub.cfg on
 #   the rootfs partition has to be updated; see the scripts in /usr/local/bin).
-# - Tripole kernels built with source directly from kernel.org can be found at
+# - Kernels built by Tripole for use e.g. with this script can be found at
 #   https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw
 # - The installed kernel pkg. files are saved also in /var/cache/kernel.pkg
 # - The standard Ubuntu kernel linux-image-generic can also be installed (after
-#   unminizing). It is then recommended to first install the dependency package
-#   linux-firmware (ca 900M) and then the package linux-image-generic.
-#   (This is to avoid problems with the package linux-firmware not being fully
-#   configured which can apparently happen otherwise.) The installation scripts
-#   for linux-image-generic will automatically generate a new valid grub.cfg
-#   which will include also an entry for the Ophub/local kernel (albeit with
-#   the Ubuntu generic kernel command line parameters). (Alternatively, there
-#   is the script /usr/local/bin/mkgrubcfg_simple.bash which creates a simple
-#   grub.cfg for all kernels with a different command line; check it out.)
+#   unminizing). The installation scripts for linux-image-generic will then
+#   automatically generate a new valid grub.cfg which will include also an
+#   entry for the Ophub/Tripole/local kernel (albeit with the Ubuntu generic
+#   kernel command line parameters). (Alternatively, there is the script
+#   /usr/local/bin/mkgrubcfg_simple.bash which creates a simple grub.cfg for
+#   all kernels with a different command line; check it out.)
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 #   Another alternative is kubuntu-desktop (nice and polished but larger).
@@ -95,8 +89,8 @@
 #   time zone, keyboard and root password.
 # - Basic configuration: You might want to configure zram (and optionally set
 #   up swap), see e.g. https://wiki.debian.org/ZRam and also the info and links
-#   inside the config. file /etc/default/zramswap (try e.g. with PERCENT=35).
-#   Also, you can remove/disable unnecessary packages/functionality, e.g.
+#   inside the config file /etc/default/zramswap Also, you can remove/disable
+#   unnecessary packages/functionality (in particular snapd), e.g. by doing
 #   # systemctl disable spice-vdagent.service --now
 #   # apt remove snapd && apt autoremove
 # - Pro tip: Generate the image cheaply, say 3G rootfs (so that burn to SD/USB
