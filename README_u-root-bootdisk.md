@@ -102,9 +102,12 @@ At present, the following three caveats exist for booting ARM64 with `u-root`:
 target kernel and initramfs.
 Instead, the dtb residing on the u-root-bootdisk (and used by the `u-root`
 kernel) is inherited.
-The shortcoming seems to lie in the `localboot()` function (since some lower
-level functions support dtb's, see e.g. `load_linux_arm64()`) where the
+The shortcoming seems to lie partly in the `localboot()` function (since some
+lower level functions support dtb's, see e.g. `load_linux_arm64()`) where the
 `devicetree` (ARM64) directive in `grub.cfg` files is not recognized/parsed.
+However, at present it doesn't seem possible to avoid the inheritance of dtb,
+see e.g. the section 'FDT Flattened Device Tree' in
+[Embedded Linux Wiki: Device Tree Linux)](https://elinux.org/Device_Tree_Linux).
 
 - The file system where the target kernel and initramfs reside must be one of
 the following four types; FAT16, FAT32, EXT4 or XFS.

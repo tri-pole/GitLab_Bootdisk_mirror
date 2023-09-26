@@ -87,6 +87,9 @@ running `Petitboot`) is inherited.
 This seems to be a design decision and some reasons therefore are hinted at
 [here](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 (see also [this post](https://github.com/open-power/petitboot/issues/84)).
+However, at present it doesn't seem possible to avoid the inheritance of dtb,
+see e.g. the section 'FDT Flattened Device Tree' in
+[Embedded Linux Wiki: Device Tree Linux)](https://elinux.org/Device_Tree_Linux).
 
 - Our build of `Petitboot` is set up to have only USB, DISK and OPTICAL as
 default boot target types. Despite this, `Petitboot` sets up network interfaces
