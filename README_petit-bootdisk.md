@@ -77,7 +77,8 @@ for `Petitboot` and `u-root` onto one disk. It can be downloaded from
 Caveats
 -------
 
-At present, the following caveats exist for booting ARM64 with `petit-bootdisk`:
+At present, the following four caveats exist for booting Linux ARM64 with
+`petit-bootdisk` (loaded by `u-boot`):
 
 - The device tree (dtb) blob present on the target image (as indicated in the
 `grub.cfg` or `extlinux.conf` file) is not picked up and loaded along with the
@@ -87,9 +88,9 @@ running `Petitboot`) is inherited.
 This seems to be a design decision and some reasons therefore are hinted at
 [here](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 (see also [this post](https://github.com/open-power/petitboot/issues/84)).
-However, at present it doesn't seem possible to avoid the inheritance of dtb,
+Moreover, at present it doesn't seem possible to avoid the inheritance of dtb,
 see e.g. the section 'FDT Flattened Device Tree' in
-[Embedded Linux Wiki: Device Tree Linux)](https://elinux.org/Device_Tree_Linux).
+[Embedded Linux Wiki: Device Tree Linux](https://elinux.org/Device_Tree_Linux).
 
 - Our build of `Petitboot` is set up to have only USB, DISK and OPTICAL as
 default boot target types. Despite this, `Petitboot` sets up network interfaces
@@ -127,7 +128,7 @@ up. More info can be found in the README file on `petit-bootdisk`
 it seems that it cannot boot (via kexec) kernels residing on SD. So, in
 particular, if the bootdisk is installed on SD it will boot into `Petitboot`
 but then the (kexec) loading of a kernel residing on the same SD will fail.
-(This has been observed on s922x devices.)
+(This behavior has been observed at least on s922x devices.)
 
 Part of the idea with the bootdisk was to be able to have the bootdisk on SD
 and have several different USBs with boot target Linux distros attached during

@@ -95,7 +95,8 @@ for `Petitboot` and `u-root` onto one disk. It can be downloaded from
 Caveats
 -------
 
-At present, the following three caveats exist for booting ARM64 with `u-root`:
+At present, the following four caveats exist for booting Linux ARM64 with
+`u-root` (loaded by `u-boot`):
 
 - The device tree (dtb) blob present on the target image (as indicated in the
 `grub.cfg` or `extlinux.conf` file) is not picked up and loaded along with the
@@ -105,9 +106,9 @@ kernel) is inherited.
 The shortcoming seems to lie partly in the `localboot()` function (since some
 lower level functions support dtb's, see e.g. `load_linux_arm64()`) where the
 `devicetree` (ARM64) directive in `grub.cfg` files is not recognized/parsed.
-However, at present it doesn't seem possible to avoid the inheritance of dtb,
+Moreover, at present it doesn't seem possible to avoid the inheritance of dtb,
 see e.g. the section 'FDT Flattened Device Tree' in
-[Embedded Linux Wiki: Device Tree Linux)](https://elinux.org/Device_Tree_Linux).
+[Embedded Linux Wiki: Device Tree Linux](https://elinux.org/Device_Tree_Linux).
 
 - The file system where the target kernel and initramfs reside must be one of
 the following four types; FAT16, FAT32, EXT4 or XFS.
@@ -124,7 +125,7 @@ On each partition searched, the `u-root` function `grub()` used in
 it seems that it cannot boot (via kexec) kernels residing on SD. So, in
 particular, if the bootdisk is installed on SD it will boot into `u-root`
 but then the (kexec) loading of a kernel residing on the same SD will fail.
-(This has been observed on s922x devices.)
+(This behavior has been observed at least on s922x devices.)
 
 Part of the idea with the bootdisk was to be able to have the bootdisk on SD
 and have several different USBs with boot target Linux distros attached during
