@@ -121,11 +121,9 @@ On each partition searched, the `u-root` function `grub()` used in
 `localboot()` searches to a depth of 4 all subdirectories of
 `boot,EFI,efi,grub,grub2` for the file `grub.cfg`.
 
-- Regardless of where the bootdisk is installed (i.e. SD, USB or even eMMC)
-it seems that it cannot boot (via kexec) kernels residing on SD. So, in
-particular, if the bootdisk is installed on SD it will boot into `u-root`
-but then the (kexec) loading of a kernel residing on the same SD will fail.
-(This behavior has been observed at least on s922x devices.)
+- There may be combinations of kernels running Petitboot and target Linux image
+  media (SD, USB2, USB3) which do not work, depending on the TV-box/SBC.
+  In such a case, it is advisable to try running Petitboot with another kernel.
 
 Part of the idea with the bootdisk was to be able to have the bootdisk on SD
 and have several different USBs with boot target Linux distros attached during
