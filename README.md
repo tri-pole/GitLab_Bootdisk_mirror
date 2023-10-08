@@ -36,6 +36,14 @@ bootdisks.
 Instructions for recreating or adapting the bootdisks can be found in the file
 [`README_diy-bootdisk.md`](README_diy-bootdisk.md)
 
+#### Building Petitboot
+
+Petitboot is implemented in the form of an initramfs which can be built either
+manually (as outlined in the documentation listed above) or e.g. using the
+script ['petitboot_mkinird.bash'](petitboot_mkinitrd.bash).
+(Initramfses built using this script can be found at the download location
+listed in [`README_petit-bootdisk.md`](README_petit-bootdisk.md).)
+
 ### ARM64 Linux images
 
 This repo also contains scripts and information on how to create ARM64 Linux
