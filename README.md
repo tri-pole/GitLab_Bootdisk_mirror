@@ -4,9 +4,8 @@ This repo contains information relating to
 [bootdisks](https://en.wikipedia.org/wiki/Boot_disk) for TV-boxes/SBCs based on
 the ARM64 architecture.
 With these bootdisks you can boot e.g. many ("generic") ARM64 Linux images
-from major distributions that have grub boot configurations, such as Fedora
-(e.g. 37, 38), Ubuntu (e.g. Jammy, Lunar), Debian (e.g. Bullseye, Bookworm) and
-openSuse (e.g. Leap 15.4 and Tumbleweed).
+from major distributions that have grub boot configurations, such as Fedora,
+Ubuntu, Debian and openSuse.
 A good use case for TV-boxes is to have the bootdisk installed on SD and have
 several Linux distros installed on USBs to choose from.
 
@@ -33,16 +32,16 @@ General info about the bootdisks `petit-bootdisk` and `u-root-bootdisk`
 In [`README_working_distros.md`](README_working_distros.md) there is a an
 annotated list of distributions that can be installed and booted with the
 bootdisks.
-Instructions for recreating or adapting the bootdisks can be found in the file
-[`README_diy-bootdisk.md`](README_diy-bootdisk.md)
+Instructions for (manually) recreating or adapting the bootdisks can be found
+in the file [`README_diy-bootdisk.md`](README_diy-bootdisk.md)
 
 #### Building Petitboot
 
 Petitboot is implemented in the form of an initramfs which can be built either
 manually (as outlined in the documentation listed above) or e.g. using the
-script ['petitboot_mkinird.bash'](petitboot_mkinitrd.bash).
-(Initramfses built using this script can be found at the download location
-listed in [`README_petit-bootdisk.md`](README_petit-bootdisk.md).)
+script [`petitboot_mkinird.bash`](petitboot_mkinitrd.bash).
+Initramfses built using this script can be found at the download location
+listed in [`README_petit-bootdisk.md`](README_petit-bootdisk.md).
 
 ### ARM64 Linux images
 
