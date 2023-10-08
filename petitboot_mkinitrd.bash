@@ -42,8 +42,6 @@
 # - Figure out why the initial scan does not always detect all bootable devices.
 #   Will further fiddling with udevd or udevadm e.g. with delays fix it?
 # - There seems to be a kernel cmdline option; petitboot.debug. Investigate...
-# - Figure out how to properly include a build tag in the version field in
-#   the Petitboot menu (it does not work currently).
 
 # --------------------------------- Parameters -------------------------------
 
