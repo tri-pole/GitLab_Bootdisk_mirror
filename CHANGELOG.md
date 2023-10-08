@@ -306,3 +306,10 @@ petit-bootdisk-nc
 
 ### Added
  - First commit.
+
+# petitboot_mkinitrd.bash
+
+## [v0.1] 23-10-08
+
+### Added
+ - First commit.

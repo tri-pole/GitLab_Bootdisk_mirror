@@ -1,0 +1,42 @@
+--- ./discover/platform.c       2021-07-12 01:31:34.000000000 +0000
++++ ../../../../petitboot-v1.13/discover/platform.c     2022-08-12 11:26:50.227141567 +0000
+@@ -122,8 +122,10 @@
+ {
+        const char *lang;
+ 
++        /* This section has bee edited by Tripole */
++        /* For device types, see lib/types/types.c */
+        config->autoboot_enabled = true;
+-       config->autoboot_timeout_sec = 10;
++       config->autoboot_timeout_sec = 60; /* Default was 10 */
+        config->autoboot_enabled = true;
+        config->network.interfaces = NULL;
+        config->network.n_interfaces = 0;
+@@ -132,20 +134,22 @@
+        config->http_proxy = NULL;
+        config->https_proxy = NULL;
+        config->safe_mode = false;
+-       config->allow_writes = true;
++       config->allow_writes = false; /* Default was true */
+        config->disable_snapshots = false;
+ 
+        config->n_consoles = 0;
+        config->consoles = NULL;
+        config->boot_console = NULL;
+ 
+-       config->n_autoboot_opts = 2;
++       config->n_autoboot_opts = 3; /* Default was 2 */
+        config->autoboot_opts = talloc_array(config, struct autoboot_option,
+                                                config->n_autoboot_opts);
+        config->autoboot_opts[0].boot_type = BOOT_DEVICE_TYPE;
+-       config->autoboot_opts[0].type = DEVICE_TYPE_NETWORK;
++       config->autoboot_opts[0].type = DEVICE_TYPE_USB;      /* Default was DEVICE_TYPE_NETWORK */
+        config->autoboot_opts[1].boot_type = BOOT_DEVICE_TYPE;
+-       config->autoboot_opts[1].type = DEVICE_TYPE_ANY;
++       config->autoboot_opts[1].type = DEVICE_TYPE_DISK;     /* Default was DEVICE_TYPE_ANY */
++       config->autoboot_opts[2].boot_type = BOOT_DEVICE_TYPE; /* Default was <not defined> */
++       config->autoboot_opts[2].type = DEVICE_TYPE_OPTICAL;
+ 
+        config->ipmi_bootdev = 0;
+        config->ipmi_bootdev_persistent = false;
+
