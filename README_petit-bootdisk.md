@@ -34,7 +34,7 @@ The non chainloaded variant enables a faster boot process but may not work for
 all TV-boxes/SBCs (depending on the resident/vendor version of `u-boot` and
 kernel used to load `Petitboot`) whereas the bootdisk using chainloading can
 probably be made to work for most TV-boxes/SBCs (several alternative
-`u-boot.ext` are available on the chainloader bootdisk).
+`u-boot.ext` are available on the `multi-bootdisk`, see below).
 The non chainloaded disk is the easiest to set up, however.
 
 Note: The term chainloading is used to describe two diffrent things here.
@@ -52,8 +52,7 @@ and should e.g. be able to directly detect and parse `extlinux.conf` files.
 Therefore, newer resident/vendor `u-boot` should be able to directly boot a
 non chainloaded bootdisk with an added `extlinux/extlinux.conf`
 (provided it is configured correctly, see e.g.
-[the `u-boot` reference](https://u-boot.readthedocs.io/en/latest/develop/distro.html#boot-configuration-files)
-or cf. a chainloaded disk).
+[the `u-boot` reference](https://u-boot.readthedocs.io/en/latest/develop/distro.html#boot-configuration-files)).
 
 Downloads
 ---------
