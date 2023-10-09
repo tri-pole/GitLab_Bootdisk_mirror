@@ -1,15 +1,15 @@
 # petit-bootdisk
 
-`petit-bootdisk` is the name of a utility disk for booting various forms of
-Linux images on ARM64 single board computers (SBC) and TV-boxes with a resident
-`u-boot`.
-Booting is done via chainloading of another bootloader, `Petitboot`, which is
-located on `petit-bootdisk` and acts as a middle stage in the booting process.
+The name `petit-bootdisk` refers to a utility disk for booting Linux images on
+ARM64 single board computers (SBC) and TV-boxes with a resident `u-boot`.
+Booting is then done via chainloading of another bootloader, `Petitboot`,
+which is located on `petit-bootdisk` and acts as a middle stage in the booting
+process.
 When booting a SBC/TV-box with a `petit-bootdisk` attached, the boot process
 pauses at the `Petitboot` boot menu where a list of bootable devices is
 displayed.
-After selection of a boot menu entry, the new boot configuration (kernel and
-initramfs) is loaded into memory and booting proceeds with the new
+After selection of a boot menu entry, the new target boot configuration
+(kernel and initramfs) is loaded into memory and booting proceeds with the new
 configuration (utilizing a `kexec()` call).
 (The process is analogous to that of `u-root`, see
 [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md).)
@@ -20,28 +20,28 @@ such as grub setups, syslinux and `Petitboot`'s own
 [native format.](https://lists.ozlabs.org/pipermail/petitboot/2022-January/001516.html)
 More documentation about `Petitboot` can be found
 [here](https://open-power.github.io/petitboot).
-`Petitboot` also has a built-in shell from which the
+`Petitboot` has a built-in shell from which the
 [commands of BusyBox](https://www.busybox.net/downloads/BusyBox.html)
-are available so `petit-bootdisk` can serve as a rescue disk.
+are available so `petit-bootdisk` also can serve as a rescue disk.
 
 Variants
 --------
 
-The `petit-bootdisk` exists in two variants; one with the chainloader
+A `petit-bootdisk` can be set up in two variants; one with the chainloader
 `u-boot.ext` and one without the chainloader (which boots using board
-resident/vendor `u-boot` together with boot scripts on the `petit-bootdisk`).
-The latter bootdisk has a name ending in `-nc` ("no chainload") and enables a
-faster boot process but may not work for all TV-boxes/SBCs (this depends on the
-resident/vendor version of `u-boot`) whereas the bootdisk using chainloading
-can probably be made to work for most TV-boxes/SBCs (several alternative
+resident/vendor `u-boot` together with boot scripts).
+The non chainloaded variant enables a faster boot process but may not work for
+all TV-boxes/SBCs (depending on the resident/vendor version of `u-boot` and
+kernel used to load `Petitboot`) whereas the bootdisk using chainloading can
+probably be made to work for most TV-boxes/SBCs (several alternative
 `u-boot.ext` are available on the chainloader bootdisk).
 The non chainloaded disk is the easiest to set up, however.
 
 (Note that the term chainloading is used to describe two diffrent things here.
 First, the bootdisk itself which is chainloaded by the board resident/vendor
 `u-boot`.
-Second, on one of the bootdisks the binary `u-boot.ext` is used to chainload
-the kernel and initramfs that runs `Petitboot`.)
+Second, on the so called chainloaded bootdisks the binary `u-boot.ext` is used
+to chainload the kernel and initramfs that runs `Petitboot`.)
 
 It should be noted also that the bootdisks were developed for booting on
 TV-boxes with a rather old code base for the resident/vendor `u-boot` (often
@@ -50,7 +50,7 @@ More recent versions of (e.g. resident/vendor) `u-boot` implement
 [`u-boot` Standard Boot](https://u-boot.readthedocs.io/en/latest/develop/bootstd.html)
 and should e.g. be able to directly detect and parse `extlinux.conf` files.
 Therefore, newer resident/vendor `u-boot` should be able to directly boot a
-non chainloaded (`-nc`) bootdisk with an added `extlinux/extlinux.conf`
+non chainloaded bootdisk with an added `extlinux/extlinux.conf`
 (provided it is configured correctly, see e.g.
 [the `u-boot` reference](https://u-boot.readthedocs.io/en/latest/develop/distro.html#boot-configuration-files)
 or cf. a chainloaded disk).
@@ -58,26 +58,20 @@ or cf. a chainloaded disk).
 Downloads
 ---------
 
-The actual bootdisk images are hosted outside of Gitlab, at the link below
-
-[petit-bootdisk and petit-bootdisk-nc](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw)
-
-The version of `Petitboot` on the `petit-bootdisk`(s) above is v1.13.
-
-The bootdisks are released as tarballs since no special disk is needed, only
-a single FAT partition large enough to hold all the files.
-The skeleton image `bootdisk_skel.img` (one single, empty, 120M FAT partition)
-can be used as a basis when building a bootdisk from a tarball of the bootdisk
-files (just uncompress the tarball onto the skeleton image).
-
-There is also an early version of `multi-bootdisk` which combines the files
-for `Petitboot` and `u-root` onto one disk. It can be downloaded from
+The files needed to set up either a `petit-bootdisk` or a `u-root-bootdisk` are
+collected on a `multi-bootdisk` hosted outside of Gitlab at
 [here](https://mega.nz/folder/fd0DxILD#msDXVG0mBLYvP1dyPqNzAw).
+
+The `multi-bootdisk` is released as a tarball since no special disk is needed,
+only a single FAT partition large enough to hold all the files.
+The skeleton image `bootdisk_skel.img` (one single, empty, FAT partition)
+at the link above can be used as a basis when building a bootdisk from a
+tarball (just uncompress the tarball onto the skeleton image).
 
 Caveats
 -------
 
-At present, the following four caveats exist for booting Linux ARM64 with
+At present, the following five caveats exist for booting Linux ARM64 with a
 `petit-bootdisk` (loaded by `u-boot`):
 
 - The device tree (dtb) blob present on the target image (as indicated in the
@@ -97,7 +91,7 @@ default boot target types. Despite this, `Petitboot` sets up network interfaces
 for netbooting and tries to establish network connections. Since this is not
 desirable for everyone we have added an option (in v0.20) to run `Petitboot`
 in a network namespace where only the loopback interface `lo` can be brought
-up. More info can be found in the README file on `petit-bootdisk`
+up. More info can be found in the README file on `multi-bootdisk`
 (specifically the `pb_nonet=true` kernel command line argument).
 
 - `Petitboot` searches the following locations for a grub boot configuration
@@ -123,6 +117,11 @@ up. More info can be found in the README file on `petit-bootdisk`
     "/EFI/BOOT/GRUB.CFG",
     "/EFI/BOOT/grub.cfg"
 ```
+
+- Autobooting is enabled with a 60s delay but can be controlled via a kernel
+  command line argument. More info can be found in the README file on
+  `multi-bootdisk` (specifically the `pb_no_autoboot=true` kernel command line
+  argument).
 
 - There may be combinations of kernels running Petitboot and target Linux image
   media (SD, USB2, USB3) which do not work, depending on the TV-box/SBC.
@@ -157,28 +156,18 @@ with support also for Allwinner and Rockchip SoCs).
 Linux distros tested
 --------------------
 
-The petit-bootdisks have been tested with Fedora 36 (Gnome, KDE), openSuse
-Leap 15.4 (KDE), Armbian generic ARM64 images (XFCE) and with the Ubuntu and
-Debian images built according to the instructions in adjacent README files.
-For a full list of distribtions that work with these bootdisks, see
+The `petit-bootdisk`(s) have been tested on a large number of Linux
+distributions, see e.g.
 [`README_working_distros.md`](README_working_distros.md).
-
-Some live images of these distros and others do not work because of the
-caveats listed above but the installer images typically work as intended.
-In other cases, live images work (e.g. Ubuntu server and Ubuntu desktop for
-recent releases) but the install-to-disk process on these live images
-malfunctions (typically at the stage where an initramfs is created, cf. the
-other READMEs about Ubuntu/Debian install).
 
 Authorship
 ----------
 
 Nothing (almost) of what is present on these bootdisks is my original work;
 I have mostly assembled and compiled (and slightly tweaked) other people's
-source code, or copied freely available scripts, and made disk images of the
-result.
-Detailed descriptions of the sources of my material can be found in the README
-files on the bootdisks and in
+source code, or written scripts to do this, or copied freely available
+scripts (e.g. boot scripts), and made disk images of the result.
+Detailed descriptions of the sources of my material can be found in
 [`README_diy-bootdisk.md`](README_diy-bootdisk.md).
 In some cases, such as script files, the material has been used and evolved,
 with small modifications, in several projects or by several people.

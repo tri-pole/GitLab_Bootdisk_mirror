@@ -28,6 +28,9 @@
   However, all the binaries needed to produce the disks (including the optional
   chainloader) can be compiled from sources available at Github or other public
   git repos (see below and the README files on the disks).
+  For `Petitboot` there is also the script
+  [`petitboot_mkinitrd.bash`](petitboot_mkinitrd.bash) which can be used to
+  build the initramfs.
   Thus, it should be easy to customize, enhance and adapt the bootdisks to
   various needs based on the information provided here.
 
@@ -36,8 +39,8 @@
 
 ## Outline
 
-  Most of what follows cover the steps in the procedure of creating a
-  bootdisk, what parts may need to be adapted and how this can be done.
+  Most of what follows cover the steps in the procedure of creating a bootdisk,
+  what parts may need to be adapted and how this can be done.
   At the very end we also make some remarks relating to the functioning and
   use of `u-boot`.
   The latter material is not necessary for building a bootdisk but may provide
@@ -45,15 +48,15 @@
 
 ## Prerequisites
 
-- Materials: The simplest is to start with either `petit-bootdisk` or
-  `u-root-bootdisk` (for a chainloaded bootdisk), or `petit-bootdisk-nc` or
-  `u-root-bootdisk-nc` (for a non chainloaded bootdisk).
+- Materials: The simplest way is probably to start with an existing
+  `petit-bootdisk` or `u-root-bootdisk`, set up for booting either directly
+  via boot scripts or via a chainloader `u-boot.ext`.
   The files most likely to need customization for other TV-boxes/SBCs are the
   the kernel, the dtb file and the chainloader (if applicable).
   The requirements for the kernel on a bootdisk are straightforward; it must
   be able to recognize and read the block devices and file systems, including
-  (perhaps) btrfs and iso, and to have the kexec functionality enabled (kexec
-  crash kernel functionality is not required).
+  (perhaps) btrfs and iso9660, and to have the kexec functionality enabled
+  (kexec crash kernel functionality is not required).
   However, any combination of kernel, dtb (and chainloader) that works to boot
   the box otherwise will also work for the bootdisk.
 
@@ -83,10 +86,10 @@
   Such a bootloader is not required for normal use of the bootdisks but is
   useful if a bootdisk is later converted into a rescue disk, see below.
 
-  The value of S in the second "Sectors" line above above is mostly dependent on
-  how many kernels are needed (for experimentation); a value of S which
-  corresponds to 150M is typically enough for a basic install (with a couple
-  of kernels).
+  The value of S in the second "Sectors" line above above is mostly dependent
+  on how many kernels are needed (for experimentation); a value of S which
+  corresponds to 150-200M is typically enough for a basic install (with a
+  couple of kernels).
   (The bootable flag for the single partition above should be left unset.)
 
   From now on we will assume that a disk has been prepared according to the
@@ -96,8 +99,9 @@
 
   The bootloader that loads the kernel and the initramfs (containing
   `Petitboot/u-root`) on the bootdisk can be either the board resident/vendor
-  version of `u-boot`, in case of a non chainloaded disk, or a chainloader in
-  the form of a binary file on the bootdisk.
+  version of `u-boot`, in case of a disk set up for direct booting via scripts,
+  or a chainloader in the form of a binary file on the bootdisk for a disk
+  using the chainloading method of booting.
 
   In case of a chainloaded disk, the bootloader binary required is a version
   of `u-boot.bin` which is renamed to `u-boot.ext` and is placed in the root
@@ -106,12 +110,14 @@
   SoC but luckily there are many precompiled variants freely available.
   A good selection of candidates can be found on the images produced by
   [Ophub](https://github.com/ophub/amlogic-s9xxx-armbian) and some of them
-  can also be found on the chainloaded bootdisks (for Amlogic s922x SOC, see
+  can also be found on the bootdisks (for Amlogic s922x SOC, see
   also [here](https://mega.nz/folder/rUdggRyb#11ffZO8FBqN-gCcXGBcd4g)).
   (Ophub refers to the binaries used for chainloading as "overload"
   bootloaders, to distinguish them from the ones to be used as "hidden"
   bootloaders (see below) which he refers to simply as "bootloaders".
   More info about `u-boot` can be found further down in this document.)
+  Note, however, that some of the older versions of `u-boot.bin` may not be
+  able to boot newer kernels.
 
   - *Only for chainloaded disk*
   
@@ -136,7 +142,7 @@
   └── vmlinuz
 ```
 
-and for a non chainloaded (`-nc`) disk it could look like this
+and for a direct booted (non chainloaded) disk it could look like this
 
 ```
   ├── aml_autoscript
@@ -161,8 +167,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
   files that control the boot sequence of `u-boot` (i.e. how resident/vendor
   `u-boot` scan devices for bootable configurations), for Amlogic devices.
   We use slightly different versions of these file on the chainloaded and non
-  chainloaded bootdisks, however.
-  For the non chainloaded (`-nc`) disks we use scripts from
+  chainloaded (direct booted) bootdisks, however.
+  For the non chainloaded disks we use scripts from
   [Manjaro ARM](https://wiki.manjaro.org/index.php/Manjaro-ARM) (see the README
   files on the bootdisk) and for the chainloaded disks we use scripts from
   [D. Fauth's Github repo](https://github.com/FauthD/amlogic-u-boot-scripts)
@@ -186,8 +192,8 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   The zero-length file `aml_autoscript.zip` is just a placeholder file.
   (My understanding is that the presence of this file is required on some
-  TV-boxes to trigger the board resident/vendor `u-boot` to read and parse
-  `aml_autoscript` when enabling "multiboot".)
+  TV-boxes to trigger the board resident/vendor boot recovery code to read and
+  parse `aml_autoscript` when enabling "multiboot".)
 
   The script file `s905_autoscript` is always needed (it is referenced by
   `aml_autoscript`).
@@ -210,7 +216,7 @@ and for a non chainloaded (`-nc`) disk it could look like this
 
   - *Only for non chainloaded disk*
 
-  In the case of booting via (only) boot scripts, i.e. the non chain loaded
+  In the case of booting via (only) boot scripts, i.e. the non chainloaded
   case, the kernel command line parameters and the dtb file are specified in a
   small text file called `uEnv.ini` (which is referenced in `s905_autoscript`).
   The `uEnv.ini` file can for instance look like this (the `console` parameter
@@ -221,7 +227,7 @@ dtb_name=/dtbs/amlogic/meson-g12b-gtking-pro.dtb
 bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 net.ifnames=0 loglevel=1 nr_cpus=1 vga=773
 ```
 
-  The kernel command line argument `nr_cpus=1` is sometimes needed to force
+  The kernel command line argument `nr_cpus=1` is needed on some SoCs to force
   the kernel on the bootdisk to use only one CPU during the subsequent kexec
   call.
   (Without the single-CPU restriction during kexec there may errors in the
@@ -233,7 +239,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
 
   On a chainloaded disk the kernel, initramfs and dtb is defined in the text
   file `extlinux.conf`.
-  A simplistic version of the file `extlinux.conf` can look like this
+  A simplistic version of the file `extlinux.conf` can look like this (file
+  names and kernel command line arguments may vary)
 
 ```
   LINUX=/vmlinuz
@@ -276,12 +283,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   On e.g. `petit-bootdisk` there are several kernels to choose from which
   should work with Amlogic, Allwinner or Rockchip SoCs (see the `config-*`
   files on e.g. `petit-bootdisk`).
-  On older/early versions of the bootdisks these kernels are compiled using
-  [Unifreq's](https://github.com/unifreq) version of the Linux kernel source
-  by employing
-  [Ophub's](https://github.com/ophub/amlogic-s9xxx-armbian) build framework.
-  On newer/recent versions of the bootdisks the kernels are from our own line
-  `koop-3pole` of kernels (cf. [README.md](README.md)).
+  On newer/recent versions of the bootdisks the kernels are from our own kernel
+  builds, such as the `koop-3pole` line of kernels (cf. [README.md](README.md)).
   A few extra options have been enabled over the default kernel config such as
   kexec and support for btrfs and iso file systems, see the `config-` files on
   the bootdisks.
@@ -337,24 +340,27 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   (see also the comments in the README file on the bootdisk).
   For recreation and adaption of this package the sources below must be
   collected.
-  
+  It is also possible to use the script
+  [`petitboot_mkinitrd.bash`](petitboot_mkinitrd.bash) to build the initramfs.
+
   The Petitboot build was based on sources from
   [Petitboot's Github repo](https://github.com/open-power/petitboot)
   but it was done with a few tweaks (see the README file on the bootdisk,
   where also more Petitboot links can be found).
-  It was based on release (tag) v1.13.
+  It was based on release (tag) indicated in the file name.
 
   The Petitboot initramfs also contains a build of the (full) `ip` command from
-  [iproute2](https://github.com/shemminger/iproute2), the `udevadm` daemon
-  from [systemd](https://github.com/systemd/systemd), the package
-  [kexec](https://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git),
+  [iproute2](https://github.com/shemminger/iproute2), the `udevd` and
+  `udevadm` programs from [eudev](https://github.com/eudev-project/eudev), the
+  package [kexec](https://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git),
   the package [busybox](https://github.com/mirror/busybox) (minus the `ip`
   command) and some of the commands from
   [e2fsprogs](http://e2fsprogs.sourceforge.net).
 
-  (Note: For some of these packages it can be convenient to use
-  [buildroot](https://buildroot.org/)
-  for handling of dependencies and building.)
+  (Note: For tips on how to configure and compile some these packages, see the
+  code in [`petitboot_mkinitrd.bash`](petitboot_mkinitrd.bash). An alternative
+  for handling of dependencies and building can be to use
+  [buildroot](https://buildroot.org/).)
 
   __u-root:__ The initramfs containing `u-root` can be recreated and adapted by
   downloading and compiling the `u-root` code from
@@ -364,7 +370,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   Our version of the `u-root` initramfs contains all the packages in the
   `u-root` package collections `core` and `boot`.
   The initramfs has been compiled from a `u-root` source release (tag) as
-  indicated in the initramfs name, the current version is v0.11.0.
+  indicated in the initramfs name.
 
   __Tweaks:__ A few script files have been added to the Petitboot initramfs,
   most notably a hack to produce a `shutdown` command and a fake `dmidecode`
