@@ -37,11 +37,11 @@ probably be made to work for most TV-boxes/SBCs (several alternative
 `u-boot.ext` are available on the chainloader bootdisk).
 The non chainloaded disk is the easiest to set up, however.
 
-(Note that the term chainloading is used to describe two diffrent things here.
+Note: The term chainloading is used to describe two diffrent things here.
 First, the bootdisk itself which is chainloaded by the board resident/vendor
 `u-boot`.
 Second, on the so called chainloaded bootdisks the binary `u-boot.ext` is used
-to chainload the kernel and initramfs that runs `Petitboot`.)
+to chainload the kernel and initramfs that runs `Petitboot`.
 
 It should be noted also that the bootdisks were developed for booting on
 TV-boxes with a rather old code base for the resident/vendor `u-boot` (often
@@ -59,7 +59,7 @@ Downloads
 ---------
 
 The files needed to set up either a `petit-bootdisk` or a `u-root-bootdisk` are
-collected on a `multi-bootdisk` hosted outside of Gitlab at
+collected on a `multi-bootdisk` hosted outside of Gitlab
 [here](https://mega.nz/folder/fd0DxILD#msDXVG0mBLYvP1dyPqNzAw).
 
 The `multi-bootdisk` is released as a tarball since no special disk is needed,
@@ -89,10 +89,10 @@ see e.g. the section 'FDT Flattened Device Tree' in
 - Our build of `Petitboot` is set up to have only USB, DISK and OPTICAL as
 default boot target types. Despite this, `Petitboot` sets up network interfaces
 for netbooting and tries to establish network connections. Since this is not
-desirable for everyone we have added an option (in v0.20) to run `Petitboot`
-in a network namespace where only the loopback interface `lo` can be brought
-up. More info can be found in the README file on `multi-bootdisk`
-(specifically the `pb_nonet=true` kernel command line argument).
+desirable for everyone we have added an option to run `Petitboot` in a network
+namespace where only the loopback interface `lo` can be brought up. More info
+can be found in the README file on `multi-bootdisk` (specifically the
+`pb_nonet=true` kernel command line argument).
 
 - `Petitboot` searches the following locations for a grub boot configuration
 (cf. Petitboot source `discover/grub2/grub2.c`):
@@ -134,9 +134,9 @@ This works as intended on the two platforms tested (see below) but for other
 boxes some experimentation may be needed with e.g. the bootdisk on USB, with
 different `u-boot.ext` etc.
 
-The above assumes that the boot order of `u-boot` is set up so that external
-media is searched first, typically starting with SD (this is sometimes called
-"multiboot").
+The above assumes that the boot order of (resident/vendor) `u-boot` is set up
+so that external media is searched first, typically starting with SD (this is
+sometimes called "multiboot").
 If this is not enabled by default, a "toothpick" reset with an appropriate
 Linux image attached (such as one of the bootdisks) can in general be used to
 alter the boot order on TV-boxes. (Descriptions of this procedure are easy to
@@ -151,7 +151,7 @@ The initramfs that implements `Petitboot` is generic and should work with any
 other SoC but the kernel on the bootdisk that runs `Petitboot` might only work
 with Amlogic boxes (although the kernel on the bootidsk has been compiled
 with support also for Allwinner and Rockchip SoCs).
-(More details can be found in the README files on the bootdisk.)
+(More details can be found in the README files on the `multi-bootdisk`.)
 
 Linux distros tested
 --------------------
@@ -165,12 +165,12 @@ Authorship
 
 Nothing (almost) of what is present on these bootdisks is my original work;
 I have mostly assembled and compiled (and slightly tweaked) other people's
-source code, or written scripts to do this, or copied freely available
+source code, or written build scripts to do this, or copied freely available
 scripts (e.g. boot scripts), and made disk images of the result.
 Detailed descriptions of the sources of my material can be found in
 [`README_diy-bootdisk.md`](README_diy-bootdisk.md).
-In some cases, such as script files, the material has been used and evolved,
-with small modifications, in several projects or by several people.
+In some cases, such as boot script files, the material has been used and
+evolved, with small modifications, in several projects or by several people.
 To properly trace the origin of various ideas/concepts one then has to follow
 the links backwards from my sources. Two projects that have produced many of
 the original versions of scripts are [LibreElec](https://libreelec.tv) and
