@@ -89,7 +89,9 @@
 #   recovery and transformation options. There, enter the command "f" to load
 #   the MBR and build a fresh GPT from it. At last, exit gdisk with "w" (write).
 
-# ToDo: Check network setup (in particular the resolver setup).
+# ToDo: Fix network setup (in particular the resolver setup) using sec 2.1 in
+# https://wiki.archlinux.org/title/Systemd-resolved
+
 
 # ------------------------------- parameters ---------------------------------
 
@@ -115,7 +117,7 @@ img_tag=3pole-$(date +"%y%m%d")
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
 ophub_repo_url="https://github.com/ophub"
-ophub_uboot_url=${ophub_repo_url}"/amlogic-s9xxx-armbian/raw/main/build-armbian/u-boot/amlogic/overload"
+ophub_uboot_url=${ophub_repo_url}"/u-boot/blob/main/u-boot/amlogic/overload"
 
 # u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
 # Note: Some of these may not be able to boot newer Ubuntu kernels or initramfs
