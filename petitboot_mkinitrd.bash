@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # petitboot_mkinitrd.bash
-# 23-10-08: v0.1
+# 23-10-12: v0.11
 # Author: Tripole
 
 # Script to compile and pack Petitboot for ARM64 in the form of an initramfs.
@@ -56,11 +56,14 @@ build_ver_tag="${mytag}"
 # and the tag is also applied to the resulting initramfs(s) (see +100 lines).
 use_build_ver_tag=true # {true_false}
 
-# In the download parameter settings below the setting dload_<pkg>_tarball
-# can be set to true or false. If set to true it is assumed that the 
-# correctly named tarball is placed in ${temp_dir}/downloads and if set to
-# false it will be downloaded there.
+# The initramfs can be built also in a smaller version where the e2fsprogs
+# tools are omitted.
+no_e2fsprogs=false # {true,false}
 
+# In the download parameter settings below the setting dload_<pkg>_tarball
+# can be set to true or false. If set to false it is assumed that the 
+# correctly named tarball is already placed in ${temp_dir}/downloads and if
+# set to true it will be downloaded there.
 kexectools_ver="2.0.27"
 kexectools_url_base="https://github.com/horms/kexec-tools/archive/refs/tags"
 kexectools_tarball_rpo=v${kexectools_ver}.tar.gz
@@ -110,15 +113,24 @@ eudev_udev_rules_list=("50-udev-default.rules" "60-autosuspend.rules"
                        "70-memory.rules" "70-mouse.rules" "75-probe_mtd.rules")
 
 # Libraries used by these executables will be copied from the host.
-dyn_linked_exe_list=("/sbin/kexec" "/sbin/mke2fs" "/sbin/e2fsck"
-                     "/sbin/badblocks" "/sbin/tune2fs" "/sbin/resize2fs"
-                     "/sbin/dumpe2fs" "/usr/sbin/pb-event" "/usr/sbin/pb-config"
-                     "/usr/sbin/pb-discover" "/usr/sbin/petitboot-nc"
-                     "/usr/share/petitboot/30-dtb-updates" "/usr/bin/gpg"
-                     "/usr/bin/udevd" "/usr/bin/udevadm" "/bin/ip"
-                     "/usr/lib/udev/scsi_id" "/usr/lib/udev/ata_id"
-                     "/usr/lib/udev/cdrom_id" "/usr/lib/udev/dmi_memory_id"
-                     "/usr/lib/udev/fido_id")
+dyn_linked_exe_list_noe2fs=("/sbin/kexec"
+                            "/usr/bin/udevd" "/usr/bin/udevadm" "/usr/bin/collect"
+                            "/bin/ip" "/usr/sbin/pb-event" "/usr/sbin/pb-config"
+                            "/usr/sbin/pb-discover" "/usr/sbin/petitboot-nc"
+                            "/usr/share/petitboot/30-dtb-updates" "/usr/bin/gpg"
+                            "/usr/lib/udev/scsi_id" "/usr/lib/udev/ata_id"
+                            "/usr/lib/udev/cdrom_id" "/usr/lib/udev/dmi_memory_id"
+                            "/usr/lib/udev/fido_id")
+dyn_linked_exe_list_e2fs=("/sbin/mke2fs" "/sbin/e2fsck" "/sbin/badblocks"
+                          "/sbin/tune2fs" "/sbin/resize2fs" "/sbin/dumpe2fs"
+)
+if [[ $no_e2fsprogs == true ]]; then
+    dyn_linked_exe_list=${dyn_linked_exe_list_noe2fs[@]}
+else
+    dyn_linked_exe_list=(${dyn_linked_exe_list_noe2fs[@]}
+                         ${dyn_linked_exe_list_e2fs[@]})
+fi
+
 stat_linked_exe_list=("/bin/busybox")
 
 # Tag to be applied to the name of the resulting initrd (and the uInitrd).
@@ -164,7 +176,7 @@ The following source versions have been used
 kexec-tools: $kexectools_ver
 Busybox:     $busybox_ver
 iproute2:    $iproute2_ver
-e2fsprogs:   $e2fspgrogs_ver
+e2fsprogs:   $e2fspgrogs_ver (optional)
 Petitboot:   $petitboot_ver
 eudev:       $eudev_ver
 
@@ -354,6 +366,12 @@ do_download() {
 
 # ------------------------------- Preliminaries -----------------------------
 
+if [[ $no_e2fsprogs != true ]]; then
+    echo -e ${i_msg}" -- Builting the Petitboot initramfs (with e2fsprogs) --"
+else
+    echo -e ${i_msg}" -- Builting the Petitboot initramfs (without e2fsprogs) --"
+fi
+
 echo -e -n ${i_msg}" Setting up initramfs directory structure ..."
 result_dir=${PWD}/result
 mkdir $result_dir
@@ -449,10 +467,12 @@ if [[ "$dload_iproute2_tarball" == true ]]; then
     do_download "iproute2" $iproute2_pkg_url $iproute2_pkg_loc
 fi
 
-e2fsprogs_pkg_url=${e2fsprogs_url_base}/${e2fsprogs_tarball_rpo}
-e2fsprogs_pkg_loc=${temp_dir}/downloads/${e2fsprogs_tarball_loc}
-if [[ "$dload_e2fsprogs_tarball" == true ]]; then
-    do_download "e2fsprogs" $e2fsprogs_pkg_url $e2fsprogs_pkg_loc
+if [[ $no_e2fsprogs != true ]]; then
+    e2fsprogs_pkg_url=${e2fsprogs_url_base}/${e2fsprogs_tarball_rpo}
+    e2fsprogs_pkg_loc=${temp_dir}/downloads/${e2fsprogs_tarball_loc}
+    if [[ "$dload_e2fsprogs_tarball" == true ]]; then
+        do_download "e2fsprogs" $e2fsprogs_pkg_url $e2fsprogs_pkg_loc
+    fi
 fi
 
 petitboot_pkg_url=${petitboot_url_base}/${petitboot_tarball_rpo}
@@ -488,6 +508,9 @@ cd ${temp_dir}/busybox/busybox-${busybox_ver}
 make defconfig
 # We will compile a separate iproute2.
 sed -i 's/CONFIG_IPROUTE=y/\# CONFIG_IPROUTE is not set/g' .config
+if [[ $no_e2fsprogs != true ]]; then
+    sed -i 's/CONFIG_MKE2FS=y/\# CONFIG_MKE2FS is not set/g' .config
+fi
 # make menuconfig
 LDFLAGS=--static make -j $no_comp_cores
 cp .config dot_config
@@ -495,7 +518,7 @@ tar -czf ${temp_dir}/initramfs/usr/share/busybox/build.tgz dot_config Makefile
 echo -e -n ${i_msg}" Installing Busybox binary to initramfs tree..."
 cp ./busybox ${temp_dir}/initramfs/bin # This is the stripped version.
 cp ./examples/udhcp/simple.script ${temp_dir}/initramfs/usr/share/udhcpc/
-chown 0755 ${temp_dir}/initramfs/usr/share/udhcpc/simple.script
+# chown 0755 ${temp_dir}/initramfs/usr/share/udhcpc/simple.script
 cd ${temp_dir}/initramfs/bin
 ln -s busybox sh
 echo " Done."
@@ -512,23 +535,25 @@ strip ./ip/ip -o ${temp_dir}/initramfs/bin/ip
 echo " Done."
 echo -e ${k_msg}" Finished building and installing iproute2 (ip command)."
 
-echo -e ${i_msg}" Building e2fsprogs ..."
-tar -xf ${temp_dir}/downloads/${e2fsprogs_tarball_loc} -C ${temp_dir}/e2fsprogs
-cd ${temp_dir}/e2fsprogs/e2fsprogs-${e2fsprogs_ver}
-mkdir build
-cd ./build
-../configure --prefix=/usr
-make -j $no_comp_cores
-tar -czf ${temp_dir}/initramfs/usr/share/e2fsprogs/build.tgz config.log Makefile
-echo -e -n ${i_msg}" Installing e2fsprogs binaries to initramfs tree ..."
-strip ./misc/badblocks -o ${temp_dir}/initramfs/sbin/badblocks
-strip ./misc/dumpe2fs -o ${temp_dir}/initramfs/sbin/dumpe2fs
-strip ./misc/tune2fs -o ${temp_dir}/initramfs/sbin/tune2fs
-strip ./misc/mke2fs -o ${temp_dir}/initramfs/sbin/mke2fs
-strip ./e2fsck/e2fsck -o ${temp_dir}/initramfs/sbin/e2fsck
-strip ./resize/resize2fs -o ${temp_dir}/initramfs/sbin/resize2fs
-echo " Done."
-echo -e ${k_msg}" Finished building and installing e2fsprogs."
+if [[ $no_e2fsprogs != true ]]; then
+    echo -e ${i_msg}" Building e2fsprogs ..."
+    tar -xf ${temp_dir}/downloads/${e2fsprogs_tarball_loc} -C ${temp_dir}/e2fsprogs
+    cd ${temp_dir}/e2fsprogs/e2fsprogs-${e2fsprogs_ver}
+    mkdir build
+    cd ./build
+    ../configure --prefix=/usr
+    make -j $no_comp_cores
+    tar -czf ${temp_dir}/initramfs/usr/share/e2fsprogs/build.tgz config.log Makefile
+    echo -e -n ${i_msg}" Installing e2fsprogs binaries to initramfs tree ..."
+    strip ./misc/badblocks -o ${temp_dir}/initramfs/sbin/badblocks
+    strip ./misc/dumpe2fs -o ${temp_dir}/initramfs/sbin/dumpe2fs
+    strip ./misc/tune2fs -o ${temp_dir}/initramfs/sbin/tune2fs
+    strip ./misc/mke2fs -o ${temp_dir}/initramfs/sbin/mke2fs
+    strip ./e2fsck/e2fsck -o ${temp_dir}/initramfs/sbin/e2fsck
+    strip ./resize/resize2fs -o ${temp_dir}/initramfs/sbin/resize2fs
+    echo " Done."
+    echo -e ${k_msg}" Finished building and installing e2fsprogs."
+fi
 
 echo -e ${i_msg}" Building Petitboot ..."
 tar -xf ${temp_dir}/downloads/${petitboot_tarball_loc} -C ${temp_dir}/petitboot
@@ -603,6 +628,7 @@ tar -czf ${temp_dir}/initramfs/usr/share/eudev/build.tgz config.log Makefile
 echo -e ${i_msg}" Installing eudev binaries and udev rules to initramfs tree ..."
 strip ./src/udev/udevadm -o ${temp_dir}/initramfs/usr/bin/udevadm
 strip ./src/udev/udevd -o ${temp_dir}/initramfs/usr/bin/udevd
+strip ./src/collect/collect -o ${temp_dir}/initramfs/usr/bin/collect
 for id_item in ata_id cdrom_id dmi_memory_id fido_id scsi_id; do
     strip ./src/${id_item}/${id_item} -o ${temp_dir}/initramfs/usr/lib/udev/${id_item}
 done
