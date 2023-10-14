@@ -72,6 +72,9 @@ non chainloaded bootdisk with an added `extlinux/extlinux.conf` (provided it
 is configured correctly, see e.g.
 [the `u-boot` reference](https://u-boot.readthedocs.io/en/latest/develop/distro.html#boot-configuration-files)).
 
+More info about the internals of `u-root` and how to build and customize it
+can be found in [`README_diy-bootdisk.md`](README_diy-bootdisk.md).
+
 Downloads
 ---------
 

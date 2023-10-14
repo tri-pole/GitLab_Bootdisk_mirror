@@ -444,6 +444,28 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   If you already have a Linux installation on eMMC you can of course also adapt
   that, as outlined above, to host also `Petitboot` or `u-root`.
 
+  ### Building a FIT image
+
+  Since both the kernel and the initramfs, and most likely also the dtb used to
+  start either `Petitboot` or `u-root` will remain the same for long periods of
+  time it can sometimes be convenient to pack all three into a single
+  [Flattened Image Tree (FIT)](https://u-boot.readthedocs.io/en/latest/usage/fit/source_file_format.html)
+  format file.
+  A FIT image can be read and loaded by newer `u-boot` (incl. all recent
+  chainloader `u-bot.ext`) and is easy to create a FIT image using a image
+  source file (.its).
+  Examples of image source files are given in the `u-boot` documentation and
+  also in many other places, e.g.
+  [here](https://www.gibbard.me/linux_fit_images/).
+  The command used to create the FIT image is then
+
+  `mkimage -f image.its image.itb`
+
+  where `image.its` is the source file description and`image.itb` is the
+  resulting FIT image. (The FIT image can be referenced in `extlinux.conf` via
+  e.g. a `KERNEL /image.itb` option and an `APPEND` option specifying the
+  kernel command line parameters to be used for the kernel inside `image.itb`.)
+
   ## Some notes relating to `u-boot`
 
   The following is not needed to set up a bootdisk but might help understand
