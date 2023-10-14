@@ -452,16 +452,16 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   [Flattened Image Tree (FIT)](https://u-boot.readthedocs.io/en/latest/usage/fit/source_file_format.html)
   format file.
   A FIT image can be read and loaded by newer `u-boot` (incl. all recent
-  chainloader `u-bot.ext`) and is easy to create a FIT image using a image
-  source file (.its).
-  Examples of image source files are given in the `u-boot` documentation and
-  also in many other places, e.g.
+  chainloader `u-boot.ext`) and is easy to create a FIT image using an image
+  tree source file (.its).
+  Examples of image tree source files are given in the `u-boot` documentation
+  and also in many other places, e.g.
   [here](https://www.gibbard.me/linux_fit_images/).
   The command used to create the FIT image is then
 
   `mkimage -f image.its image.itb`
 
-  where `image.its` is the source file description and`image.itb` is the
+  where `image.its` is the image tree source file and`image.itb` is the
   resulting FIT image. (The FIT image can be referenced in `extlinux.conf` via
   e.g. a `KERNEL /image.itb` option and an `APPEND` option specifying the
   kernel command line parameters to be used for the kernel inside `image.itb`.)
