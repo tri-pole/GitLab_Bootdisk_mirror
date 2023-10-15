@@ -671,15 +671,18 @@ bootfs and use the bootloader/bootmanager as a middle stage in the booting
 process. With such an installation it is possible to have multiple kernels
 installed to choose from at the bootmanager prompt. It is also possible to boot
 kernels (and Linux OSes) installed on other attached removable media.
+For more info on such "bootdisk" booting, see
+https://gitlab.com/tripole-inc/bootdisk
 
 To install e.g. Petitboot onto this bootfs, do the following:
-(For locations of the downloads, see https://gitlab.com/tripole-inc/bootdisk)
 
-(1) Get the latest initramfs which contains Petitboot (currently this is
-    initramfs-petitboot-0v25.cpio.gz).
-(2) Get a recent vmlinuz version of the kernels in the koop-3pole series.
-(3) Copy the vmlinuz and initramfs-petitboot to the top level on the bootfs.
-(4) Add a default entry in extlinux.conf corresponding to vmlinuz/initramfs
+(1) Download the latest tarball with the Petitboot/u-root bootloaders, e.g. in
+    the form of multi-bootdisk-<version>.tgz (see Gitlab linked to above)
+(2) Unpack the tarball in some temporary directory.
+(3) Copy one of the vmlinuz files from the unpacked tarball to the top level
+    on the bootfs and likewise copy the initrd for Petitboot from the unpacked
+    tarball to the top level of the bootfs.
+(4) Add a default entry in extlinux.conf corresponding to the vmlinuz/initramfs
 (5) Reboot into Petitboot
 
 The procedure is similar when using a bootdisk with the u-root bootloader.

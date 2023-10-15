@@ -129,7 +129,7 @@ compressed_img=yes # {yes,no}
 # Example for Ophub/Flippy kernel.
 # krnver_str="6.1.38-ophub" # Kernel name/release str., plain text.
 # Example for koop-3pole kernel.
-krnver_str="6.1.54-koop-3pole" # Kernel name/release str., plain text.
+krnver_str="6.1.57-koop-3pole" # Kernel name/release str., plain text.
 
 # The selected zram compression method here must match what the kernel supports
 # (if unsure, set to zstd). See /etc/default/zramswap
@@ -150,6 +150,7 @@ socdtbs_list=("amlogic" "allwinner" "rockchip")
 
 # dtb name in uEnv.ini/extlinux.conf (dtb must be in boot-*.tar.gz pkg).
 dtbfile_name=meson-g12b-gtking-pro.dtb
+dtbname_in_grubcfg=no # {"yes","no"} Only useful if bootloader can use it.
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
 ophub_repo_url="https://github.com/ophub"
@@ -175,9 +176,9 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # (3) Daily build of an LTS release (e.g. Focal, Jammy).
 case "$distro_release" in
     "mantic")
-        distro_buildfile=mantic-base-arm64.tar.gz
-        distro_urlbase=$distro_urlbase/daily
-        distro_buildurl=${distro_urlbase}/current/${distro_buildfile}
+        distro_buildfile=ubuntu-base-23.10-base-arm64.tar.gz
+        distro_urlbase=$distro_urlbase/releases
+        distro_buildurl=${distro_urlbase}/mantic/release/${distro_buildfile}
     ;;
     "lunar")
         distro_buildfile=ubuntu-base-23.04-base-arm64.tar.gz
@@ -552,13 +553,16 @@ EOF
 
 mkgrubcfg_simple_p2=$(cat <<"EOF1"
 
+devicetree_str="# devicetree /path/to/dtbfile # not used currently"
+devicetree_msg="Devicetree: dtb file not specified or missing, skipping."
 if [[ "$#" -eq 1 ]]; then
     dtbfile_full=$(readlink -f $1)
-    devicetree_str="devicetree $dtbfile_full"
-    echo "Using dtb file: $dtbfile_full"
-else
-    devicetree_str="# devicetree /path/to/dtbfile # not used currently"
+    if [[ -f $dtbfile_full ]]; then
+        devicetree_str="devicetree $dtbfile_full"
+        devicetree_msg="Devicetree: $dtbfile_full"
+    fi
 fi
+echo $devicetree_msg
 
 cd /boot
 
@@ -572,7 +576,7 @@ for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
 
     kernel_path=/boot/$kernel_name
     initrd_path=/boot/$initrd_name
-    echo "Adding entry: $distro_name_ $distro_edition_ (kernel $kernel_version)"
+    echo "Adding menu entry: $distro_name_ $distro_edition_ (kernel $kernel_version)"
     # Note: The leading tabs in the here-document below are important.
 	cat <<-EOF >> grub/grub.cfg
 	menuentry "$distro_name_ $distro_edition_ (kernel $kernel_version)" {
@@ -665,34 +669,37 @@ EOF
 )
 
 README_auxbootldr=$(cat <<"EOF"
-It is easy to install Petitboot or u-root on this bootfs. With any of these two
-bootloaders/bootmanagers you can boot "generic" UEFI+grub (and more generally
-images with a valid grub config). If this image is installed on SD (so that it
-is first in the boot chain, as defined by aml_autoscript), the bootloader will
-start and scan the SD and other attached USB devices for bootable configurations
-which can be conveniently selected and booted via a text based UI. For more
-info on such "bootdisk" booting, see https://gitlab.com/tripole-inc/bootdisk
+It is easy to install Petitboot or u-root on this bootfs and with any of these
+two bootloaders/bootmanagers you can boot "generic" UEFI+grub Linux images
+(and more generally images with a valid grub config). If the Linux image is
+installed on SD (so that it is first in the boot chain, as defined by
+aml_autoscript), the bootloader will start and scan the SD and other attached
+USB devices for bootable configurations which can be conveniently selected and
+booted via a text based UI. For more info on such "bootdisk" booting, see
+https://gitlab.com/tripole-inc/bootdisk
 
-To install e.g. Petitboot on this bootfs (same for u-root), do the following:
+To install e.g. Petitboot on this bootfs (similar for u-root), do the following:
 
-(1) Download the latest tarball with Petitboot in the non chainloaded version,
-    e.g. petit-bootdisk-nc_0v25.tgz
+(1) Download the latest tarball with the Petitboot/u-root bootloaders, e.g. in
+    the form of multi-bootdisk-<version>.tgz (see Gitlab linked to above).
 (2) Unpack the tarball in some temporary directory.
-(3) Copy the existing Image and uInitrd on the bootfs to some backup location.
-(4) Copy the Image (or zImage; it is an Image) from the tarball to Image on the
-    bootfs and copy the uInitrd from the tarball to uInitrd on the bootfs.
-(5) Make a uImage from Image/zImage using the script /usr/local/bin/mkuimg.bash
-(6) Reboot into Petitboot.
+(3) Copy the existing uImage and uInitrd on the bootfs to some backup location.
+(4) Copy the kernel uImage file from the unpacked tarball to uImage on the
+    bootfs and copy the uInitrd from the unpacked tarball to uInitrd on the
+    bootfs. (In the tarball, there are several versions of uImage and uInitrd
+    available, apart from the default ones, uImage and uInitrd.)
+(5) Reboot into Petitboot.
 
-(The procedure is similar when starting Petitboot via chainloader u-boot.ext
-check the scripts and structure in e.g. petit-bootdisk-0v24.tgz)
+The procedure is similar when starting Petitboot via chainloader u-boot.ext
+check the scripts and structure in e.g. multi-bootdisk-<version>.tgz
 
-To boot this disk image with u-boot requires a working resident/vendor u-boot
-bootloader but this restriction can be removed if a "hidden" bootloader, i.e.
-u-boot, is installed in the gap leading up to the first partition. With such a
-bootloader properly installed, the disk will always boot from SD or USB on
-Amlogic devices, regardless of the state of the resident/vendor u-boot. More
-inforomation about this can be found in README_diy-bootdisk.md at Gitlab.
+A note about u-boot: To boot this disk image with u-boot requires a working
+resident/vendor u-boot bootloader but this restriction can be removed if a
+"hidden" bootloader, i.e. u-boot, is installed in the gap leading up to the
+first partition. With such a bootloader properly installed, the disk will
+always boot from SD or USB on Amlogic devices, regardless of the state of the
+resident/vendor u-boot. More information about this can be found in
+README_diy-bootdisk.md at Gitlab.
 EOF
 )
 
@@ -919,12 +926,13 @@ for socdtbs_name in ${socdtbs_list[*]}; do
 done
 echo " Done."
 
-echo -n -e ${i_msg}" Setting up dtb file on bootfs..."
 dtbfile_loc=$(find ${rootfs_mnt}/boot/dtbs -name ${dtbfile_name})
 if [[ -f $dtbfile_loc ]]; then
     cp $dtbfile_loc ${bootfs_mnt}
     dtbfile_rootfs=${dtbfile_loc#${rootfs_mnt}}
-    ln -s $dtbfile_rootfs ${rootfs_mnt}/root/dtbfile_link
+    if [[ "$dtbname_in_grubcfg" == "yes" ]]; then
+        ln -s $dtbfile_rootfs ${rootfs_mnt}/root/dtbfile_link
+    fi
 else
     echo -e ${e_msg}" Unable to find the dtb file ${dtbfile_name}, exiting."
     exit 1
@@ -953,7 +961,7 @@ echo -e ${i_msg}" Entering chroot jail. Installing some pkgs., running some scri
 systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
                /root/ubuntu_custom_inst.bash
 rm ${rootfs_mnt}/root/ubuntu_custom_inst.bash
-rm ${rootfs_mnt}/root/dtbfile_link
+rm ${rootfs_mnt}/root/dtbfile_link >/dev/null 2>&1 # It might not exist.
 sleep 2 # Just to be able to read some of the messages.
 echo "Done."
 
