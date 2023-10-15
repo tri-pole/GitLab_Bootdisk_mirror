@@ -39,14 +39,14 @@ question (various Internet sources describe this).
 ## Distributions
 
 In general, the requirements for a Linux ARM64 distribution to boot and run
-from USB is that there is a kernel and initramfs available with sufficient
-support for the boot medium (here USB) and for the TV-box/SBC (SoC) in
-question.
+from USB is that there is a kernel and initramfs available on the image with
+sufficient support for the boot medium (here USB) and for the TV-box/SBC (SoC)
+in question.
 For some of the distributions everything is in place on the images already as
 posted on the download site, on others only minor tweaks are needed (such as
 setting up a `grub.cfg` file).
 
-In some cases a new kernel needs to be installed and for others a new image
+In a few cases a new kernel needs to be installed and for others a new image
 may need to be built because of shortcomings in the existing installers.
 (Examples of these scenarios are given in the adjacent README files.)
 
@@ -69,17 +69,8 @@ The ARM64 live iso images can be run as-is.
 
 ### Fedora
 
-The Fedora 37 Generic ARM64 images can be booted and run as-is.
-The images can be found e.g. [here](https://dl.fedoraproject.org/pub/fedora/linux/releases/37/).
-
-For Fedora 38 and onwards it is necessary to use the latest version of the
-initramfs containing Petitboot (to boot Fedora kernels newer than 6.1.y).
-As of this writing the latest version of the Petitboot initramfs is 0v25 and
-it can be found at the same place as the petit-bootdisks, see
-[`README_petit-bootdisk.md`](README_petit-bootdisk.md).
-The new version of the initramfs (which has a newer version of the kexec load
-command) can be used as a direct drop-in replacement to upgrade an already
-existing petit-bootdisk.
+The Fedora 38 Generic ARM64 images can be booted and run as-is.
+The images can be found e.g. [here](https://dl.fedoraproject.org/pub/fedora/linux/releases/38).
 
 Note: On some (older) Fedora releases the graphical login may not function
 properly after package upgrades (this problem was present also on Fedora 36).
