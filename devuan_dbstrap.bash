@@ -139,9 +139,8 @@ uboot_list=(
 # uboot_ext_local=u-boot.bin-gtkp-pb
 # uboot_ext_local_bldtag=u-boot-amlogic-20220809
 uboot_ext_local=u-boot.bin-gtkp-pb-1s-ctrlc
-uboot_ext_local_bldtag=u-boot-amlogic-20230131
-uboot_ext_local_url1="https://mega.nz/folder/rUdggRyb#11ffZO8FBqN-gCcXGBcd4g"
-uboot_ext_local_url2="https://mega.nz/folder/fBlwCYjL#Yjg6iU0GwP4Pobu0TrJzPQ"
+uboot_ext_local_bldtag=u-boot-amlogic-v2023.10
+uboot_ext_local_url="https://mega.nz/folder/bIdjwI6B#mojtTtZPufsHD9v7gTkjdQ"
 
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
@@ -431,8 +430,7 @@ https://source.denx.de/u-boot/custodians/u-boot-amlogic
 using the tag $uboot_ext_local_bldtag
 with gtk pro defconf and usb_start added as preboot command.
 For more info about $uboot_ext_local and downloads of similar files see
-$uboot_ext_local_url1
-$uboot_ext_local_url2
+$uboot_ext_local_url
 EOF
 )
 

@@ -111,7 +111,7 @@
   A good selection of candidates can be found on the images produced by
   [Ophub](https://github.com/ophub/amlogic-s9xxx-armbian) and some of them
   can also be found on the bootdisks (for Amlogic s922x SOC, see
-  also [here](https://mega.nz/folder/rUdggRyb#11ffZO8FBqN-gCcXGBcd4g)).
+  also [here](https://mega.nz/folder/bIdjwI6B#mojtTtZPufsHD9v7gTkjdQ)).
   (Ophub refers to the binaries used for chainloading as "overload"
   bootloaders, to distinguish them from the ones to be used as "hidden"
   bootloaders (see below) which he refers to simply as "bootloaders".
@@ -451,20 +451,24 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   time it can sometimes be convenient to pack all three into a single
   [Flattened Image Tree (FIT)](https://u-boot.readthedocs.io/en/latest/usage/fit/source_file_format.html)
   format file.
-  A FIT image can be read and loaded by newer `u-boot` (incl. all recent
-  chainloader `u-boot.ext`) and is easy to create a FIT image using an image
-  tree source file (.its).
+  A FIT image can be read and loaded by newer `u-boot` (incl. recent
+  chainloader `u-boot.ext`) provided support for FIT images is enabled in the
+  compile config.
+  It is moreover easy to create a FIT image using an image tree source file
+  (.its).
   Examples of image tree source files are given in the `u-boot` documentation
   and also in many other places, e.g.
-  [here](https://www.gibbard.me/linux_fit_images/).
+  [here](https://www.gibbard.me/linux_fit_images/) (make sure that the arch
+  tag in the .its file is set to the correct value e.g. arm64).
   The command used to create the FIT image is then
 
   `mkimage -f image.its image.itb`
 
-  where `image.its` is the image tree source file and`image.itb` is the
-  resulting FIT image. (The FIT image can be referenced in `extlinux.conf` via
-  e.g. a `KERNEL /image.itb` option and an `APPEND` option specifying the
-  kernel command line parameters to be used for the kernel inside `image.itb`.)
+  where `image.its` is the image tree source file and `image.itb` is the
+  resulting FIT image.
+  The FIT image can then be referenced in `extlinux.conf` via e.g. a
+  `KERNEL /image.itb` option and an `APPEND` option specifying the kernel
+  command line parameters to be used for the kernel inside `image.itb`.
 
   ## Some notes relating to `u-boot`
 

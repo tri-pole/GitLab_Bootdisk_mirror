@@ -99,7 +99,7 @@
 # ------------------------------- parameters ---------------------------------
 
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
-ubuntu_edition=Lunar    # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
+ubuntu_edition=Mantic    # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
 debian_name=Debian      # Used for the image name and in grub.cfg
 debian_edition=Bullseye # Tested with Bullseye, Bookworm, Sid
 
@@ -140,9 +140,8 @@ uboot_list=(
 # uboot_ext_local=u-boot.bin-gtkp-pb
 # uboot_ext_local_bldtag=u-boot-amlogic-20220809
 uboot_ext_local=u-boot.bin-gtkp-pb-1s-ctrlc
-uboot_ext_local_bldtag=u-boot-amlogic-20230131
-uboot_ext_local_url1="https://mega.nz/folder/rUdggRyb#11ffZO8FBqN-gCcXGBcd4g"
-uboot_ext_local_url2="https://mega.nz/folder/fBlwCYjL#Yjg6iU0GwP4Pobu0TrJzPQ"
+uboot_ext_local_bldtag=u-boot-amlogic-v2023.10
+uboot_ext_local_url="https://mega.nz/folder/bIdjwI6B#mojtTtZPufsHD9v7gTkjdQ"
 
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
@@ -549,7 +548,9 @@ the top level on the boot (fat) partition. Then edit extlinux/extlinux.conf
 according to the instructions inside that file. The files here are from
 Ophub's repo at https://github.com/ophub/u-boot where also suitable candidates
 for u-boot.ext for other platforms (e.g. Allwinner, Rockchip) can be found.
-Note: Some chainloaders here can not boot newer kernels/initrfamfs.
+Note: Some chainloaders here can not boot newer kernels/initramfs.
+Finally, an excellent exposition of the boot flow for Amlogic can be found at
+https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
 EOF
 )
 
@@ -559,8 +560,7 @@ https://source.denx.de/u-boot/custodians/u-boot-amlogic
 using the tag $uboot_ext_local_bldtag
 with gtk pro defconf and usb_start added as preboot command.
 For more info about $uboot_ext_local and downloads of similar files see
-$uboot_ext_local_url1
-$uboot_ext_local_url2
+$uboot_ext_local_url
 Finally, an excellent exposition of the boot flow for Amlogic can be found at
 https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
 EOF
@@ -621,7 +621,19 @@ EOF
 
 mkgrubcfg_simple_p2=$(cat <<"EOF1"
 
+devicetree_str="# devicetree /path/to/dtbfile # not used currently"
+devicetree_msg="Devicetree: dtb file not specified or missing, skipping."
+if [[ "$#" -eq 1 ]]; then
+    dtbfile_full=$(readlink -f $1)
+    if [[ -f $dtbfile_full ]]; then
+        devicetree_str="devicetree $dtbfile_full"
+        devicetree_msg="Devicetree: $dtbfile_full"
+    fi
+fi
+echo $devicetree_msg
+
 cd /boot
+
 if [[ -f grub/grub.cfg ]]; then
     mv grub/grub.cfg grub/grub.cfg.bak
 fi
@@ -632,14 +644,14 @@ for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
 
     kernel_path=/boot/$kernel_name
     initrd_path=/boot/$initrd_name
-    echo "Adding entry: $distro_name_ $distro_edition_ (kernel $kernel_version)"
+    echo "Adding menu entry: $distro_name_ $distro_edition_ (kernel $kernel_version)"
     # Note: The leading tabs in the here-document below are important.
 	cat <<-EOF >> grub/grub.cfg
 	menuentry "$distro_name_ $distro_edition_ (kernel $kernel_version)" {
 	
 	linux  $kernel_path $kernel_cmdline_
 	initrd $initrd_path
-	# devicetree /dtbs/amlogic/${dtbfile_name_} # not used currently
+	$devicetree_str
 	
 	}
 	
@@ -1075,7 +1087,7 @@ if [[ "$docleanup_after" == "yes" ]]; then
     echo -n -e ${i_msg}" Doing final cleanup of build area..."
     rm -rf $tmpfile_dir
     rmdir $rootfs_mnt
-    echo " Done."    
+    echo " Done."
 fi
 
 echo -e "\n\033[92m -- Finished -- \033[0m\n"
