@@ -42,15 +42,16 @@ in the file [`README_diy-bootdisk.md`](README_diy-bootdisk.md)
 
 #### Building Petitboot and u-root
 
-An initramfs for `Petitboot` can be built either manually, as outlined in
-[`README_diy-bootdisk.md`](README_diy-bootdisk.md), or e.g. using the script
-[`petitboot_mkinird.bash`](petitboot_mkinitrd.bash).
+An initramfs for `Petitboot` can be built from the C source either manually,
+as outlined in [`README_diy-bootdisk.md`](README_diy-bootdisk.md), or e.g.
+using the script [`petitboot_mkinird.bash`](petitboot_mkinitrd.bash).
 Initramfses with `Petitboot` built using this script can be found at the
 download location listed in
 [`README_diy-bootdisk.md`](README_diy-bootdisk.md).
 
-An initramfs for `u-root` can be built from publicly available `golang` source
-code. For instructions and links see e.g.
+An initramfs for `u-root` can be built from the `Go` source using a
+recent version of (the toolchain) `Go`.
+For instructions and links see e.g.
 [`README_diy-bootdisk.md`](README_diy-bootdisk.md) where also also a download
 location for pre build initramfses with `u-root` is listed.
 
