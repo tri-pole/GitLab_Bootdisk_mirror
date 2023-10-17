@@ -24,9 +24,10 @@ configurations,
 [including](https://github.com/u-root/u-root/blob/main/pkg/boot/syslinux/syslinux.go)
 the `extlinux.conf` configurations used by
 [`u-boot`](https://en.wikipedia.org/wiki/Das_U-Boot).
+Both `Petitboot` and `u-root` are implemented in the form of an initramfs.
 
 General info about the bootdisks `petit-bootdisk` and `u-root-bootdisk`
-(incl. download links) can can be found in the files
+(incl. download links) can be found in the files
 [`README_petit-bootdisk.md`](README_petit-bootdisk.md) and
 [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), respectively.
 In [`README_working_distros.md`](README_working_distros.md) there is a an
@@ -35,13 +36,19 @@ bootdisks.
 Instructions for (manually) recreating or adapting the bootdisks can be found
 in the file [`README_diy-bootdisk.md`](README_diy-bootdisk.md)
 
-#### Building Petitboot
+#### Building Petitboot and u-root
 
-Petitboot is implemented in the form of an initramfs which can be built either
-manually (as outlined in the documentation listed above) or e.g. using the
-script [`petitboot_mkinird.bash`](petitboot_mkinitrd.bash).
-Initramfses built using this script can be found at the download location
-listed in [`README_petit-bootdisk.md`](README_petit-bootdisk.md).
+An initramfs for `Petitboot` can be built either manually, as outlined in
+[`README_diy-bootdisk.md`](README_diy-bootdisk.md), or e.g. using the script
+[`petitboot_mkinird.bash`](petitboot_mkinitrd.bash).
+Initramfses with `Petitboot` built using this script can be found at the
+download location listed in
+[`README_diy-bootdisk.md`](README_diy-bootdisk.md).
+
+An initramfs for `u-root` can be built from publicly available `golang` source
+code. For instructions and links see e.g.
+[`README_diy-bootdisk.md`](README_diy-bootdisk.md) where also also a download
+location for pre build initramfses with `u-root` is listed.
 
 ### ARM64 Linux images
 
@@ -144,12 +151,12 @@ be found [here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
 Some (low resolution) screenshots of some of the bootdisk screens.
 
-### petit-bootdisk and petit-bootdisk-nc
+### Petitboot
 
 ![Boot menu in Petitboot](/images/petitboot-bootscreen.png "petitboot")*The
 boot menu screen encountered after boot with a Petitboot bootdisk.*
 
-### u-root-bootdisk and u-root-bootdisk-nc
+### u-root
 
 ![Boot menu in u-root](/images/u-root-bootmenu.png "u-root boot")*The menu
 of bootable images displayed after u-root has scanned the attached devices
