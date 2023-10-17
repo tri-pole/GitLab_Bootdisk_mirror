@@ -1,23 +1,27 @@
 # bootdisk
 
-This repo contains information relating to
-[bootdisks](https://en.wikipedia.org/wiki/Boot_disk) for TV-boxes/SBCs based on
-the ARM64 architecture.
-With these bootdisks you can boot e.g. many ("generic") ARM64 Linux images
-from major distributions that have grub boot configurations, such as Fedora,
-Ubuntu, Debian and openSuse.
-A good use case for TV-boxes is to have the bootdisk installed on SD and have
-several Linux distros installed on USBs to choose from.
+This repo contains information about some
+[bootloaders](https://en.wikipedia.org/wiki/Bootloader) and
+[bootdisks](https://en.wikipedia.org/wiki/Boot_disk) for
+[TV-boxes](https://en.wikipedia.org/wiki/Digital_media_player) and
+[SBCs](https://en.wikipedia.org/wiki/Single-board_computer) based on the ARM64
+architecture.
+With these bootloaders and bootdisks you can boot e.g. many ("generic") ARM64
+Linux images from major distributions that have grub boot configurations, such
+as Fedora, Ubuntu, Debian and openSuse.
+A good use case for TV-boxes/SBCs is to have a bootdisk installed on SD and
+have several Linux distros installed on USBs to choose from.
 
-The bootdisks are built around the two boot loaders
+The bootdisks are built around the two bootloaders
 [`Petitboot`](https://open-power.github.io/petitboot/)
 and [`u-root`](https://u-root.org/).
-Both `Petitboot` and `u-root` employ a chainloading mechanism based on the
-Linux [`kexec`](https://en.wikipedia.org/wiki/Kexec)
+Both `Petitboot` and `u-root` employ a
+[chainloading](https://en.wikipedia.org/wiki/Chain_loading) mechanism
+utilizing the Linux [`kexec`](https://en.wikipedia.org/wiki/Kexec)
 [system call](https://wiki.archlinux.org/title/Kexec).
-The `Petitboot` boot loader provides a somewhat nicer UI and can boot
+The `Petitboot` bootloader provides a somewhat nicer UI and can boot
 [grub](https://wiki.archlinux.org/title/GRUB) configurations defined in
-`grub.cfg` whereas the `u-root` boot loader can boot (simple) grub
+`grub.cfg` whereas the `u-root` bootloader can boot (simple) grub
 configurations as well as a subset of
 [syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
 configurations,
