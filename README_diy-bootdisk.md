@@ -179,11 +179,12 @@ and for a direct booted (non chainloaded) disk it could look like this
   The header equipped files are produced with the `mkimage` command (often
   found in the `u-boot-tools` package).
 
-  In `aml_autoscript` it is defined in _what order_ various devices should be
-  searched by `u-boot` for bootable configurations (as described by e.g.
-  `s905_autoscript`).
-  In `s905_autoscript` it is defined _how_ booting should be done with
+  In `aml_autoscript` it is (mostly) defined in _what order_ various devices
+  should be searched by `u-boot` for boot scripts and bootable configurations
+  (as described by e.g.   `s905_autoscript`).
+  In `s905_autoscript` it is (mostly) defined _how_ booting should be done with
   `u-boot`.
+  (The division of tasks between the two scripts is not complete, however.)
 
   The file `aml_autoscript` is strictly only needed when "multiboot" is being
   enabled on a TV-box through the "toothpick procedure".
@@ -213,6 +214,16 @@ and for a direct booted (non chainloaded) disk it could look like this
   other ways than described above but the basic working of `u-boot` and the
   usage of the boot configuration files (e.g. `extlinux.conf`, see below) is
   similar.
+
+  It should be noted that the script files described here are (as with much of
+  the material in these README files) mostly applicable to the older versions
+  of `u-boot` typically found in TV-boxes.
+  Newer versions of `u-boot` use
+  [`u-boot` Standard Boot](https://u-boot.readthedocs.io/en/latest/develop/bootstd.html)
+  where `distro boot` is typically the main boot method and `extlinux.conf` is
+  the main boot configration file.
+  This is what is used when a (recent) `u-boot.ext` is chainloaded after the
+  vendor/resident `u-boot`.
 
   - *Only for non chainloaded disk*
 
@@ -481,7 +492,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   bootable devices, according to a
   [predefined search order](https://u-boot.readthedocs.io/en/latest/board/amlogic/boot-flow.html)
   (not to be confused with `u-boot`'s programmable boot order, as defined e.g.
-  in `aml_autoscript`), and boots the first working bootloader it finds.
+  in `aml_autoscript` and `s905_autoscript`), and boots the first working
+  bootloader it finds.
   This means that even if the resident/vendor (on eMMC) version of `u-boot` is
   non functional (for some reason) the code in the boot ROM will scan e.g. SD
   for a bootloader and if there is one, it will be used.
