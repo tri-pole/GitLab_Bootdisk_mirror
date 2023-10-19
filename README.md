@@ -53,7 +53,7 @@ An initramfs for `u-root` can be built from the `Go` source using a
 recent version of (the toolchain) `Go`.
 For instructions and links see e.g.
 [`README_diy-bootdisk.md`](README_diy-bootdisk.md) where also also a download
-location for pre build initramfses with `u-root` is listed.
+location for pre built initramfses with `u-root` is listed.
 
 ### ARM64 Linux images
 
@@ -88,25 +88,14 @@ produce images of e.g. Chimaera (Bullseye) and Daedalus (Bookworm).
 Images built using this script can be downloaded from
 [here](https://mega.nz/folder/3AUj0RKB#hpWS6VSQUfIZshvVR04PJg).
 
-__Opbuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
-easy to produce an Ubuntu image (Focal, Jammy, Kinetic, Lunar) with an
-[Ophub kernel](https://github.com/ophub/kernel/tree/main/pub/stable).
-This kernel is adapted for Amlogic TV-boxes but has support also for Rockchip
-and Allwinner.
-The script uses a daily official build of the Ubuntu
-[rootfs](https://cdimage.ubuntu.com/ubuntu-base) as a base for the OS.
-Images built using this script can be downloaded from
-[here](https://mega.nz/folder/XEckCbSL#sC0UVeOI9PGRJ8Zxm4FiPw).
-
 __Tribuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
-also possible to produce Ubuntu images with a locally provided kernel, for
-instance mainline Linux with source from [kernel.org](https://kernel.org/) and
-kernel
-[configuration](https://github.com/ophub/amlogic-s9xxx-armbian/tree/main/compile-kernel/tools/config) from Ophub.
+possible to produce Ubuntu images (Focal, Jammy, Kinetic, Lunar) using daily
+official build of the Ubuntu
+[rootfs](https://cdimage.ubuntu.com/ubuntu-base) as a base for the OS and
+with a locally provided kernel, for instance the `koop-3pole` kernel
+described below.
 Images built according to this concept can be downloaded from
 [here](https://mega.nz/folder/KJdAwK4Q#r4HNsKQRkLgT7HTD2s1GLg).
-(A download link for `koop-3pole` line of kernels used on these images is given
-below.)
 
 __Arch Linux:__ An image of Arch Linux ARM64 can be produced with the script
 [`archlnx_mkimg.bash`](archlnx_mkimg.bash) which uses the official Arch Linux
@@ -144,11 +133,16 @@ All the images so created can be booted with the bootdisks.
 ### ARM64 Linux kernel
 
 The script [`arm64_kbuild.bash`](arm64_kbuild.bash) can be used to produce
-(build and pack) kernels with source from `kernel.org` and with kernel config
-and patches provided locally.
-For instance, it can be used to produce the `koop-3pole` line of ARM64 kernels
-mentioned above (on a x86_64 Ubuntu Focal or Jammy host, or natively on an
-ARM64 Ubuntu Jammy host).
+(i.e. build and pack, on a x86_64 Ubuntu Focal or Jammy host, or natively
+on an ARM64 Ubuntu Jammy host) kernels with source from
+[kernel.org](https://kernel.org) and with kernel config and patches provided
+locally.
+For instance, it can be used to produce the `koop-3pole` line of ARM64
+kernels which use a kernel
+[config](https://github.com/ophub/amlogic-s9xxx-armbian/tree/main/compile-kernel/tools/config)
+from Ophub.
+This kernel is adapted for Amlogic TV-boxes but has support also for Rockchip
+and Allwinner.
 Compiled packages of the `koop-3pole` series of kernels (and a few more) can
 be found [here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
