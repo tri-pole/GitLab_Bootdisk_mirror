@@ -88,7 +88,7 @@ The skeleton image `bootdisk_skel.img` (one single, empty, FAT partition)
 at the link above can be used as a basis when building a bootdisk from a
 tarball (just uncompress the tarball onto the skeleton image).
 
-Builds of the the initramfs for `u-root` can be found
+Builds of the initramfs for `u-root` can be found
 [here](https://mega.nz/fm/ndMWCBKJ).
 
 Caveats
