@@ -481,6 +481,11 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   `KERNEL /image.itb` option and an `APPEND` option specifying the kernel
   command line parameters to be used for the kernel inside `image.itb`.
 
+   The FIT image can of course also be booted with the `bootm` command in
+   `u-boot`. (An example of an implementation using this boot method can be
+   found in the mini `petit-bootdisk` at the download location given in
+   [README_petit-bootdisk.md](README_petit-bootdisk.md).)
+
   ## Some notes relating to `u-boot`
 
   The following is not needed to set up a bootdisk but might help understand
