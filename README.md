@@ -93,7 +93,8 @@ possible to produce Ubuntu images (Focal, Jammy, Kinetic, Lunar) using daily
 official build of the Ubuntu
 [rootfs](https://cdimage.ubuntu.com/ubuntu-base) as a base for the OS and
 with a locally provided kernel, for instance the `koop-3pole` kernel
-described below.
+described below or an
+[Ophub kernel](https://github.com/ophub/kernel/releases/tag/kernel_stable).
 Images built according to this concept can be downloaded from
 [here](https://mega.nz/folder/KJdAwK4Q#r4HNsKQRkLgT7HTD2s1GLg).
 
@@ -105,8 +106,8 @@ Images built using this script can be downloaded from
 
 __Trinjaro:__ With the script [`archlnx_mkimg.bash`](archlnx_mkimg.bash) it is
 also possible to produce Manjaro images with a Manjaro kernel or a locally
-provided kernel, for instance an Ophub kernel or the one of the `koop-3pole`
-kernels mentioned above.
+provided kernel, for instance one of the `koop-3pole` kernels mentioned above
+or an Ophub kernel.
 An image built using this recipe with a `koop-3pole` kernel can be downloaded
 from [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
 (Note: The Trinjaro images are very crude compared to the polished high
