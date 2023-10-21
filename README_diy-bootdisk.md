@@ -267,10 +267,10 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   Moreover, these newer versions of `u-boot` can typically handle a variety of
   formats for the kernel and initramfs, in particular files without the
   `u-boot` tag/header.
-  However, the `u-boot` installed (as resident/vendor `u-boot`) on most TV-box
-  produced up to recently are based on a rather old codebase for `u-boot` which
-  doesn't support booting via `extlinux.conf` (hence the need for a
-  chainloader).
+  However, the `u-boot` installed (as resident/vendor `u-boot`) on most
+  TV-boxes produced up to recently are based on a rather old codebase for
+  `u-boot` which doesn't support booting via `extlinux.conf`; hence the
+  option to use a chainloader on the bootdisk.
 
   #### Kernel
 
@@ -368,10 +368,10 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   command) and some of the commands from
   [e2fsprogs](http://e2fsprogs.sourceforge.net).
 
-  (Note: For tips on how to configure and compile some these packages, see the
-  code in [`petitboot_mkinitrd.bash`](petitboot_mkinitrd.bash). An alternative
-  for handling of dependencies and building can be to use
-  [buildroot](https://buildroot.org/).)
+  For tips on how to configure and compile some these packages, see the code
+  in [`petitboot_mkinitrd.bash`](petitboot_mkinitrd.bash).
+  An alternative for handling of dependencies and building can be to use
+  [buildroot](https://buildroot.org/).
 
   __u-root:__ The initramfs containing `u-root` can be recreated and adapted by
   downloading and compiling the `u-root` code from
@@ -453,7 +453,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   images copied over to separate partitions eMMC.
 
   If you already have a Linux installation on eMMC you can of course also adapt
-  that, as outlined above, to host also `Petitboot` or `u-root`.
+  that, as outlined above, to host also `Petitboot` or `u-root` as (secondary)
+  bootloader/manager.
 
   ### Building a FIT image
 
@@ -506,6 +507,9 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   bootloader to the gap on a bootdisk which will then do the same job as the
   resident/vendor `u-boot` would otherwise do so that the bootdisk will always
   boot.
+  (If a hidden bootloader exists on e.g. SD and the resident/vendor u-boot is
+  indeed functional, the resident/vendor u-boot will proceed to execute also
+  the code in the hidden bootloader.)
 
   It is easy to add a u-boot bootloader to an SD, provided there is at least a
   2M gap before the first partition (some builds of `u-boot` require up to 4M,
@@ -515,18 +519,22 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   [FIP blobs](https://github.com/LibreELEC/amlogic-boot-fip)
   added, which is used for
   ["cold booting"](https://github.com/ARM-software/arm-trusted-firmware/blob/master/docs/design/firmware-design.rst).
+  The versions intended for installation on SD usually have a name of the type
+  `u-boot.bin.sd*` and these include also boot/signature code in block 0 (MBR).
   (The smaller versions of `u-boot.bin`, about 800k, are typically used for
   chainloading in the form of `u-boot.ext`, which is a form of "warm booting".)
-  Instructions on how to copy the bootloader onto the SD can be found in many
+  Instructions on how to copy the bootloader onto an SD can be found in many
   places.
   The operation is typically done in two passes with the `dd` command; first
   the bootloader signature/bootstrap code in the first part of sector 0 (MBR)
   and then the body of the bootloader code in sector 1 and onward in the gap
   before first partition.
 
-  A note on eMMC and booting: The eMMC chips used in TV-boxes come pre
-  partitioned according to the (JEDEC) standard mobile eMMC partition scheme;
-  one large user partition (e.g. 8G, 16G, 32G), one
+  #### A note on eMMC and booting
+
+  The eMMC chips used in TV-boxes come pre partitioned according to the
+  (JEDEC) standard mobile eMMC partition scheme; one large user partition
+  (e.g. 8G, 16G, 32G), one
   [replay protected memory block (rpmb)](https://en.wikipedia.org/wiki/Replay_Protected_Memory_Block)
   partition of 4M and two 4M partitions labeled boot0 and boot1.
   The latter two partitions hold copies of the resident/vendor bootloader

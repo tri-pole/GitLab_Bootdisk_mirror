@@ -51,7 +51,7 @@ download location listed in
 
 An initramfs for `u-root` can be built from the `Go` source using a
 recent version of (the toolchain) `Go`, as outlined in
-[`README_diy-bootdisk.md`](README_diy-bootdisk.md)
+[`README_diy-bootdisk.md`](README_diy-bootdisk.md).
 Initramfses with `u-root` built like this can be found at the download
 location listed in
 [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md).
