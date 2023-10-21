@@ -47,13 +47,14 @@ as outlined in [`README_diy-bootdisk.md`](README_diy-bootdisk.md), or e.g.
 using the script [`petitboot_mkinird.bash`](petitboot_mkinitrd.bash).
 Initramfses with `Petitboot` built using this script can be found at the
 download location listed in
-[`README_diy-bootdisk.md`](README_diy-bootdisk.md).
+[`README_petit-bootdisk.md`](README_petit-bootdisk.md).
 
 An initramfs for `u-root` can be built from the `Go` source using a
-recent version of (the toolchain) `Go`.
-For instructions and links see e.g.
-[`README_diy-bootdisk.md`](README_diy-bootdisk.md) where also also a download
-location for pre built initramfses with `u-root` is listed.
+recent version of (the toolchain) `Go`, as outlined in
+[`README_diy-bootdisk.md`](README_diy-bootdisk.md)
+Initramfses with `u-root` built like this can be found at the download
+location listed in
+[`README_u-root-bootdisk.md`](README_u-root-bootdisk.md).
 
 ### ARM64 Linux images
 
