@@ -210,6 +210,9 @@ and for a direct booted (non chainloaded) disk it could look like this
   [7Ji's blog](https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html)
   where also more details about the script files discussed above are given (see
   also [here](https://github.com/FauthD/amlogic-u-boot-scripts)).
+  (It can also be helpful to study the default `u-boot` boot procedure as it is
+  defined without boot scripts in the `u-boot` source code file
+  `include/config_distro_bootcmd.h`.)
   For other SoC brands than Amlogic the boot order of `u-boot` is defined in
   other ways than described above but the basic working of `u-boot` and the
   usage of the boot configuration files (e.g. `extlinux.conf`, see below) is
@@ -425,8 +428,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
 
   It is straightforward to install `Petitboot` or `u-root`, using a non
   chainloaded or chainloaded setup, to a vfat partition on eMMC.
-  With such an installation, the TV-box/SBC has a boot manager that can handle
-  booting of Linux from eMMC and also from removable media SD and USB.
+  With such an installation, the TV-box/SBC has a general boot manager that can
+  handle booting of Linux from eMMC and also from removable media SD and USB.
   The only thing that needs to be changed, compared to an installation on
   SD/USB, is that a bootscript `emmc_autoscript` has to be addded.
   (A version of the script `emmc_autoscript` is outlined in the file
@@ -447,10 +450,21 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   (To be sure you can search for files under `/etc` that contain the string
   "UUID".)
 
-  This concept has been tested and verified on Ugoos AM6 plus with `Petitboot`
-  on eMMC, both with resident/vendor `u-boot` and mainline (GTK pro) `u-boot`
-  installed on eMMC, and with the rootfs contents of several different Linux
-  images copied over to separate partitions eMMC.
+  Note that Amlogic boxes typically come with a proprietary partitioning
+  scheme on eMMC and this scheme must be left intact for the vendor/resident
+  u-boot to work properly.
+  Mainline `u-boot`, on the other hand, can in general be fitted into a
+  standard 4M gap before the first partition, see below and the `u-boot`
+  documentation (e.g. the Amlogic
+  [specific](https://docs.u-boot.org/en/latest/board/amlogic/index.html#boot-documentation) documentation).
+  For more info on the Amlogic partitioning scheme, see e.g. the documentation
+  for [7ji's `Ampart` partitioning tool](https://github.com/7Ji/ampart).
+
+  The concept with such a general boot manager installed on eMMC has been
+  tested and verified on Ugoos AM6 plus with `Petitboot` on eMMC, both with
+  resident/vendor `u-boot` and mainline (GTK pro) `u-boot` installed on eMMC,
+  and with the rootfs contents of several different Linux images copied over
+  to separate partitions eMMC.
 
   If you already have a Linux installation on eMMC you can of course also adapt
   that, as outlined above, to host also `Petitboot` or `u-root` as (secondary)
@@ -514,21 +528,23 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   It is easy to add a u-boot bootloader to an SD, provided there is at least a
   2M gap before the first partition (some builds of `u-boot` require up to 4M,
   or even larger).
-  The version of `u-boot.bin` that should then be used is one of the "the
-  bigger ones" (about 1.5M, typically, for mainline `u-boot`) with all the
+  The version of `u-boot.bin` that should then be used is one of "the bigger
+  ones" (about 1.5M, typically, for mainline `u-boot`) with all the
   [FIP blobs](https://github.com/LibreELEC/amlogic-boot-fip)
   added, which is used for
   ["cold booting"](https://github.com/ARM-software/arm-trusted-firmware/blob/master/docs/design/firmware-design.rst).
   The versions intended for installation on SD usually have a name of the type
   `u-boot.bin.sd*` and these include also boot/signature code in block 0 (MBR).
   (The smaller versions of `u-boot.bin`, about 800k, are typically used for
-  chainloading in the form of `u-boot.ext`, which is a form of "warm booting".)
+  chainloading in the form of `u-boot.ext`, which could be considered as a
+  form of "warm booting".)
   Instructions on how to copy the bootloader onto an SD can be found in many
   places.
   The operation is typically done in two passes with the `dd` command; first
   the bootloader signature/bootstrap code in the first part of sector 0 (MBR)
   and then the body of the bootloader code in sector 1 and onward in the gap
-  before first partition.
+  before first partition (cf. e.g.
+  [`u-boot` for w400](https://docs.u-boot.org/en/latest/board/amlogic/w400.html).)
 
   #### A note on eMMC and booting
 
