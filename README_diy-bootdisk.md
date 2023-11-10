@@ -546,7 +546,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   before first partition (cf. e.g.
   [`u-boot` for w400](https://docs.u-boot.org/en/latest/board/amlogic/w400.html).)
 
-  #### A note on eMMC and booting
+  #### A final note on eMMC and booting
 
   The eMMC chips used in TV-boxes come pre partitioned according to the
   (JEDEC) standard mobile eMMC partition scheme; one large user partition
@@ -559,3 +559,11 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   bootloader, the box can be booted, cf. the
   [Amlogic boot flow](https://u-boot.readthedocs.io/en/latest/board/amlogic/boot-flow.html)
   alluded to above.
+  (A caveat is that vendor/resident `u-boot` may require that other areas of
+  eMMC, with certain data, are left intact for the booloader to work properly,
+  cf. the remarks about the Amlogic partitioning scheme above.)
+
+  Amlogic boxes can however always be revived/restored to factory settings
+  using e.g. the
+  [Amlogic USB burning Tool](https://wiki.coreelec.org/coreelec:aml_usb_tool)
+  to flash a stock/factory Android image over a USB connection.
