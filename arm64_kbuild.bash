@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # arm64_kbuild.bash
-# 23-08-27: v0.11
+# 23-11-12: v0.12
 # Author: Tripole
 
 # Script to compile the Linux kernel for ARM64 and package the result (together
@@ -39,14 +39,21 @@
 # https://linux-kernel-labs.github.io/refs/heads/master/labs/arm_kernel_development.html
 # https://github.com/ophub/amlogic-s9xxx-armbian/blob/main/rebuild
 
+# Kernel configs to start with:
+# https://github.com/ophub/amlogic-s9xxx-armbian
+# https://github.com/armbian/build/
+
 # ------------------------------- parameters ---------------------------------
 
 # Q: Which parameters do I (really) need to edit?
 # A: Well, as always, "it depends". (The ones you most often need to change
 # (if you (re)compile one kernel series often) are collected near the top.)
 
-# Kernel name/number/url for kernel source from kernel.org.
-kern_ver_num=6.1.53
+# It is assumed below that the kernel source is compressed with xz and that
+# the compressed kernel source tarball name is of the form linux-6.5.11.tar.xz
+
+# Kernel version number for kernel (e.g. 6.5.11).
+kern_ver_num=6.5.11
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
@@ -55,8 +62,16 @@ kern_ver_num=6.1.53
 kern_tag_str="-koop-3pole"
 kern_out_str=${kern_ver_num}${kern_tag_str}
 
+# Alternatively, a locally provided kernel source tarball can be used.
+# Such a tarball must have the same file name format as the tarballs from
+# kernel.org and be placed in the dir pointed to by loc_kern_dir (a dir path
+# relative to the working dir, see $kern_loc_src_dir below).
+use_loc_kern_src=no # {yes,no}
+loc_kern_tarball_dir=dummy_dir
+
 # Path to local patch dir (see $patch_src_dir below).
 loc_patch_dir=dummy_dir
+
 # List of names for SoC vendor for which you want to create a dtb package
 # (tarball). (All of these SoCs must be enabled in the kernel config.)
 socdtbs_list=("amlogic" "allwinner" "rockchip")
@@ -168,13 +183,16 @@ reqd_cmdlist=("systemd-nspawn" "tar" "gzip" "wget")
 
 reqd_cmdlist_virt=("qemu-aarch64-static")
 
-# Location (dir) of demporary files (downloads) (for size, see below).
+# Location (dir) of temporary files (downloads) (for size, see below).
 work_dir=$PWD
 tmpfile_dir=${work_dir}/temp_files
 
 # Location of unpacked kernel source and the output files produced by the build.
 kern_src_dir=${work_dir}/kern_src
 kern_out_dir=${work_dir}/kern_out
+
+# Location of directory for locally provided kernel (optional) source tarball.
+kern_loc_src_dir=${work_dir}/${loc_kern_tarball_dir}
 
 # Location of local patches to be applied
 patch_src_dir=${work_dir}/${loc_patch_dir}
@@ -331,11 +349,22 @@ echo -n -e ${i_msg}" Making a directory for the kernel source files..."
 mkdir -p $kern_src_dir
 echo " Done."
 
-echo -e ${i_msg}" Downloading the kernel source tarball..."
-wget -P $tmpfile_dir -nv $kern_txz_url
-if [[ $? -ne 0 ]]; then
-    echo -e ${e_msg}" Unable to download the kernel source tarball, exiting."
-    exit 1
+if [[ "$use_loc_kern_src" != "yes" ]]; then
+    echo -e ${i_msg}" Downloading the kernel source tarball..."
+    wget -P $tmpfile_dir -nv $kern_txz_url
+    if [[ $? -ne 0 ]]; then
+        echo -e ${e_msg}" Unable to download the kernel source tarball, exiting."
+        exit 1
+    fi
+else
+    echo -e ${i_msg}" Copying locally provided kernel source tarball in"
+    echo " $kern_loc_src_dir"
+    echo " to temp_dir ..."
+    cp ${kern_loc_src_dir}/${kern_txz_name} $tmpfile_dir
+    if [[ $? -ne 0 ]]; then
+        echo -e ${e_msg}" Unable to find the local kernel source tarball, exiting."
+        exit 1
+    fi
 fi
 echo -e ${k_msg}" Done."
 
@@ -365,6 +394,7 @@ fi
 
 echo -e ${i_msg}" Preparing for menuconfig..."
 make $kern_make_opts mrproper
+# echo -e ${w_msg}" Debug: Sleep for 5s (e.g. for hacking)..." ; sleep 5s
 make KCONFIG_DEFCONFIG_LIST=$kconfig_file_full $kern_make_opts menuconfig
 
 # For kernels 5.12 and above we enable clang LTO (it can offer some advantages).

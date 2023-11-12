@@ -283,6 +283,11 @@ petit-bootdisk-nc
 
 # arm64_kbuild.bash:
 
+## [v0.12] 23-11-12
+
+### Changed
+ - Bump version.
+
 ## [v0.11] 23-08-27
 
 ### Changed
