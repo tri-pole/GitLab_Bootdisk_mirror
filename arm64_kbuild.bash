@@ -53,7 +53,7 @@
 # the compressed kernel source tarball name is of the form linux-6.5.11.tar.xz
 
 # Kernel version number for kernel (e.g. 6.5.11).
-kern_ver_num=6.5.11
+kern_ver_num=6.1.63
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
@@ -76,6 +76,10 @@ loc_patch_dir=dummy_dir
 # (tarball). (All of these SoCs must be enabled in the kernel config.)
 socdtbs_list=("amlogic" "allwinner" "rockchip")
 
+# If you want legacy u-boot images of kernel and initramfs (uImage, uInitd) to
+# be made, say yes here (see also kernel load address and starting point below).
+make_uboot_imgs=yes
+
 kern_series_major=$(cut -b1 <<< $kern_ver_num)
 case $kern_series_major in
     "5")
@@ -90,7 +94,7 @@ case $kern_series_major in
 esac
 
 kern_url_base="https://cdn.kernel.org/pub/linux/kernel/${kern_series}"
-kern_txz_name=linux-${kern_ver_num}.tar.xz
+kern_txz_name=linux-${kern_ver_num/%.0/}.tar.xz # Strip trailing .0 in version.
 kern_txz_url=${kern_url_base}/${kern_txz_name}
 
 # Official Ubuntu rootfs tarball (used to make the initramfs).
@@ -229,19 +233,25 @@ DEBIAN_FRONTEND=noninteractive apt-get -y install \
 # To be able to boot kernels with old (e.g. vendor/resident) u-boot we use gzip.
 sed -i 's/COMPRESS=zstd/COMPRESS=gzip/g' /etc/initramfs-tools/initramfs.conf
 
+echo -e ${i_msg}" Creating a new initramfs for inclusion in boot package ..."
 update-initramfs -k $kern_out_str -c
-
-# On ARM64 it is common to use the name vmlinuz also for uncompressed kernels.
-echo "Making uImage-${kern_out_str} from vmlinuz-${kern_out_str} ..."
-mkimage -n "uImage" -A arm64 -O linux -T kernel -C none \
-    -a $k_load_addr -e $k_entry_addr \
-    -d /boot/vmlinuz-${kern_out_str} /boot/uImage-${kern_out_str}
 echo " Done."
 
-echo "Making uInitrd-${kern_out_str} from initrd.img-${kern_out_str} ..."
-mkimage -A arm64 -O linux -T ramdisk -C gzip \
-    -d /boot/initrd.img-${kern_out_str} /boot/uInitrd-${kern_out_str}
-echo " Done."
+if [[ "$make_uboot_imgs" == "yes" ]]; then
+    echo -e ${i_msg}" Making u-boot tagged versions of kernel and initramfs."
+    # On ARM64 the name vmlinuz is often used also for uncompressed kernels.
+    echo "Making uImage-${kern_out_str} from vmlinuz-${kern_out_str} ..."
+    mkimage -n "uImage" -A arm64 -O linux -T kernel -C none \
+        -a $k_load_addr -e $k_entry_addr \
+        -d /boot/vmlinuz-${kern_out_str} /boot/uImage-${kern_out_str}
+    echo " Done."
+
+    echo "Making uInitrd-${kern_out_str} from initrd.img-${kern_out_str} ..."
+    mkimage -A arm64 -O linux -T ramdisk -C gzip \
+        -d /boot/initrd.img-${kern_out_str} /boot/uInitrd-${kern_out_str}
+    echo " Done."
+fi
+
 EOF
 )
 
@@ -350,16 +360,17 @@ mkdir -p $kern_src_dir
 echo " Done."
 
 if [[ "$use_loc_kern_src" != "yes" ]]; then
-    echo -e ${i_msg}" Downloading the kernel source tarball..."
+    echo -e ${i_msg}" Downloading the kernel source tarball $kern_txz_name"
+    echo " to $tmpfile_dir"
     wget -P $tmpfile_dir -nv $kern_txz_url
     if [[ $? -ne 0 ]]; then
         echo -e ${e_msg}" Unable to download the kernel source tarball, exiting."
         exit 1
     fi
 else
-    echo -e ${i_msg}" Copying locally provided kernel source tarball in"
-    echo " $kern_loc_src_dir"
-    echo " to temp_dir ..."
+    echo -e ${i_msg}" Copying locally provided kernel source tarball $kern_txz_name"
+    echo " in $kern_loc_src_dir"
+    echo " to $tmpfile_dir"
     cp ${kern_loc_src_dir}/${kern_txz_name} $tmpfile_dir
     if [[ $? -ne 0 ]]; then
         echo -e ${e_msg}" Unable to find the local kernel source tarball, exiting."
@@ -394,7 +405,7 @@ fi
 
 echo -e ${i_msg}" Preparing for menuconfig..."
 make $kern_make_opts mrproper
-# echo -e ${w_msg}" Debug: Sleep for 5s (e.g. for hacking)..." ; sleep 5s
+# echo -e ${w_msg}" Debug: Sleep for 5s (e.g. pause for hacking)..." ; sleep 5s
 make KCONFIG_DEFCONFIG_LIST=$kconfig_file_full $kern_make_opts menuconfig
 
 # For kernels 5.12 and above we enable clang LTO (it can offer some advantages).
@@ -494,13 +505,16 @@ for socdtbs_name in ${socdtbs_list[*]}; do
 done
 #echo -e ${k_msg}" Done."
 
-echo -n -e ${i_msg}" Copying over kernel files and modules to rootfs..."
+echo -n -e ${i_msg}" Copying over kernel image and config to rootfs..."
 cd ${kern_src_dir}/linux-${kern_ver_num}
 rm -rf ${rootfs_dir}/boot/*
 cp System.map ${rootfs_dir}/boot/System.map-${kern_out_str}
 cp .config ${rootfs_dir}/boot/config-${kern_out_str}
 # On ARM64 it is common to use the name vmlinuz also for uncompressed kernels.
 cp arch/arm64/boot/Image ${rootfs_dir}/boot/vmlinuz-${kern_out_str}
+echo " Done."
+
+echo -n -e ${i_msg}" Copying over modules to rootfs..."
 # On Ubuntu (and thus in rootfs) /lib is a symlink to /usr/lib
 mkdir -p ${rootfs_dir}/lib/modules
 cp -r ${kern_out_dir}/modules/lib/modules/${kern_out_str} ${rootfs_dir}/lib/modules
