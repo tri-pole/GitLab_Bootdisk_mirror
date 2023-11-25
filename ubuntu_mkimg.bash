@@ -117,7 +117,7 @@
 # A: Well, as always, "it depends". (Best to browse through them all, I guess.)
 
 distro_name=Ubuntu   # Used for the image name and in grub.cfg
-distro_edition=Jammy # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
+distro_edition=Mantic # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
 
 # Host name for image.
 host_name=opbu
@@ -129,7 +129,7 @@ compressed_img=yes # {yes,no}
 # Example for Ophub/Flippy kernel.
 # krnver_str="6.1.38-ophub" # Kernel name/release str., plain text.
 # Example for koop-3pole kernel.
-krnver_str="6.1.57-koop-3pole" # Kernel name/release str., plain text.
+krnver_str="6.1.63-koop-3pole" # Kernel name/release str., plain text.
 
 # The selected zram compression method here must match what the kernel supports
 # (if unsure, set to zstd). See /etc/default/zramswap
@@ -149,6 +149,7 @@ imgfile_name=${distro_name}_${distro_edition}_${img_tag}.img
 socdtbs_list=("amlogic" "allwinner" "rockchip")
 
 # dtb name in uEnv.ini/extlinux.conf (dtb must be in boot-*.tar.gz pkg).
+# (Make sure the dtb file selected here exists in one of the kernel dtb pkgs.)
 dtbfile_name=meson-g12b-gtking-pro.dtb
 dtbname_in_grubcfg=no # {"yes","no"} Only useful if bootloader can use it.
 
@@ -400,16 +401,17 @@ echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
 echo "Setting up boot (2 items):"
 echo "(1) Creating /boot/grub/grub.cfg"
-/usr/local/bin/mkgrubcfg_simple.bash /root/dtbfile_link
+rootfsUUID=$rootfs_UUID bash -c '/usr/local/bin/mkgrubcfg_simple.bash /root/dtbfile_link'
 echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, uInitrd)."
 /usr/local/bin/mkbootlinux.bash $krnver_str $bootfs_dir >/dev/null
 EOF
 )
 
 aml_autoscript=$(cat <<"EOF"
-# Standard aml_autoscript to set u-boot boot order: mmc/SD, USB, emmc
+# Standard aml_autoscript to set u-boot boot (script) order: mmc/SD, USB, emmc
 # Search for *_autoscript on these device types and execute the first such script found.
 # Sourced from Manjaro ARM.
+# Note: On newer u-boot, the autoscr is replaced by the source command.
 # Recompile with mkimage -A arm -O linux -T script -C none -d aml_autoscript.txt aml_autoscript
 defenv
 setenv bootcmd 'run start_autoscript; run storeboot'
@@ -542,24 +544,46 @@ mkgrubcfg_simple_p1=$(cat <<EOF
 # Scans for vmlinuz-* in /boot and makes a simple grub.cfg in /boot/grub
 # Usage: /usr/local/bin/mkgrubcfg_simple.bash [path-to-dtb-file]
 # If a dtb file is specified as the first argument, it is inserted together
-# with a line specifying devicetree in each menu entry created.
+# with a line specifying a devicetree line in each menu entry created. (The
+# dtb name can be a symlink; the full dtb name will be inserted into grub.cfg)
+# Normally, the script is run from a mounted rootfs and then the UUID of the
+# rootfs is discovered using the blkid comand (see below). However, for use
+# e.g. inside a chroot jail the rootfs UUID can also be given as an environment
+# variable prepended on the command line, e.g. like so (note the single quotes):
+# chroot . /bin/bash -c 'rootfsUUID=f3cab04c-...-faec36aace3f ; /usr/local/bin/mkgrubcfg_simple.bash [path-to-dtb-file]'
 
-distro_name_=$distro_name
-distro_edition_=$distro_edition
-kernel_cmdline_="$kernel_cmdline"
+kernel_cmdline_pars_="$kernel_cmdline_opts"
 
 EOF
 )
 
 mkgrubcfg_simple_p2=$(cat <<"EOF1"
 
+distro_name_lc=$(cat /etc/os-release | grep -E "^ID=" | cut -d "=" -f2)
+distro_edition_lc=$(cat /etc/os-release | grep VERSION_CODENAME | cut -d "=" -f2)
+
+# First letter to uppercase.
+distro_name="$(tr '[:lower:]' '[:upper:]' <<< ${distro_name_lc:0:1})""${distro_name_lc:1}"
+distro_edition="$(tr '[:lower:]' '[:upper:]' <<< ${distro_edition_lc:0:1})""${distro_edition_lc:1}"
+
+if [[ -z "$rootfsUUID" ]]; then
+    rootfs_uuid=$(blkid -s UUID $(mount | grep -E "/ " | cut -d " " -f 1) | cut -d "\"" -f2)
+else
+    rootfs_uuid=$rootfsUUID
+fi
+echo "Rootfs UUID: $rootfs_uuid"
+
+# The next line is a default kernel command line and may have to be adjusted for each kernel.
+kernel_cmdline_rootfsuuid="root=UUID="${rootfs_uuid}
+kernel_cmdline=${kernel_cmdline_rootfsuuid}" "${kernel_cmdline_pars_}
+
 devicetree_str="# devicetree /path/to/dtbfile # not used currently"
-devicetree_msg="Devicetree: dtb file not specified or missing, skipping."
+devicetree_msg="Devicetree:  No dtb file specified or dtb file missing."
 if [[ "$#" -eq 1 ]]; then
     dtbfile_full=$(readlink -f $1)
     if [[ -f $dtbfile_full ]]; then
         devicetree_str="devicetree $dtbfile_full"
-        devicetree_msg="Devicetree: $dtbfile_full"
+        devicetree_msg="Devicetree:  $dtbfile_full"
     fi
 fi
 echo $devicetree_msg
@@ -576,12 +600,12 @@ for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
 
     kernel_path=/boot/$kernel_name
     initrd_path=/boot/$initrd_name
-    echo "Adding menu entry: $distro_name_ $distro_edition_ (kernel $kernel_version)"
+    echo "Adding menu entry: $distro_name $distro_edition (kernel $kernel_version)"
     # Note: The leading tabs in the here-document below are important.
 	cat <<-EOF >> grub/grub.cfg
-	menuentry "$distro_name_ $distro_edition_ (kernel $kernel_version)" {
+	menuentry "$distro_name $distro_edition (kernel $kernel_version)" {
 	
-	linux  $kernel_path $kernel_cmdline_
+	linux  $kernel_path $kernel_cmdline
 	initrd $initrd_path
 	$devicetree_str
 	
@@ -924,7 +948,6 @@ for socdtbs_name in ${socdtbs_list[*]}; do
     mkdir -p -m 0755 ${rootfs_mnt}/boot/dtbs/${socdtbs_name}
     tar -xzf ${krnfile_dir}/dtb-${socdtbs_name}-${krnver_str}.tar.gz -C ${rootfs_mnt}/boot/dtbs/${socdtbs_name}
 done
-echo " Done."
 
 dtbfile_loc=$(find ${rootfs_mnt}/boot/dtbs -name ${dtbfile_name})
 if [[ -f $dtbfile_loc ]]; then
@@ -934,10 +957,10 @@ if [[ -f $dtbfile_loc ]]; then
         ln -s $dtbfile_rootfs ${rootfs_mnt}/root/dtbfile_link
     fi
 else
-    echo -e ${e_msg}" Unable to find the dtb file ${dtbfile_name}, exiting."
+    echo -e ${e_msg}" Unable to find the requested dtb file ${dtbfile_name}, exiting."
     exit 1
 fi
-echo " Done."
+echo -e ${k_msg}" Done."
 
 # The flash-kernel package causes problems on systems w/o flash storage (when
 # installing Ubuntu kernels) so it is good to block to aviod future problems.

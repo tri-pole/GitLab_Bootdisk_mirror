@@ -99,9 +99,9 @@
 # ------------------------------- parameters ---------------------------------
 
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
-ubuntu_edition=Mantic    # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
+ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
 debian_name=Debian      # Used for the image name and in grub.cfg
-debian_edition=Bullseye # Tested with Bullseye, Bookworm, Sid
+debian_edition=Bookworm # Tested with Bullseye, Bookworm, Sid
 
 # Host name for image.
 host_name=debu
@@ -152,6 +152,7 @@ kernel_cmdline_opts="quiet splash"
 # The dtb file name used in extlinux.conf (and uEnv.ini.bak).
 # (dtb must be in local /usr/lib/firmware/{kernel-version}/device-tree/amlogic).
 dtbfile_name=meson-g12b-gtking-pro.dtb
+dtbname_in_grubcfg=no # {"yes","no"} Only useful if bootloader can use it.
 
 # File system sizes and types (unit MiB).
 # - The partition table type on the image is MBR.
@@ -403,9 +404,7 @@ EOF
 
 # This is the basic (default) set of packages installed on top of the rootfs.
 # (If you want to add packages, edit the here-doc ubuntu_custom_extra above.)
-# We split the here-doc for ubuntu_custom_inst in two; first part with variable
-# substitution and the second part without.
-ubuntu_custom_inst_p1=$(cat <<EOF
+ubuntu_custom_inst=$(cat <<EOF
 #!/bin/bash
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get -y install linux-image-generic
@@ -414,21 +413,14 @@ DEBIAN_FRONTEND=noninteractive apt-get -y install man-db network-manager ssh dia
 DEBIAN_FRONTEND=noninteractive $ubuntu_custom_extra
 dpkg-reconfigure tzdata
 dpkg-reconfigure keyboard-configuration
+
 echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
-bootfs_dir_=${bootfs_dir}
-EOF
-)
-
-# The leading blank line is important.
-ubuntu_custom_inst_p2=$(cat <<"EOF"
 
 echo "Creating /boot/grub/grub.cfg"
-/usr/local/bin/mkgrubcfg_simple.bash
+rootfsUUID=$rootfs_UUID bash -c '/usr/local/bin/mkgrubcfg_simple.bash /root/dtbfile_link'
 EOF
 )
-
-ubuntu_custom_inst="${ubuntu_custom_inst_p1}""${ubuntu_custom_inst_p2}"
 
 debian_repo_list=$(cat <<EOF
 deb http://deb.debian.org/debian $debian_release main contrib $nonfree_list
@@ -443,7 +435,7 @@ apt-get -y install aptitude usbutils zram-tools
 EOF
 )
 
-debian_custom_inst_p1=$(cat <<EOF
+debian_custom_inst=$(cat <<EOF
 #!/bin/bash
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt -y install linux-image-arm64
@@ -452,26 +444,21 @@ DEBIAN_FRONTEND=noninteractive apt -y install locales ntp sudo u-boot-tools
 DEBIAN_FRONTEND=noninteractive $debian_custom_extra
 dpkg-reconfigure tzdata
 apt -y install console-setup
+
 echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
-bootfs_dir_=${bootfs_dir}
-EOF
-)
-
-# The leading blank line is important.
-debian_custom_inst_p2=$(cat <<"EOF"
 
 echo "Creating /boot/grub/grub.cfg"
-/usr/local/bin/mkgrubcfg_simple.bash
+rootfsUUID=$rootfs_UUID bash -c '/usr/local/bin/mkgrubcfg_simple.bash /root/dtbfile_link'
+
 EOF
 )
 
-debian_custom_inst="${debian_custom_inst_p1}""${debian_custom_inst_p2}"
-
 aml_autoscript=$(cat <<"EOF"
-# Standard aml_autoscript to set boot order: mmc/SD, USB, emmc
+# Standard aml_autoscript to set u-boot boot (script) order: mmc/SD, USB, emmc
 # Search for *_autoscript on these device types and execute the first such script found.
 # Sourced from Manjaro ARM.
+# Note: On newer u-boot, the autoscr is replaced by the source command.
 # Recompile with mkimage -A arm -O linux -T script -C none -d aml_autoscript.txt aml_autoscript
 defenv
 setenv bootcmd 'run start_autoscript; run storeboot'
@@ -609,25 +596,48 @@ mkgrubcfg_simple_p1=$(cat <<EOF
 #!/bin/bash
 
 # Scans for vmlinuz-* in /boot and makes a simple grub.cfg in /boot/grub
-# Usage: /usr/local/bin/mkgrubcfg_simple.bash
+# Usage: /usr/local/bin/mkgrubcfg_simple.bash [path-to-dtb-file]
+# If a dtb file is specified as the first argument, it is inserted together
+# with a line specifying a devicetree line in each menu entry created. (The
+# dtb name can be a symlink; the full dtb name will be inserted into grub.cfg)
+# Normally, the script is run from a mounted rootfs and then the UUID of the
+# rootfs is discovered using the blkid comand (see below). However, for use
+# e.g. inside a chroot jail the rootfs UUID can also be given as an environment
+# variable prepended on the command line, e.g. like so (note the single quotes):
+# chroot . /bin/bash -c 'rootfsUUID=f3cab04c-...-faec36aace3f ; /usr/local/bin/mkgrubcfg_simple.bash [path-to-dtb-file]'
 
-distro_name_=$distro_name
-distro_edition_=$distro_edition
-kernel_cmdline_="$kernel_cmdline"
-dtbfile_name_=$dtbfile_name
+kernel_cmdline_pars_="$kernel_cmdline_opts"
 
 EOF
 )
 
 mkgrubcfg_simple_p2=$(cat <<"EOF1"
 
+distro_name_lc=$(cat /etc/os-release | grep -E "^ID=" | cut -d "=" -f2)
+distro_edition_lc=$(cat /etc/os-release | grep VERSION_CODENAME | cut -d "=" -f2)
+
+# First letter to uppercase.
+distro_name="$(tr '[:lower:]' '[:upper:]' <<< ${distro_name_lc:0:1})""${distro_name_lc:1}"
+distro_edition="$(tr '[:lower:]' '[:upper:]' <<< ${distro_edition_lc:0:1})""${distro_edition_lc:1}"
+
+if [[ -z "$rootfsUUID" ]]; then
+    rootfs_uuid=$(blkid -s UUID $(mount | grep -E "/ " | cut -d " " -f 1) | cut -d "\"" -f2)
+else
+    rootfs_uuid=$rootfsUUID
+fi
+echo "Rootfs UUID: $rootfs_uuid"
+
+# The next line is a default kernel command line and may have to be adjusted for each kernel.
+kernel_cmdline_rootfsuuid="root=UUID="${rootfs_uuid}
+kernel_cmdline=${kernel_cmdline_rootfsuuid}" "${kernel_cmdline_pars_}
+
 devicetree_str="# devicetree /path/to/dtbfile # not used currently"
-devicetree_msg="Devicetree: dtb file not specified or missing, skipping."
+devicetree_msg="Devicetree:  No dtb file specified or dtb file missing."
 if [[ "$#" -eq 1 ]]; then
     dtbfile_full=$(readlink -f $1)
     if [[ -f $dtbfile_full ]]; then
         devicetree_str="devicetree $dtbfile_full"
-        devicetree_msg="Devicetree: $dtbfile_full"
+        devicetree_msg="Devicetree:  $dtbfile_full"
     fi
 fi
 echo $devicetree_msg
@@ -644,12 +654,12 @@ for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
 
     kernel_path=/boot/$kernel_name
     initrd_path=/boot/$initrd_name
-    echo "Adding menu entry: $distro_name_ $distro_edition_ (kernel $kernel_version)"
+    echo "Adding menu entry: $distro_name $distro_edition (kernel $kernel_version)"
     # Note: The leading tabs in the here-document below are important.
 	cat <<-EOF >> grub/grub.cfg
-	menuentry "$distro_name_ $distro_edition_ (kernel $kernel_version)" {
+	menuentry "$distro_name $distro_edition (kernel $kernel_version)" {
 	
-	linux  $kernel_path $kernel_cmdline_
+	linux  $kernel_path $kernel_cmdline
 	initrd $initrd_path
 	$devicetree_str
 	
@@ -820,7 +830,7 @@ echo " Done."
 echo -e ${i_msg}" Debootstrapping ${distro_name} system to ${rootfs_mnt}"
 debootstrap --arch arm64 --keyring $keyring_file \
 $distro_release $rootfs_mnt $distro_repourl
-echo "Done."
+echo -e ${k_msg}" Done."
 
 echo -n -e ${i_msg}" Setting up the fstab file..."
 echo -e "$fstab_file" >${rootfs_mnt}/etc/fstab
@@ -939,10 +949,14 @@ case $1 in
     dtbfile_loc=${dtbfile_dir}/${dtbfile_name}
     if [[ -f $dtbfile_loc ]]; then
         cp $dtbfile_loc $bootfs_mnt
+        if [[ "$dtbname_in_grubcfg" == "yes" ]]; then
+            ln -s $dtbfile_rootfs ${rootfs_mnt}/root/dtbfile_link
+        fi
         echo " Done."
     else
-        echo -e ${w_msg}"\nCould not find $dtbfile_name in "
-        echo $dtbfile_dir
+        echo -e ${e_msg}"\nCould not find $dtbfile_name"
+        echo " in $dtbfile_dir"
+	exit 1
     fi
 
     ;;
@@ -990,10 +1004,15 @@ case $1 in
     dtbfile_loc=${dtbfile_dir}/${dtbfile_name}
     if [[ -f $dtbfile_loc ]]; then
         cp $dtbfile_loc $bootfs_mnt
+	if [[ "$dtbname_in_grubcfg" == "yes" ]]; then
+            ln -s $dtbfile_rootfs ${rootfs_mnt}/root/dtbfile_link
+        fi
         echo " Done."
     else
-        echo -n -e ${w_msg}" Could not find $dtbfile_name in "
-        echo $dtbfile_dir
+        echo -e ${e_msg}"\nCould not find $dtbfile_name"
+        echo " in $dtbfile_dir"
+	echo " Exiting."
+	exit 1
     fi
 
     # Only used with manual setup of resolv.conf

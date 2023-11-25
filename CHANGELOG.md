@@ -314,7 +314,7 @@ petit-bootdisk-nc
 
 # petitboot_mkinitrd.bash
 
-## [v0.11] 23-1012
+## [v0.11] 23-10-12
 
 ### Added
  - Option to build smaller initrd.
