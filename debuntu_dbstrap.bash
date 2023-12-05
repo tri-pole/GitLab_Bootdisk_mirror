@@ -44,22 +44,28 @@
 #   configuration will be deferred and you will see a message about this.
 #   (You can always later manually do dpkg-reconfigure keyboard-configuration)
 # - The image can always be booted via grub (e.g. using bootdisk) and most
-#   often via (a recent) chainloader (uboot.ext, using the configuration file
-#   extlinux/extlinux.conf on the bootfs). However, it will likely not boot via
-#   vendor u-boot (loading uImage and uInitrd via boot scripts), unless the
-#   vendor u-boot is very recent. (One reason for this may be that the standard
-#   compression method for initramfs (in /etc/initramfs-tools/initramfs.conf)
-#   is zstd, but older u-boot (pre 2020) can only do gzip (easy to fix, though).
-#   However, a second reason is that some (old) u-boot don't (even) support
-#   gzip compressed kernels (which is a little bit more cumbersome to fix).
+#   often via (a recent) chainloader (uboot.ext, using extlinux/extlinux.conf
+#   on the bootfs). However, it may not boot via resident/vendor u-boot
+#   (loading uImage and uInitrd via boot scripts), unless the vendor u-boot is
+#   recent. (One reason for this is that the standard initramfs compression
+#   method (in /etc/initramfs-tools/initramfs.conf) is zstd, but older u-boot
+#   (pre 2020) can only do gzip. A second reason is that some (old) u-boot
+#   don't (even) support gzip compressed kernels (which is a little bit more
+#   cumbersome to fix).
 # - The kernel and initramfs files on the bootfs are not automatically updated
-#   when the kernel is upgraded or the initramfs is rebuilt. Therefore, if you
-#   are booting using u-boot and bootfs, when upgrading the kernel or
-#   rebuilding the initramfs these components have to be copied manually over
-#   to the bootfs (which is typically mounted under /boot/aux on the rootfs).
+#   when the kernel is upgraded or the initramfs is rebuilt on the rootfs.
+#   Therefore, if you are booting using u-boot and bootfs (e.g. w/ u-boot.ext),
+#   then when upgrading the kernel or rebuilding the initramfs these components
+#   have to be copied manually over to the bootfs (which is typically mounted
+#   under /boot/aux on the rootfs).
 #   If you are booting via grub.cfg on rootfs (e.g. using bootdisk) you only
 #   need to update grub.cfg and this cane can be done by using grub-mkimage or
-#   via scripts in /usr/local/bin (e.g. mkgrubcfg_simple.bash).
+#   via scripts in /usr/local/bin e.g. mkgrubcfg_simple.bash
+# - The dtb file is not specified in the grub.cfg file upon installation but
+#   the script mkgrubcfg_simple.bash can be run post-install to include a dtb
+#   specification in grub.cfg. However, bootloaders based on kexec, such as
+#   Petitboot/u-root, typically let the booted Linux image inherit the dtb used
+#   by the bootloader, cf. the README at Gitlab files about Petitboot/u-root.
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 #   Another alternative is kubuntu-desktop.
@@ -101,7 +107,7 @@
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
 ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
 debian_name=Debian      # Used for the image name and in grub.cfg
-debian_edition=Bookworm # Tested with Bullseye, Bookworm, Sid
+debian_edition=Bookworm # Tested with Bullseye, Bookworm, Trixie
 
 # Host name for image.
 host_name=debu
@@ -137,8 +143,6 @@ uboot_list=(
 
 # If the file $uboot_ext_local exists in $imgfile_dir (see below) then it will
 # be installed on the image as the default u-boot.ext on the bootfs.
-# uboot_ext_local=u-boot.bin-gtkp-pb
-# uboot_ext_local_bldtag=u-boot-amlogic-20220809
 uboot_ext_local=u-boot.bin-gtkp-pb-1s-ctrlc
 uboot_ext_local_bldtag=u-boot-amlogic-v2023.10
 uboot_ext_local_url="https://mega.nz/folder/bIdjwI6B#mojtTtZPufsHD9v7gTkjdQ"
@@ -152,7 +156,6 @@ kernel_cmdline_opts="quiet splash"
 # The dtb file name used in extlinux.conf (and uEnv.ini.bak).
 # (dtb must be in local /usr/lib/firmware/{kernel-version}/device-tree/amlogic).
 dtbfile_name=meson-g12b-gtking-pro.dtb
-dtbname_in_grubcfg=no # {"yes","no"} Only useful if bootloader can use it.
 
 # File system sizes and types (unit MiB).
 # - The partition table type on the image is MBR.
@@ -418,7 +421,7 @@ echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
 
 echo "Creating /boot/grub/grub.cfg"
-rootfsUUID=$rootfs_UUID bash -c '/usr/local/bin/mkgrubcfg_simple.bash /root/dtbfile_link'
+rootfsUUID=$rootfs_UUID bash -c '/usr/local/bin/mkgrubcfg_simple.bash'
 EOF
 )
 
@@ -449,8 +452,7 @@ echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
 
 echo "Creating /boot/grub/grub.cfg"
-rootfsUUID=$rootfs_UUID bash -c '/usr/local/bin/mkgrubcfg_simple.bash /root/dtbfile_link'
-
+rootfsUUID=$rootfs_UUID bash -c '/usr/local/bin/mkgrubcfg_simple.bash'
 EOF
 )
 
@@ -536,8 +538,6 @@ according to the instructions inside that file. The files here are from
 Ophub's repo at https://github.com/ophub/u-boot where also suitable candidates
 for u-boot.ext for other platforms (e.g. Allwinner, Rockchip) can be found.
 Note: Some chainloaders here can not boot newer kernels/initramfs.
-Finally, an excellent exposition of the boot flow for Amlogic can be found at
-https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
 EOF
 )
 
@@ -728,6 +728,8 @@ https://github.com/FauthD/amlogic-u-boot-scripts
 Yet another setup (which is probably more versatile but may require bootloader
 u-boot.bin flashed to the boot sector and gap before first partition) is the
 scripts used on Ophub's images https://github.com/ophub/amlogic-s9xxx-armbian
+An in-depth description of how boot scripts work on Amlogic can be foind in
+https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
 EOF
 )
 
@@ -933,7 +935,7 @@ case $1 in
                    /root/ubuntu_custom_inst.bash
     rm ${rootfs_mnt}/root/ubuntu_custom_inst.bash
     sleep 2 # Just to be able to read some of the messages.
-    echo "Done (have left the chroot jail)."
+    echo -e ${k_msg}" Done in chroot jail."
 
     if [[ $arch_str != "aarch64" ]]; then
         echo -n -e ${i_msg}" Removing local qemu-aarch64-static binary..."
@@ -949,9 +951,6 @@ case $1 in
     dtbfile_loc=${dtbfile_dir}/${dtbfile_name}
     if [[ -f $dtbfile_loc ]]; then
         cp $dtbfile_loc $bootfs_mnt
-        if [[ "$dtbname_in_grubcfg" == "yes" ]]; then
-            ln -s $dtbfile_rootfs ${rootfs_mnt}/root/dtbfile_link
-        fi
         echo " Done."
     else
         echo -e ${e_msg}"\nCould not find $dtbfile_name"
@@ -1004,15 +1003,12 @@ case $1 in
     dtbfile_loc=${dtbfile_dir}/${dtbfile_name}
     if [[ -f $dtbfile_loc ]]; then
         cp $dtbfile_loc $bootfs_mnt
-	if [[ "$dtbname_in_grubcfg" == "yes" ]]; then
-            ln -s $dtbfile_rootfs ${rootfs_mnt}/root/dtbfile_link
-        fi
         echo " Done."
     else
         echo -e ${e_msg}"\nCould not find $dtbfile_name"
         echo " in $dtbfile_dir"
-	echo " Exiting."
-	exit 1
+        echo " Exiting."
+        exit 1
     fi
 
     # Only used with manual setup of resolv.conf

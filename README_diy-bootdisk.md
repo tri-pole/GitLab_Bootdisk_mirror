@@ -429,7 +429,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   It is straightforward to install `Petitboot` or `u-root`, using a non
   chainloaded or chainloaded setup, to a vfat partition on eMMC.
   With such an installation, the TV-box/SBC has a general boot manager that can
-  handle booting of Linux from eMMC and also from removable media SD and USB.
+  handle booting of Linux residing eMMC and also Linux on removable media SD
+  and USB.
   The only thing that needs to be changed, compared to an installation on
   SD/USB, is that a bootscript `emmc_autoscript` has to be addded.
   (A version of the script `emmc_autoscript` is outlined in the file
@@ -478,8 +479,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   [Flattened Image Tree (FIT)](https://u-boot.readthedocs.io/en/latest/usage/fit/source_file_format.html)
   format file.
   A FIT image can be read and loaded by newer `u-boot` (incl. recent
-  chainloader `u-boot.ext`) provided support for FIT images is enabled in the
-  compile config.
+  chainloader `u-boot.ext`) provided support for FIT images has been enabled
+  in the `u-boot` compile config.
   It is moreover easy to create a FIT image using an image tree source file
   (.its).
   Examples of image tree source files are given in the `u-boot` documentation

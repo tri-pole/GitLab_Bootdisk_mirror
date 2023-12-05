@@ -45,22 +45,28 @@
 #   configuration will be deferred and you will see a message about this.
 #   (You can always later manually do dpkg-reconfigure keyboard-configuration)
 # - The image can always be booted via grub (e.g. using bootdisk) and most
-#   often via (a recent) chainloader (uboot.ext, using the configuration file
-#   extlinux/extlinux.conf on the bootfs). However, it will likely not boot via
-#   vendor u-boot (loading uImage and uInitrd via boot scripts), unless the
-#   vendor u-boot is very recent. (One reason for this may be that the standard
-#   compression method for initramfs (in /etc/initramfs-tools/initramfs.conf)
-#   is zstd, but older u-boot (pre 2020) can only do gzip (easy to fix, though).
-#   However, a second reason is that some (old) u-boot don't (even) support
-#   gzip compressed kernels (which is a little bit more cumbersome to fix).
+#   often via (a recent) chainloader (uboot.ext, using extlinux/extlinux.conf
+#   on the bootfs). However, it may not boot via resident/vendor u-boot
+#   (loading uImage and uInitrd via boot scripts), unless the vendor u-boot is
+#   recent. (One reason for this is that the standard initramfs compression
+#   method (in /etc/initramfs-tools/initramfs.conf) is zstd, but older u-boot
+#   (pre 2020) can only do gzip. A second reason is that some (old) u-boot
+#   don't (even) support gzip compressed kernels (which is a little bit more
+#   cumbersome to fix).
 # - The kernel and initramfs files on the bootfs are not automatically updated
-#   when the kernel is upgraded or the initramfs is rebuilt. Therefore, if you
-#   are booting using u-boot and bootfs, when upgrading the kernel or
-#   rebuilding the initramfs these components have to be copied manually over
-#   to the bootfs (which is typically mounted under /boot/aux on the rootfs).
+#   when the kernel is upgraded or the initramfs is rebuilt on the rootfs.
+#   Therefore, if you are booting using u-boot and bootfs (e.g. w/ u-boot.ext),
+#   then when upgrading the kernel or rebuilding the initramfs these components
+#   have to be copied manually over to the bootfs (which is typically mounted
+#   under /boot/aux on the rootfs).
 #   If you are booting via grub.cfg on rootfs (e.g. using bootdisk) you only
 #   need to update grub.cfg and this cane can be done by using grub-mkimage or
-#   via scripts in /usr/local/bin (e.g. mkgrubcfg_simple.bash).
+#   via scripts in /usr/local/bin e.g. mkgrubcfg_simple.bash
+# - The dtb file is not specified in the grub.cfg file upon installation but
+#   the script mkgrubcfg_simple.bash can be run post-install to include a dtb
+#   specification in grub.cfg. However, bootloaders based on kexec, such as
+#   Petitboot/u-root, typically let the booted Linux image inherit the dtb used
+#   by the bootloader, cf. the README at Gitlab files about Petitboot/u-root.
 # - A full working desktop can be obtained by installing e.g.
 #   task-xfce-desktop, task-kde-desktop etc. (conveniently via e.g. aptitude).
 #   (With a desktop install it is convenient to let NetworkManager handle the
@@ -90,8 +96,7 @@
 #   the MBR and build a fresh GPT from it. At last, exit gdisk with "w" (write).
 
 # ToDo: Fix network setup (in particular the resolver setup) using sec 2.1 in
-# https://wiki.archlinux.org/title/Systemd-resolved
-
+# https://wiki.archlinux.org/title/Systemd-resolved (it is applicable here too).
 
 # ------------------------------- parameters ---------------------------------
 
@@ -316,7 +321,7 @@ apt-get -y install aptitude usbutils zram-tools
 EOF
 )
 
-devuan_custom_inst_p1=$(cat <<EOF
+devuan_custom_inst=$(cat <<EOF
 #!/bin/bash
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt -y install linux-image-arm64
@@ -325,21 +330,14 @@ DEBIAN_FRONTEND=noninteractive apt -y install locales ntp sudo u-boot-tools
 DEBIAN_FRONTEND=noninteractive $devuan_custom_extra
 dpkg-reconfigure tzdata
 apt -y install console-setup
+
 echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
-bootfs_dir_=${bootfs_dir}
-EOF
-)
-
-# The leading blank line is important.
-devuan_custom_inst_p2=$(cat <<"EOF"
 
 echo "Creating /boot/grub/grub.cfg"
-/usr/local/bin/mkgrubcfg_simple.bash
+rootfsUUID=$rootfs_UUID bash -c '/usr/local/bin/mkgrubcfg_simple.bash'
 EOF
 )
-
-devuan_custom_inst="${devuan_custom_inst_p1}""${devuan_custom_inst_p2}"
 
 aml_autoscript=$(cat <<"EOF"
 # Standard aml_autoscript to set boot order: mmc/SD, USB, emmc
@@ -398,13 +396,13 @@ extlinux_conf=$(cat <<EOF
 # https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX
 # (Note: u-boot's parsing of this file may be slightly different/incomplete.)
 
-MENU TITLE <DEBUNTU-BOOT>
-DEFAULT DEBNT_DEFAULT
+MENU TITLE <DEVUAN-BOOT>
+DEFAULT DEVUAN_DEFAULT
 
 # Timeout is in units of 0.1s (to wait before boot of default entry below).
 TIMEOUT 10
 
-LABEL DEBNT_DEFAULT
+LABEL DEVUAN_DEFAULT
   LINUX  /vmlinuz
   INITRD /initrd.img
   FDT    /$dtbfile_name
@@ -477,19 +475,54 @@ mkgrubcfg_simple_p1=$(cat <<EOF
 #!/bin/bash
 
 # Scans for vmlinuz-* in /boot and makes a simple grub.cfg in /boot/grub
-# Usage: /usr/local/bin/mkgrubcfg_simple.bash
+# Usage: /usr/local/bin/mkgrubcfg_simple.bash [path-to-dtb-file]
+# If a dtb file is specified as the first argument, it is inserted together
+# with a line specifying a devicetree line in each menu entry created. (The
+# dtb name can be a symlink; the full dtb name will be inserted into grub.cfg)
+# Normally, the script is run from a mounted rootfs and then the UUID of the
+# rootfs is discovered using the blkid comand (see below). However, for use
+# e.g. inside a chroot jail the rootfs UUID can also be given as an environment
+# variable prepended on the command line, e.g. like so (note the single quotes):
+# chroot . /bin/bash -c 'rootfsUUID=f3cab04c-...-faec36aace3f ; /usr/local/bin/mkgrubcfg_simple.bash [path-to-dtb-file]'
 
-distro_name_=$distro_name
-distro_edition_=$distro_edition
-kernel_cmdline_="$kernel_cmdline"
-dtbfile_name_=$dtbfile_name
+kernel_cmdline_pars_="$kernel_cmdline_opts"
 
 EOF
 )
 
 mkgrubcfg_simple_p2=$(cat <<"EOF1"
 
+distro_name_lc=$(cat /etc/os-release | grep -E "^ID=" | cut -d "=" -f2)
+distro_edition_lc=$(cat /etc/os-release | grep VERSION_CODENAME | cut -d "=" -f2)
+
+# First letter to uppercase.
+distro_name="$(tr '[:lower:]' '[:upper:]' <<< ${distro_name_lc:0:1})""${distro_name_lc:1}"
+distro_edition="$(tr '[:lower:]' '[:upper:]' <<< ${distro_edition_lc:0:1})""${distro_edition_lc:1}"
+
+if [[ -z "$rootfsUUID" ]]; then
+    rootfs_uuid=$(blkid -s UUID $(mount | grep -E "/ " | cut -d " " -f 1) | cut -d "\"" -f2)
+else
+    rootfs_uuid=$rootfsUUID
+fi
+echo "Rootfs UUID: $rootfs_uuid"
+
+# The next line is a default kernel command line and may have to be adjusted for each kernel.
+kernel_cmdline_rootfsuuid="root=UUID="${rootfs_uuid}
+kernel_cmdline=${kernel_cmdline_rootfsuuid}" "${kernel_cmdline_pars_}
+
+devicetree_str="# devicetree /path/to/dtbfile # not used currently"
+devicetree_msg="Devicetree:  No dtb file specified or dtb file missing."
+if [[ "$#" -eq 1 ]]; then
+    dtbfile_full=$(readlink -f $1)
+    if [[ -f $dtbfile_full ]]; then
+        devicetree_str="devicetree $dtbfile_full"
+        devicetree_msg="Devicetree:  $dtbfile_full"
+    fi
+fi
+echo $devicetree_msg
+
 cd /boot
+
 if [[ -f grub/grub.cfg ]]; then
     mv grub/grub.cfg grub/grub.cfg.bak
 fi
@@ -500,14 +533,14 @@ for kernel_version in $(ls | grep -E "vmlinuz-" | cut -b 9-) ; do
 
     kernel_path=/boot/$kernel_name
     initrd_path=/boot/$initrd_name
-    echo "Adding entry: $distro_name_ $distro_edition_ (kernel $kernel_version)"
+    echo "Adding menu entry: $distro_name $distro_edition (kernel $kernel_version)"
     # Note: The leading tabs in the here-document below are important.
 	cat <<-EOF >> grub/grub.cfg
-	menuentry "$distro_name_ $distro_edition_ (kernel $kernel_version)" {
+	menuentry "$distro_name $distro_edition (kernel $kernel_version)" {
 	
-	linux  $kernel_path $kernel_cmdline_
+	linux  $kernel_path $kernel_cmdline
 	initrd $initrd_path
-	# devicetree /dtbs/amlogic/${dtbfile_name_} # not used currently
+	$devicetree_str
 	
 	}
 	
@@ -519,41 +552,49 @@ EOF1
 mkgrubcfg_simple="${mkgrubcfg_simple_p1}""${mkgrubcfg_simple_p2}"
 
 README_auxbootldr=$(cat <<"EOF"
-Note: It appears that Petitboot/u-root can not boot a kernel residing on the
-same medium as Petitboot/u-root, unless the medium is eMMC. (This behavior has
-been observed on Ugoos AM6 plus, Amlogic s922x SOC.) Therefore the procedure
-outlined below may only work if the image is installed to eMMC. (On this image
-there are no tools for installing to eMMC but it can be done easily by hand,
-see for instance the remarks in README_diy-bootdisk.md at Tripole's Gitlab.)
+Petitboot and u-root
+--------------------
 
-It is easy to install Petitboot or u-root on this bootfs. With any of these two
-bootloaders/bootmanagers you can boot "generic" UEFI+grub (and more generally
-images with a valid grub config). If this image is installed on SD (so that it
-is first in the boot chain, as defined by aml_autoscript), the bootloader will
-start and scan the SD and other attached USB devices for bootable configurations
-which can be conveniently selected and booted via a text based UI. For more
-info on such "bootdisk" booting, see https://gitlab.com/tripole-inc/bootdisk
+It is easy to install the bootmanager/bootloader Petitboot or u-root onto this
+bootfs and use the bootloader/bootmanager as a middle stage in the booting
+process. With such an installation it is possible to have multiple kernels
+installed to choose from at the bootmanager prompt. It is also possible to boot
+kernels (and Linux OSes) installed on other attached removable media.
+For more info on such "bootdisk" booting, see
+https://gitlab.com/tripole-inc/bootdisk
 
-To install e.g. Petitboot on this bootfs (same for u-root), do the following:
+To install e.g. Petitboot onto this bootfs, do the following:
 
-(1) Download the latest tarball with Petitboot in the chainloaded version,
-    e.g. petit-bootdisk-0v24.tgz
+(1) Download the latest tarball with the Petitboot/u-root bootloaders, e.g. in
+    the form of multi-bootdisk-<version>.tgz (see Gitlab linked to above)
 (2) Unpack the tarball in some temporary directory.
-(3) Copy the existing vmlinuz and initrd.img on the bootfs to some backup
-    location.
-(4) Copy one of the vmlinuz-* kernel images from the tarball to vmlinuz on the
-    bootfs and copy the initramfs-petitboot-*.cpio.gz (w/ Petitboot) from the
-    tarball to initrd.img on the bootfs.
-(5) Reboot into Petitboot.
+(3) Copy one of the vmlinuz files from the unpacked tarball to the top level
+    on the bootfs and likewise copy the initrd for Petitboot from the unpacked
+    tarball to the top level of the bootfs.
+(4) Add a default entry in extlinux.conf corresponding to the vmlinuz/initramfs
+(5) Reboot into Petitboot
 
 The procedure is similar when using a bootdisk with the u-root bootloader.
 
+The above will (most likely) work when the Linux image with Petitboot/u-root is
+on SD but might not work on USB (or the opposite might hold); this depends on
+the boot order set in the u-boot environment variables (and possibly on the
+kernel configuration and patches applied). It should work also when the Linux
+image is installed on eMMC. (The cases with installation on SD and eMMC have
+been tested with recent versions of the Petitboot initramfs and recent
+koop-3pole kernels, and u-root has also been verified to work on eMMC. On this
+Linux image there are no tools for copying the Linux system onto eMMC but it is
+not difficult to do by hand, see e.g. README_diy-bootdisk.md at Gitlab).
+
+Hidden bootloader
+-----------------
+
 To boot this disk image with u-boot requires a working resident/vendor u-boot
 bootloader but this restriction can be removed if a "hidden" bootloader, i.e.
-u-boot, is installed in the gap leading up to the first partition. With such a
-bootloader properly installed, the disk will always boot from SD or USB on
-Amlogic devices, regardless of the state of the resident/vendor u-boot. More
-inforomation about this can be found in README_diy-bootdisk.md at Gitlab.
+u-boot, is installed in the "gap" leading up to the first partition. With such
+a hidden bootloader properly installed, the disk will always boot from SD or
+USB on Amlogic devices, regardless of the state of the resident/vendor u-boot.
+More inforomation about this can be found in README_diy-bootdisk.md at Gitlab.
 EOF
 )
 
@@ -566,6 +607,8 @@ https://github.com/FauthD/amlogic-u-boot-scripts
 Yet another setup (which is probably more versatile but may require bootloader
 u-boot.bin flashed to the boot sector and gap before first partition) is the
 scripts used on Ophub's images https://github.com/ophub/amlogic-s9xxx-armbian
+An in-depth description of how boot scripts work on Amlogic can be found in
+https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
 EOF
 )
 
@@ -750,7 +793,7 @@ systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
                /root/devuan_custom_inst.bash
 rm ${rootfs_mnt}/root/devuan_custom_inst.bash
 sleep 2 # Just to be able to read some of the messages.
-echo "Done."
+echo -e ${k_msg}" Done in chroot jail."
 
 if [[ $arch_str != "aarch64" ]]; then
     echo -n -e ${i_msg}" Removing local qemu-aarch64-static binary..."
@@ -768,8 +811,10 @@ if [[ -f $dtbfile_loc ]]; then
     cp $dtbfile_loc $bootfs_mnt
     echo " Done."
 else
-    echo -n -e ${w_msg}" Could not find $dtbfile_name in "
-    echo $dtbfile_dir
+    echo -e ${e_msg}"\nCould not find $dtbfile_name"
+    echo " in $dtbfile_dir"
+    echo " Exiting."
+    exit 1
 fi
 
 echo -n -e ${i_msg}" Setting up /etc/resolv.conf ..."

@@ -117,7 +117,7 @@
 # A: Well, as always, "it depends". (Best to browse through them all, I guess.)
 
 distro_name=Ubuntu   # Used for the image name and in grub.cfg
-distro_edition=Mantic # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
+distro_edition=Jammy # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
 
 # Host name for image.
 host_name=opbu
@@ -127,9 +127,9 @@ compressed_img=yes # {yes,no}
 
 # Name and tag for resulting disk image (uncomment and edit to taste).
 # Example for Ophub/Flippy kernel.
-# krnver_str="6.1.38-ophub" # Kernel name/release str., plain text.
+# krnver_str="6.1.65-ophub" # Kernel name/release str., plain text.
 # Example for koop-3pole kernel.
-krnver_str="6.1.63-koop-3pole" # Kernel name/release str., plain text.
+krnver_str="6.6.4-kotr-3pole" # Kernel name/release str., plain text.
 
 # The selected zram compression method here must match what the kernel supports
 # (if unsure, set to zstd). See /etc/default/zramswap
@@ -402,6 +402,7 @@ until passwd; do echo "Try again."; done
 echo "Setting up boot (2 items):"
 echo "(1) Creating /boot/grub/grub.cfg"
 rootfsUUID=$rootfs_UUID bash -c '/usr/local/bin/mkgrubcfg_simple.bash /root/dtbfile_link'
+rm -f /root/dtbfile_link
 echo "(2) Creating uImage, uInitrd on boot partition (from vmlinuz, uInitrd)."
 /usr/local/bin/mkbootlinux.bash $krnver_str $bootfs_dir >/dev/null
 EOF
@@ -735,6 +736,8 @@ different logic, can be found (along with some comments and explanations) at
 https://github.com/FauthD/amlogic-u-boot-scripts
 Yet another setup is the scripts used on Ophub's images
 https://github.com/ophub/amlogic-s9xxx-armbian
+An in-depth description of how boot scripts work on Amlogic can be found in
+https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
 EOF
 )
 
@@ -940,7 +943,7 @@ done
 cp ${krnfile_dir}/head*-${krnver_str}.tar.gz $opsave_dir
 echo " Done."
 
-echo -n -e ${i_msg}" Installing kernel, initramfs, modules and dtb files..."
+echo -e ${i_msg}" Installing kernel, initramfs, modules and dtb files..."
 tar -xzf ${krnfile_dir}/boot-${krnver_str}.tar.gz -C ${rootfs_mnt}/boot
 mkdir -p -m 0744 ${rootfs_mnt}/lib/modules
 tar -xzf ${krnfile_dir}/modules-${krnver_str}.tar.gz -C ${rootfs_mnt}/lib/modules
@@ -952,9 +955,9 @@ done
 dtbfile_loc=$(find ${rootfs_mnt}/boot/dtbs -name ${dtbfile_name})
 if [[ -f $dtbfile_loc ]]; then
     cp $dtbfile_loc ${bootfs_mnt}
-    dtbfile_rootfs=${dtbfile_loc#${rootfs_mnt}}
     if [[ "$dtbname_in_grubcfg" == "yes" ]]; then
-        ln -s $dtbfile_rootfs ${rootfs_mnt}/root/dtbfile_link
+	dtbfile_rootfs=${dtbfile_loc#${rootfs_mnt}}
+	ln -s $dtbfile_rootfs ${rootfs_mnt}/root/dtbfile_link
     fi
 else
     echo -e ${e_msg}" Unable to find the requested dtb file ${dtbfile_name}, exiting."
@@ -984,9 +987,8 @@ echo -e ${i_msg}" Entering chroot jail. Installing some pkgs., running some scri
 systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
                /root/ubuntu_custom_inst.bash
 rm ${rootfs_mnt}/root/ubuntu_custom_inst.bash
-rm ${rootfs_mnt}/root/dtbfile_link >/dev/null 2>&1 # It might not exist.
 sleep 2 # Just to be able to read some of the messages.
-echo "Done."
+echo -e ${k_msg}" Done in chroot jail."
 
 if [[ $arch_str != "aarch64" ]]; then
     echo -n -e ${i_msg}" Removing local qemu-aarch64-static binary..."
