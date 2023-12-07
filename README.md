@@ -63,7 +63,7 @@ images (and there are downloads of the images available).
 The images can be booted using any of the bootdisks but also with `u-boot`
 (using the resident/vendor version of `u-boot` installed on the TV-box/SBC).
 
-#### The easier way (with scripts)
+#### Image creation using scripts
 
 There are several scripts available to generate images.
 The images are CLI/server images but is it easy to add a graphical desktop;
@@ -121,7 +121,17 @@ you can build an image of Debian, Devuan or Ubuntu for several well
 known families of SoCs/boards (cf. the `defconfig` and `lib/boards` folders
 there).
 
-#### The harder way (with bare hands)
+#### Image creation using QEMU
+
+A convenient way to create an ARM64 Linux image is to run a native
+ARM64 installer (e.g. in an iso file) in QEMU on e.g. an x86_64 host
+and install directly onto anSD/USB attached to the host.
+These images will typically be UEFI images and can be booted on a
+TV-box/SBC using e.g. Petitboot/u-root.
+A short desription of how use QEMU for image creation like this
+is given in [`README_QEMU_inst.md`](README_QEMU_inst.md).
+
+#### Image creation using bare hands
 
 A working Ubuntu desktop image for a TV-box can also be obtained by a
 straightforward conversion procedure starting with a Raspberry Pi image, see
