@@ -3,14 +3,14 @@
 The [QEMU](https://www.qemu.org) emulator suite can be used in several
 ways to aid in the creation of Linux ARM64 images for TV-boxes/SBCs.
 One important application is to directly create bootable ARM64 Linux
-images on SD/USB by running an ARM64 installer in QEMU on a host of a
-differerent architecture, such as x86_64.
+images on SD/USB by running an ARM64 Linux installer in QEMU on a host
+of a differerent architecture, such as x86_64.
 An advantage with this method is that the possible problems involved
 with running scripts on the host (incl. resolving dependencies) are
 avoided.
 Instead, the native installer for the ARM64 Linux distribution in
-question can be run unmodified on the host to provide a prestine
-install directly on the SD/USB.
+question can be run unmodified in QEMU on the host to provide a
+prestine install directly on the SD/USB.
 The result will typically be a UEFI Linux image that can be booted e.g.
 with Petitboot/u-root (e.g. using a bootdisk).
 
@@ -29,9 +29,9 @@ The prerequisites on the host are small; a working QEMU system install
 qemu-system-aarch64 (the package qemu-system-arm) and the package
 containing UEFI for QEMU aarch64 (qemu-efi-aarch64).
 
-It is recommended to clean the install medium (SD/USB) prior to install
-(e.g. using dd and /dev/zero) so that the installer is not affected by
-any remnants of previous activity on the medium.
+It is recommended to wipe clean the install medium (SD/USB) prior to
+install (e.g. using dd and /dev/zero) so that the installer is not
+affected by any remnants of previous activity on the medium.
 
 #### Install
 
@@ -52,17 +52,20 @@ will automatically start.
 (A virtual network card will automatically be created in QEMU and the
 SD/USB stick will appear as a "virtual disk".)
 The QEMU session can be controlled by entering commands in the terminal
-window; use Ctrl-a,Ctrl-h for help on QEMU commands and e.g.
+window; e.g. use Ctrl-a,Ctrl-h for help on QEMU commands and
 Ctrl-a,Ctrl-x to shut down QEMU.
 
-The installation the proceeds just like an ordinary install onto disk
-(and there will be only one disk visible/accessible inside QEMU; the
-SD/USB.)
+The installation procedure is the sama as for an ordinary install onto
+disk (and there will be only one disk visible/accessible inside QEMU;
+the SD/USB.)
 When the installation is finished the installer will try to reboot into
-the installed image but this is prevented by the -no-reboot switch.
+the installed image but this is prevented by the -no-reboot switch on
+the QEMU command line above.
 
-The parameters for QEMU memory size (-m) and number of cores (-smp) may
-have to bee adapted for other installer images.
+The command line parameters for QEMU memory size (-m) and number of
+cores (-smp) may have to be adapted for other installer images.
+Also, the CPU architecture (-cpu) usded during install may need to be
+changed depending on the install target.
 
 #### Post install
 
