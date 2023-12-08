@@ -125,7 +125,7 @@ there).
 
 A convenient way to create an ARM64 Linux image is to run a native
 ARM64 installer (e.g. in an iso file) in QEMU on e.g. an x86_64 host
-and install directly onto anSD/USB attached to the host.
+and install directly onto an SD/USB attached to the host.
 These images will typically be UEFI images and can be booted on a
 TV-box/SBC using e.g. Petitboot/u-root.
 A short desription of how use QEMU for image creation like this
@@ -133,20 +133,21 @@ is given in [`README_QEMU_inst.md`](README_QEMU_inst.md).
 
 #### Image creation using bare hands
 
-A working Ubuntu desktop image for a TV-box can also be obtained by a
-straightforward conversion procedure starting with a Raspberry Pi image, see
-[`README_ubuntu_frompi.md`](README_ubuntu_frompi.md).
-A completely manual approach to installing Ubuntu and Debian on a SD/USB is
-described in [`README_ubuntu_inst.md`](README_ubuntu_inst.md) and
-[`README_debian_inst.md`](README_debian_inst.md), respectively
-(the latter also covers Devuan).
-All the images so created can be booted with the bootdisks.
+There are also some (by now largely obsolete) README files describing
+procedures for manually creating Ubuntu of Debian images using e.g.
+conversion of a Raspberry Pi image as in
+[`README_ubuntu_frompi.md`](README_ubuntu_frompi.md)
+or using the debootstrap mechanism as in
+[`README_ubuntu_inst.md`](README_ubuntu_inst.md),
+[`README_debian_inst.md`](README_debian_inst.md).
+(These procedures can serve as instructive examples but in general
+the QEMU install method above would be preferrable.)
 
 ### ARM64 Linux kernel
 
 The script [`arm64_kbuild.bash`](arm64_kbuild.bash) can be used to produce
-(i.e. build and pack, on a x86_64 Ubuntu Focal or Jammy host, or natively
-on an ARM64 Ubuntu Jammy host) kernels with source from
+(i.e. build and pack in a tarball, on a x86_64 Ubuntu Focal or Jammy host, or
+natively on an ARM64 Ubuntu Jammy host) kernels with source from
 [kernel.org](https://kernel.org) and with kernel config and patches provided
 locally.
 For instance, it can be used to produce the `koop-3pole` line of ARM64

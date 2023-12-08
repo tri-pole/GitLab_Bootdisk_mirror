@@ -40,7 +40,7 @@ the installer) onto a (clean) USB stick appearing as /dev/sdX on the
 host, the command to run (at least on Linux x86_64) is the following:
 
 ```
-  sudo qemu-system-aarch64 -machine virt -m 512 -cpu cortex-a57 -smp 2 \
+  sudo qemu-system-aarch64 -machine virt -m 1024 -cpu cortex-a57 -smp 2 \
   -bios /usr/share/qemu-efi-aarch64/QEMU_EFI.fd \
   -drive file=debian-testing-arm64-netinst.iso,index=0,media=cdrom \
   -drive file=/dev/sdX,format=raw,media=disk \
@@ -49,15 +49,22 @@ host, the command to run (at least on Linux x86_64) is the following:
 
 This will start QEMU in a terminal window where the Debian installer
 will automatically start.
-(A virtual network card will automatically be created in QEMU and the
-SD/USB stick will appear as a "virtual disk".)
-The QEMU session can be controlled by entering commands in the terminal
-window; e.g. use Ctrl-a,Ctrl-h for help on QEMU commands and
-Ctrl-a,Ctrl-x to shut down QEMU.
+A virtual network card will automatically be created in QEMU and the
+SD/USB stick will appear as a "virtual disk".
+The terminal window on the host appears to the installer as a serial
+console (e.g. ttyAMA0).
 
-The installation procedure is the sama as for an ordinary install onto
-disk (and there will be only one disk visible/accessible inside QEMU;
-the SD/USB.)
+The QEMU session running in the terminal window can be controlled by
+entering commands in the terminal; e.g. use Ctrl-a,h (or Ctrl-a,Ctrl-h)
+for help on QEMU commands and Ctrl-a,x or (Ctrl-a,Ctrl-x) to shut down
+QEMU.
+(If you have aborted QEMU you may need to issue the command reset
+inside the host terminal window to get it back to default settings.)
+
+The installation procedure is the same as for an ordinary install onto
+disk. There will be only one disk visible/accessible inside QEMU; the
+SD/USB. Use standard partitioning, i.e. no LVM.
+
 When the installation is finished the installer will try to reboot into
 the installed image but this is prevented by the -no-reboot switch on
 the QEMU command line above.
@@ -73,8 +80,35 @@ The installation can be tested in QEMU on the host by running the
 install command above but modified by removing the line containing the
 reference to the Debian installer iso file (as a cdrom disk).
 Since the QEMU terminal window environment is then text-only the Linux
-image will come up in text mode.
+image will come up in text mode (in a serial console mode).
 
-During the install the package quemu-guest-agent is installed (since
-the installer detects the QEMU environment) and this package can be
-removed when the image is run natively on a TV-box/SBC.
+During the install the package quemu-guest-agent may be installed
+(since the installer detects the QEMU environment) and this package
+can be removed when the image is run natively on a TV-box/SBC.
+
+### Remarks
+
+The method describe here has been tested with the iso installer images
+for Debian Testing (Trixie), Devuan (Daedalus), Ubuntu Server (22.04.3)
+and Fedora Server (39) but should be applicable to many other
+distributions.
+
+#### Emulation environment
+
+The values of the memory and cores parameters needed in the QEMU
+command line above can vary between distributions; for Debian/Devuan
+the values -m 512, -smp 2 work just fine but for Ubuntu the values
+-m 1024, -smp 4 seems to be needed.
+For Fedora, even more memory (e.g. -m 2048) may be needed.
+
+It is of course also possible to run QEMU with graphics and then use
+the graphical installers that are available for the various distros.
+However, the conditions for running different types of graphical
+displays with QEMU is very (host) platform dependent and therefore we
+have not discussed that here.
+
+If a graphical installation procedure is really needed the best option
+is probably to use libvirt and virt-manager, and set up a virtual
+machine with disk passthrough for the install target SD/USB,
+analogously as for QEMU described here.
+
