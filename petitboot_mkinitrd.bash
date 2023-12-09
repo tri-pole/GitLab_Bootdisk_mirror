@@ -6,7 +6,7 @@
 
 # Script to compile and pack Petitboot for ARM64 in the form of an initramfs.
 
-# Requires: ARM64 build host with normal build environment (sse also below).
+# Requires: ARM64 build host with normal build environment (see also below).
 # Tested on a Ubuntu Jammy build host running in qemu-system-aarch64 on x86_64.
 
 # Dependencies: GNU build tools and compiler suite, and installed dependencies
@@ -38,14 +38,22 @@
 #   autoboot and to lock Petitboot into a netns jail, see the init script below.
 #   (With the patches applied to Petitboot the autoboot timeout is set to 60s.)
 
+# Things to note about Busybox and other utils:
+# - The pb-discover process may interfere with some e2fsprogs such as e2fsck
+#   (giving error messages about busy devices etc.) so it is advisable to first
+#   kill pb-discover before e.g. attempting to repair file systems from the
+#   Busybox shell.
+
 # ToDo (feel free to pitch in here):
 # - Figure out why the initial scan does not always detect all bootable devices.
-#   Will further fiddling with udevd or udevadm e.g. with delays fix it?
-# - There seems to be a kernel cmdline option; petitboot.debug. Investigate...
+#   Will further fiddling with udevd or udevadm e.g. with delays fix it
+#   (e.g. in order to wait for USB devices)?
+# - There seems to be an option for Petitboot named petitboot.debug that can
+#   be passed via the kernel command line, what is it? Investigate...
 
 # --------------------------------- Parameters -------------------------------
 
-# If used, this tag  is inserted inside the header in the Petitboot main manu
+# If used, this tag  is inserted inside the header in the Petitboot main menu
 # where it normally says e.g. Petitboot (v1.13) so that instead it will say
 # something like Petitboot (v1.13 (mytaglinehere))
 to_day=$(date +"%y%m%d")
@@ -57,7 +65,7 @@ build_ver_tag="${mytag}"
 use_build_ver_tag=true # {true_false}
 
 # The initramfs can be built also in a smaller version where the e2fsprogs
-# tools are omitted.
+# tools are omitted (file file system tools are still available in Busybox).
 no_e2fsprogs=false # {true,false}
 
 # In the download parameter settings below the setting dload_<pkg>_tarball
@@ -309,7 +317,7 @@ EOF
 )
 
 # Bash does not support null characters '\0' (they will be mangled when a here
-# doc is written file). Therefore, we apply sed below to replace Q -> '\0'
+# doc is written fto ile). Therefore, we apply sed below to replace Q -> '\0'
 sbin_sysinfo=$(cat << "EOF"
 #!/bin/sh
 
@@ -718,6 +726,8 @@ tree initramfs >${result_dir}/initramfs_file_tree.txt
 # echo "Enter your password to change back ownership (you) of initramfs tree:"
 my_user=$(whoami)
 sudo chown -R $my_user:$my_user ${temp_dir}/initramfs/*
+
+# ---------------------------------- Cleanup ---------------------------------
 
 echo -n "Do you want to delete the build directories?   [n/Y] >"
 read do_del_pkgblddirs
