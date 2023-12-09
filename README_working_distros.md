@@ -7,24 +7,29 @@ known to work with the bootdisks.
 
 ## Scope
 
-Here we only give basic information on working distributions and minor hints on
-how to get the distro up and running with the bootdisks.
+We provide information on how to do a manual install, or adapt distribution
+images, to work with the bootdisks, or more generally with a grub aware
+bootloader such as `Petitboot/u-root`.
+A manual install can be made using QEMU or by direct use of an installer iso.
+
+We only give basic information on working distributions and minor hints on
+how to get the distro up and running, and to be bootable with the bootdisks.
 For detailed information the reader is referred to the adjacent README files.
 The installation target for the Linux distribution is USB everywhere below
 (with the bootdisk installed on SD).
 
-The list covers distributions that have been tested and found working on
+The list below covers distributions that have been tested and found working on
 Beelink GT King Pro and Ugoos Am6 plus (both Amlogic s922x).
 The list doesn't include images made with our image making scripts (e.g. for
 Ubuntu, Debian, ArchLinux) since these images can all be booted both with the
 bootdisks and with `u-boot`.
 
 Unless otherwise noted, everything works as intended on the distributions
-listed (HDMI video, HDMI sound, Ethernet, WiFi, Bluetooth), but see the caveats
-below.
+listed (HDMI video, HDMI sound, Ethernet, WiFi, Bluetooth), but see the
+caveats below.
 Also, unless otherwise noted (and where applicable), the editions of the
 distributions listed are the latest stable or long term stable (e.g. Debian
-Bullseye and Ubuntu Jammy).
+Bookworm and Ubuntu Jammy).
 
 ### Caveats
 
@@ -38,13 +43,13 @@ question (various Internet sources describe this).
 
 ## Distributions
 
-In general, the requirements for a Linux ARM64 distribution to boot and run
-from USB is that there is a kernel and initramfs available on the image with
-sufficient support for the boot medium (here USB) and for the TV-box/SBC (SoC)
-in question.
-For some of the distributions everything is in place on the images already as
-posted on the download site, on others only minor tweaks are needed (such as
-setting up a `grub.cfg` file).
+In general, the requirements for a Linux ARM64 image to boot and run from USB
+on a TV-box/SBC is that there is a kernel and initramfs available on the image
+with sufficient support for the boot medium (here USB) and for the TV-box/SBC
+(SoC) in question.
+For some of the Linux distributions everything is in place on the images
+already as posted on the download site (or as provided by the installer), on
+others only minor tweaks are needed (such as setting up a `grub.cfg` file).
 
 In a few cases a new kernel needs to be installed and for others a new image
 may need to be built because of shortcomings in the existing installers.
@@ -55,42 +60,50 @@ may need to be built because of shortcomings in the existing installers.
 #### Ubuntu Server
 
 Ubuntu Server ARM64 can be booted directly using the live iso (burned to USB).
-Using the installer on the iso to install to disk does not work currently but
-Ubuntu Server can be installed using the install method described in
+Running the installer from the iso natively on a TV-box to install to disk does
+not work currently but Ubuntu Server can be installed by running the installer
+in QEMU as described in [`README_QEMU_inst.md`](README_QEMU_inst.md) or by using
+the (more cumbersome) install method described in
 [`README_ubuntu_inst.md`](README_ubuntu_inst.md).
 
 #### Ubuntu Desktop
 
-Ubuntu Desktop ARM64 can be installed using the method described in
+Ubuntu Desktop ARM64 can be installed with the iso installer using QEMU as in
+[`README_QEMU_inst.md`](README_QEMU_inst.md) or with the method described in
 [`README_ubuntu_inst.md`](README_ubuntu_inst.md).
-It can also be installed by exchanging the kernel on a Ubuntu Raspberry Pi
-image, see [`README_ubuntu_frompi.md`](README_ubuntu_frompi.md).
+A working Ubuntu Desktop install can also be obtained by exchanging the kernel
+on a Ubuntu Raspberry Pi image, see
+[`README_ubuntu_frompi.md`](README_ubuntu_frompi.md).
 The ARM64 live iso images can be run as-is.
 
 ### Fedora
 
-The Fedora 38 Generic ARM64 images can be booted and run as-is.
-The images can be found e.g. [here](https://dl.fedoraproject.org/pub/fedora/linux/releases/38).
+The Fedora Generic ARM64 (raw) images can be booted and run as-is.
+The images can be found e.g.
+[here](https://dl.fedoraproject.org/pub/fedora/linux/releases).
+Fedora can also be installed with the iso installer for Fedora Server using
+QEMU as described in [`README_QEMU_inst.md`](README_QEMU_inst.md).
 
 Note: On some (older) Fedora releases the graphical login may not function
-properly after package upgrades (this problem was present also on Fedora 36).
+properly after package upgrades.
 A simple workaround is to switch to e.g. VT3 (Ctrl-Alt-F3) and login there, and
 then execute the command (as root/via sudo) `systemctl restart display-manager`.
 
 ### Debian
 
-Debian ARM64 can be installed and run using the debootstrap procedure
-described in [`README_debian_inst.md`](README_debian_inst.md).
+Debian ARM64 can be installed with the iso installer using QEMU as described in
+[`README_QEMU_inst.md`](README_QEMU_inst.md) or using the debootstrap
+procedure described in [`README_debian_inst.md`](README_debian_inst.md).
 
 ### openSuse
 
-The installer (iso)
+The iso installer
 [images](https://download.opensuse.org/ports/aarch64/distribution/leap/15.4/iso/)
 for openSuse ARM64 can be run directly to install openSuse.
 Alternatively, a network install procedure can be used, see
 [`README_distro_inst_disk.md`](README_distro_inst_disk.md).
 
-The pre made openSuse images for ARM64, called
+The openSuse (raw) images for ARM64, called
 [appliances](https://download.opensuse.org/ports/aarch64/distribution/leap/15.4/appliances/),
 can be booted with the bootdisks as long as a new `grub.cfg` file is setup.
 This file should be placed at `/boot/grub/grub.cfg` and can e.g. look like
@@ -110,12 +123,13 @@ password is "linux".
 
 ### Devuan
 
-Devuan ARM64 can be installed using the debootstrap method described and the
-end of [`README_debian_inst.md`](README_debian_inst.md).
+Devuan ARM64 can be installed using the iso installer and QEMU as described in
+[`README_QEMU_inst.md`](README_QEMU_inst.md) or using the debootstrap method
+described and the end of [`README_debian_inst.md`](README_debian_inst.md).
 
 ### Gentoo
 
-The Gento installation CD for ARM64 can be booted with e.g. petit-bootdisk and
+The Gento iso installer for ARM64 can be booted with e.g. petit-bootdisk and
 it contains a live CD system from which Gentoo (e.g. 17.1) can be installed.
 The Gentoo handbook does not have a chapter for ARM64 but the instructions for
 x86_64 can be used with some small obvious modifications. (Activating the sshd
@@ -206,8 +220,7 @@ initrd /boot/initrd.img-5.13.12-meson64
 #### Custom
 
 For other distributions, it can be convenient to make a custom image by going
-through the following steps. (This applies to, for example, Manjaro ARM64
-images on USB that can be made bootable via the bootdisks.)
+through the following steps (as a template):
 
 - Copy over all the files from the original image to a newly made USB with one
   single large ext4 partition (using e.g. `rsync` to retain all structure).
@@ -218,9 +231,10 @@ images on USB that can be made bootable via the bootdisks.)
   (The proper kernel command line options are dependent on the kernel used and
   the SoC.)
 
+- Edit `/etc/fstab` to reflect the new UUID of the new rootfs on the USB.
+
 - Sometimes needed for first boot: Copy over a "a first boot kernel+initramfs"
-  which is known to work for the TV-box in question
-  (e.g. one of
+  which is known to work for the TV-box in question (e.g. one of
   [Ophub's kernels](https://github.com/ophub/amlogic-s9xxx-armbian)).
 
 - Do a first boot and upgrade e.g. to the final kernel desired, and then do the

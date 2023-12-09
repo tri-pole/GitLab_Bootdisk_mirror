@@ -88,7 +88,7 @@ can be removed when the image is run natively on a TV-box/SBC.
 
 ### Remarks
 
-The method describe here has been tested with the iso installer images
+The method described here has been tested with the iso installer images
 for Debian Testing (Trixie), Devuan (Daedalus), Ubuntu Server (22.04.3)
 and Fedora Server (39) but should be applicable to many other
 distributions.
@@ -100,6 +100,8 @@ command line above can vary between distributions; for Debian/Devuan
 the values -m 512, -smp 2 work just fine but for Ubuntu the values
 -m 1024, -smp 4 seems to be needed.
 For Fedora, even more memory (e.g. -m 2048) may be needed.
+
+#### Graphical install
 
 It is of course also possible to run QEMU with graphics and then use
 the graphical installers that are available for the various distros.
