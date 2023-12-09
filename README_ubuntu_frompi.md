@@ -2,15 +2,14 @@
 
 ## Background
 
-Installing Ubuntu desktop by using rootfs (or debootstrapping) is described in
-adjacent README files (and in a script) and the reasons for using this approach
-are outlined there too. However, for a TV-box (or SBC) the simplest method to
-obtain a working (grub bootable) image (on SD/USB) of Ubuntu desktop for ARM64
-is to start with the official Ubuntu image for the Raspberry Pi and convert it.
-The conversion process essentially amounts to replacing the kernel and this can
-be done when running another ARM64 image on the TV-box. The result of the
-conversion is an image that can be booted with `u-root-bootdisk` or
-`petit-bootdisk`.
+Creating an Ubuntu image can be done in any of the ways described in adjacent
+README files (using scripts or manual debootstrapping, or using QEMU) but there
+is also another method to create an image for a TV-box/SBC by converting an
+image for a Raspberry Pi.
+The conversion process essentially amounts to replacing the kernel.
+This can be done when running another ARM64 Linux image on the TV-box and
+the result of the conversion is an image that can be booted with e.g.
+`u-root-bootdisk` or `petit-bootdisk`.
 
 ## Scope
 

@@ -9,11 +9,11 @@ by issuing `Ctrl-Al-Del`, but there is no visible output, on any of the virtual
 terminals.)
 
 The present writeup describes a workaround to this problem and shows how to do
-an install of a base system of Debian 11 for ARM64 on e.g. a USB stick, which
-can then booted for instance with `u-root-bootdisk` (or any other boot
-mechanism that relies only on a `grub.cfg` file).
-Our method is a (slight) variant of the method we have devised for installing
-Ubuntu (cf. the associated README) and uses the Debian tool
+a manual install of a base system of Debian 11 for ARM64 on e.g. a USB stick,
+which can then booted for instance with `petit-bootdisk` or `u-root-bootdisk`
+(or any other boot mechanism that relies only on a `grub.cfg` file).
+Our method is a (slight) variant of the method we have devised for manually
+installing Ubuntu (cf. the associated README) using the Debian tool
 [debootstrap](https://www.debian.org/releases/stable/arm64/apds03.en.html)
 to install the rootfs.
 (This tool is available in the repositories for the Ubuntu Server installation
