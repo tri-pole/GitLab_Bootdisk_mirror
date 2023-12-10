@@ -8,6 +8,7 @@
 
 # Requires: ARM64 build host with normal build environment (see also below).
 # Tested on a Ubuntu Jammy build host running in qemu-system-aarch64 on x86_64.
+# The user running the script must be in the sudo group.
 
 # Dependencies: GNU build tools and compiler suite, and installed dependencies
 # for the packages kexec, busybox, iproute2, e2fsprogs, petitboot and eudev.
@@ -17,9 +18,12 @@
 # compile each of the packages listed above. Once this works, it should be
 # straightforward to resolve any remaining dependencies in the code below.
 
-# Usage: Two directories will be created in the same directory as this script;
-# one result directory and one temporary file directory hearchy. (Near the end
-# of this script you will be asked which of the temp dirs you want to delete.)
+# Usage: The script can be run as an ordinary user but near the end ut will
+# ask for the user password to execute sudo command to change ownership of
+# the files in the initramfs. During execution of this script, two directories
+# be created in the same directory as this script; one result directory and
+# one temporary file directory hearchy. (Near the end of this script you will
+# be asked which of the temp dirs you want to delete.)
 
 # Inspiration: https://www.raptorengineering.com/content/kb/1.html
 
@@ -192,6 +196,30 @@ to build the initramfs on a $host_info host running
 
 $os_info
 
+EOF
+)
+
+README_PB_Busybox=$(cat << EOF
+Notes for Busybox $busybox_ver on Petitboot $petitboot_ver :
+
+  When entering the Busybox command line you will see an error message like
+  "can't access tty; job control turned off". This is due to the choice of
+  /dev/console which will be serial; thus cannot be a controlled tty, see e.g.
+  https://raw.githubusercontent.com/brgl/busybox/master/shell/cttyhack.c
+
+  The commands reboot, halt, poweroff are available in Busybox but must be
+  used with the -f flag (force; do not go through init).
+
+  The pb-discover process may interfere with some e2fsprogs such as e2fsck
+  (giving error messages about busy devices etc.) so it is advisable to first
+  kill pb-discover before e.g. attempting to repair file systems from the
+  Busybox shell.
+EOF
+)
+
+etc_motd=$(cat << "EOF"
+This is the Busybox shell. Standard UNIX/shell-isms apply.
+Please see also /usr/share/busybox/README_PB_Busybox
 EOF
 )
 
@@ -529,8 +557,19 @@ cp ./examples/udhcp/simple.script ${temp_dir}/initramfs/usr/share/udhcpc/
 # chown 0755 ${temp_dir}/initramfs/usr/share/udhcpc/simple.script
 cd ${temp_dir}/initramfs/bin
 ln -s busybox sh
+cd ${temp_dir}/initramfs/sbin
+ln -s /bin/ip ip # Petitboot (in default config.h) expects this.
 echo " Done."
 echo -e ${k_msg}" Finished building and installing Busybox."
+
+echo -e -n ${i_msg}" Writing Busybox notes/README to /usr/share/busybox ..."
+echo -e "$README_PB_Busybox" \
+    >${temp_dir}/initramfs/usr/share/busybox/README_PB_Busybox.txt
+echo " Done."
+echo -e -n ${i_msg}" Writing /etc/motd ..."
+echo -e "$etc_motd" >${temp_dir}/initramfs/etc/motd
+chmod 0644 ${temp_dir}/initramfs/etc/motd
+echo " Done."
 
 echo -e ${i_msg}" Building iproute2 (ip command)..."
 tar -xf ${temp_dir}/downloads/${iproute2_tarball_loc} -C ${temp_dir}/iproute2
@@ -698,7 +737,7 @@ echo -e ${i_msg}" Packing up the initramfs tree into a gzipped cpio archive..."
 cd ${temp_dir}/initramfs
 my_username=$(whoami)
 echo "Enter your password to change ownership (root) of files in initramfs tree:"
-sudo chown -R root:root ${temp_dir}/initramfs/* && \
+sudo chown -R root:root ${temp_dir}/initramfs && \
   find . | cpio -H newc -o | gzip -c > ../${initrd_pb_name} && \
   chown $my_username:$my_username ../${initrd_pb_name}
 echo " Done."
@@ -725,7 +764,7 @@ tree initramfs >${result_dir}/initramfs_file_tree.txt
 # Typically the sudo cache timeout is 5m or so so this is not needed:
 # echo "Enter your password to change back ownership (you) of initramfs tree:"
 my_user=$(whoami)
-sudo chown -R $my_user:$my_user ${temp_dir}/initramfs/*
+sudo chown -R $my_user:$my_user ${temp_dir}/initramfs
 
 # ---------------------------------- Cleanup ---------------------------------
 
