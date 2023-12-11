@@ -43,6 +43,12 @@
 #   (With the patches applied to Petitboot the autoboot timeout is set to 60s.)
 
 # Things to note about Busybox and other utils:
+# - When entering the Busybox command line you will see an error message like
+#   "can't access tty; job control turned off". This is due to the choice of
+#   /dev/console which will be serial; thus cannot be a controlled tty, see e.g.
+#   https://raw.githubusercontent.com/brgl/busybox/master/shell/cttyhack.c
+# - The commands reboot, halt, poweroff are available in Busybox but must be
+#   used with the -f flag (force; do not go through init).
 # - The pb-discover process may interfere with some e2fsprogs such as e2fsck
 #   (giving error messages about busy devices etc.) so it is advisable to first
 #   kill pb-discover before e.g. attempting to repair file systems from the
@@ -70,6 +76,7 @@ use_build_ver_tag=true # {true_false}
 
 # The initramfs can be built also in a smaller version where the e2fsprogs
 # tools are omitted (file file system tools are still available in Busybox).
+# (Note: The name tage format of the generated initrd is still the same though.)
 no_e2fsprogs=false # {true,false}
 
 # In the download parameter settings below the setting dload_<pkg>_tarball
