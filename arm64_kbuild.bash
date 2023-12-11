@@ -53,7 +53,7 @@
 # the compressed kernel source tarball name is of the form linux-6.5.11.tar.xz
 
 # Kernel version number for kernel (e.g. 6.5.11).
-kern_ver_num=6.1.63
+kern_ver_num=6.1.67
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
@@ -75,6 +75,7 @@ loc_patch_dir=dummy_dir
 # List of names for SoC vendor for which you want to create a dtb package
 # (tarball). (All of these SoCs must be enabled in the kernel config.)
 socdtbs_list=("amlogic" "allwinner" "rockchip")
+#socdtbs_list=("amlogic")
 
 # If you want legacy u-boot images of kernel and initramfs (uImage, uInitd) to
 # be made, say yes here (see also kernel load address and starting point below).
@@ -304,20 +305,24 @@ if [[ "$have_all_cmds" == "no" ]]; then
     exit 1
 fi
 
+#----------------------------------- code -----------------------------------
+
+echo -e "\n\033[92m -- Making kernel package $kern_out_str -- \033[0m"
+
 if [[ $# -eq 1 ]] ; then
     kconfig_file=$1
-    if [[ -f $kconfig_file ]] ; then
-        kconfig_file_full=$(readlink -f $kconfig_file)
-        echo -e ${i_msg}" Using kernel config file"
-        echo "         $kconfig_file_full"
+    kconfig_file_full=$(readlink -f $kconfig_file)
+    if [[ -f $kconfig_file_full ]] ; then
+        echo "Kernel config file: $kconfig_file_full"
     else
         echo -e ${w_msg}" The suggested kernel config file $kconfig_file_full does not exist!"
     fi
 fi
 
-#----------------------------------- code -----------------------------------
-
-echo -e "\n\033[92m -- Making kernel package $kern_out_str -- \033[0m"
+patch_src_dir_full=$(readlink -f $patch_src_dir)
+if [[ -d $patch_src_dir_full ]]; then
+    echo "Patches directory: $patch_src_dir_full"
+fi
 
 echo -e "\nMake sure that you have enough space: up to ~${required_MiB} MB +some.\n"
 echo "This is what you have:"
