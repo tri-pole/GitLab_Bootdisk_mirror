@@ -8,9 +8,9 @@ known to work with the bootdisks.
 ## Scope
 
 We provide information on how to do a manual install, or adapt distribution
-images, to work with the bootdisks, or more generally with a grub aware
-bootloader such as `Petitboot/u-root`.
-A manual install can be made using QEMU or by direct use of an installer iso.
+(raw) images, to work with the bootdisks, or more generally to boot with a grub
+aware bootloader such as `Petitboot/u-root`.
+A manual install can be made using QEMU or by native use of an installer iso.
 
 We only give basic information on working distributions and minor hints on
 how to get the distro up and running, and to be bootable with the bootdisks.
@@ -18,11 +18,12 @@ For detailed information the reader is referred to the adjacent README files.
 The installation target for the Linux distribution is USB everywhere below
 (with the bootdisk installed on SD).
 
-The list below covers distributions that have been tested and found working on
-Beelink GT King Pro and Ugoos Am6 plus (both Amlogic s922x).
-The list doesn't include images made with our image making scripts (e.g. for
-Ubuntu, Debian, ArchLinux) since these images can all be booted both with the
-bootdisks and with `u-boot`.
+The list below covers Linux distributions that have been tested and found
+working on Beelink GT King Pro and Ugoos Am6 plus (both Amlogic s922x).
+The list doesn't include the versions of various Linux distributions (e.g.
+Ubuntu, Debian, ArchLinux) installed on the (raw) images made with our image
+making scripts since these images can all be booted both with the bootdisks and
+with `u-boot`.
 
 Unless otherwise noted, everything works as intended on the distributions
 listed (HDMI video, HDMI sound, Ethernet, WiFi, Bluetooth), but see the
@@ -47,13 +48,10 @@ In general, the requirements for a Linux ARM64 image to boot and run from USB
 on a TV-box/SBC is that there is a kernel and initramfs available on the image
 with sufficient support for the boot medium (here USB) and for the TV-box/SBC
 (SoC) in question.
-For some of the Linux distributions everything is in place on the images
+For some of the Linux distributions everything is in place on the (raw) images
 already as posted on the download site (or as provided by the installer), on
 others only minor tweaks are needed (such as setting up a `grub.cfg` file).
-
-In a few cases a new kernel needs to be installed and for others a new image
-may need to be built because of shortcomings in the existing installers.
-(Examples of these scenarios are given in the adjacent README files.)
+In some cases a new kernel needs to be installed.
 
 ### Ubuntu
 
@@ -61,20 +59,20 @@ may need to be built because of shortcomings in the existing installers.
 
 Ubuntu Server ARM64 can be booted directly using the live iso (burned to USB).
 Running the installer from the iso natively on a TV-box to install to disk does
-not work currently but Ubuntu Server can be installed by running the installer
-in QEMU as described in [`README_QEMU_inst.md`](README_QEMU_inst.md) or by using
-the (more cumbersome) install method described in
-[`README_ubuntu_inst.md`](README_ubuntu_inst.md).
+not work currently (see [`README_ubuntu_inst.md`](README_ubuntu_inst.md) but
+Ubuntu Server can be installed by running the installer in QEMU as described in
+[`README_QEMU_inst.md`](README_QEMU_inst.md) or by using the (more cumbersome)
+install method described in [`README_ubuntu_inst.md`](README_ubuntu_inst.md).
 
 #### Ubuntu Desktop
 
-Ubuntu Desktop ARM64 can be installed with the iso installer using QEMU as in
-[`README_QEMU_inst.md`](README_QEMU_inst.md) or with the method described in
-[`README_ubuntu_inst.md`](README_ubuntu_inst.md).
+Ubuntu Desktop ARM64 can be installed with the iso installer and QEMU as
+described in [`README_QEMU_inst.md`](README_QEMU_inst.md) or with the manual
+method described in [`README_ubuntu_inst.md`](README_ubuntu_inst.md).
 A working Ubuntu Desktop install can also be obtained by exchanging the kernel
 on a Ubuntu Raspberry Pi image, see
 [`README_ubuntu_frompi.md`](README_ubuntu_frompi.md).
-The ARM64 live iso images can be run as-is.
+The Ubuntu ARM64 live iso images can be run as-is.
 
 ### Fedora
 
@@ -99,7 +97,7 @@ procedure described in [`README_debian_inst.md`](README_debian_inst.md).
 
 The iso installer
 [images](https://download.opensuse.org/ports/aarch64/distribution/leap/15.4/iso/)
-for openSuse ARM64 can be run directly to install openSuse.
+for openSuse ARM64 can be run natively on a TV-box to install openSuse.
 Alternatively, a network install procedure can be used, see
 [`README_distro_inst_disk.md`](README_distro_inst_disk.md).
 
@@ -117,7 +115,7 @@ initrd /boot/initrd-5.14.21-150400.24.18-default
 }
 ```
 (One can add a `devicetree` directive here also, but it is currently redundant
-when booting with the bootdisks, see the associated READMEs.)
+when booting with the bootdisks, see the READMEs for the bootdisks.)
 On first boot it takes some time before the login screen appears and the root
 password is "linux".
 
@@ -129,7 +127,7 @@ described and the end of [`README_debian_inst.md`](README_debian_inst.md).
 
 ### Gentoo
 
-The Gento iso installer for ARM64 can be booted with e.g. petit-bootdisk and
+The Gento iso installer for ARM64 can be booted with e.g. `petit-bootdisk` and
 it contains a live CD system from which Gentoo (e.g. 17.1) can be installed.
 The Gentoo handbook does not have a chapter for ARM64 but the instructions for
 x86_64 can be used with some small obvious modifications. (Activating the sshd
@@ -140,11 +138,11 @@ password before exting the chroot jail during the installation!)
 For instance, by following the handbook instructions for an EFI system and
 installing a precompiled version of the 6.1.38 kernel a fully functioning
 Gentoo system can straightforwardly be obtained.
-(This system can be booted with Petitboot.)
+(This system can be booted with `Petitboot`.)
 
 ### Armbian
 
-The Armbian Generic ARM64 images can be booted and run as-is.
+The Armbian Generic ARM64 (raw) images can be booted and run as-is.
 
 The images for specific boards can be run if a simple `grub.cfg` file is added.
 For instance, on Ugoos Am6 plus the image for Odroid N2 can be booted and run

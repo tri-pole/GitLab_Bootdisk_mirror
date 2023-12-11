@@ -129,7 +129,7 @@ which will set up a loop device and assign a number to it, e.g.
 `/dev/loop2`. (So in this case `/dev/loopX` in the modified
 `-drive` line above would be `/dev/loop2`.)
 
-After the install the image file install can be tested by booting
+After the install the image file installation can be tested by booting
 it analogously as for the SD/USB install; by removng the `cdrom`
 line from the `qemu-system-aarch64` command line.
 
