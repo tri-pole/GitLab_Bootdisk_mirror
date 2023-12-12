@@ -106,8 +106,8 @@ For Fedora, even more memory (e.g. `-m 2048`) may be needed.
 
 #### Install to image file
 
-It is easy to adapt the installation procedure above to the case of
-installing to an image file, which can later be flashed/burned to an SD/USB.
+It is easy to adapt the procedure above to the case of installation to an
+image file (which can later be flashed/burned to an SD/USB).
 To do this, locate the line above in the `qemu-system-aarch64` command
 where `/dev/sdX` is specified and replace `/dev/sdX` in that line with
 `/dev/loopX` where `/dev/loopX` is a loop device for an (empty) image file.
@@ -119,30 +119,40 @@ An empty image file can be created e.g. with the command
 ```
 
 which will create an image file named `imgfile.img` of size 6G.
-The image file can then be associated with loop device with the command
+The image file can then be associated with a loop device e.g. with the command
 
 ```
   sudo losetup -fP --show imgfile.img
 ```
 
-which will set up a loop device and assign a number to it, e.g.
-`/dev/loop2`. (So in this case `/dev/loopX` in the modified
-`-drive` line above would be `/dev/loop2`.)
+which will set up a loop device and assign a number to it, e.g. `/dev/loop2`.
+(So in this case `/dev/loopX` in the modified `-drive` line above would be
+`/dev/loop2`.)
 
-After the install the image file installation can be tested by booting
-it analogously as for the SD/USB install; by removng the `cdrom`
-line from the `qemu-system-aarch64` command line.
+After the install the image file can be tested by booting it analogously as
+for the SD/USB install; by simply removing the `cdrom` line from the
+`qemu-system-aarch64` command line.
 
-Finally, when the loop device is not needed any longer (i.e. when
-the image file is not to be read into or booted) it can be removed
-by issuing the command
+More generally, when an image file is associated with a loop device using the
+`losetup` command above it can be accessed like any other block device.
+For instance, its partition structure can be viewed by doing `lsblk /dev/loopX`
+and the partition Y of `/dev/loopX` can be mounted under `/mnt` like so
+
+```
+  sudo mount /dev/loopXpY /mnt
+```
+
+Unmounting of `/dev/loopXpY` is done analogously and the partition table of
+`/dev/loopX` (of the partitions "inside" the image file) can be manipulated
+using e.g. `fdisk` or `gdisk` etc.
+
+Finally, when the loop device `/dev/loopX` is not needed any longer (i.e. when
+the image file is not to be read or booted) it can be removed by issuing the
+command
 
 ```
   sudo losetup -d /dev/loopX
 ```
-
-where `/dev/loopX` is replaced for the loop device name actually
-used (e.g. `/dev/loop2`).
 
 #### Graphical install
 
