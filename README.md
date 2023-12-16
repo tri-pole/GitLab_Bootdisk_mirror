@@ -131,7 +131,7 @@ ARM64 installer (e.g. in an iso file) in QEMU on e.g. an x86_64 host
 and install directly onto an SD/USB attached to the host.
 These images will typically be UEFI images and can be booted on a
 TV-box/SBC using e.g. Petitboot/u-root.
-A short desription of how use QEMU for image creation like this
+A short description of how use QEMU for image creation like this
 is given in [`README_QEMU_inst.md`](README_QEMU_inst.md).
 
 #### Image creation using bare hands

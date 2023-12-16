@@ -34,7 +34,7 @@ It should be noted that since `u-root` scans also for bootable syslinux
 configurations (e.g. `extlinux.conf`) `u-root-bootdisk` can boot also disk
 images that are set up for chainloading with `u-boot.ext` (simply because
 `u-root` bypasses `u-boot.ext` on the image to be booted). Therefore,
-`u-root-bootdisk` implements a unified boot solution for the final stages on
+`u-root-bootdisk` implements a unified boot solution for the final stages of
 booting and provides a separating layer between the SoC/board specific parts
 of the boot process and the parts shared among Linux distributions.
 

@@ -29,7 +29,7 @@ The prerequisites on the host are small; a working QEMU system install
 qemu-system-aarch64 (the package qemu-system-arm) and the package
 containing UEFI for QEMU aarch64 (qemu-efi-aarch64).
 
-We describe first the method to install to SD/USB and the modifications
+We describe first the method to install to SD/USB and then the modifications
 needed to install to image file are given in the remarks section below.
 
 It is recommended to wipe clean the install medium SD/USB prior to
@@ -164,5 +164,5 @@ have not discussed that here.
 
 If a graphical installation procedure is really needed the best option
 is probably to use libvirt and virt-manager, and set up a virtual
-machine with disk passthrough for the install target SD/USB,
+machine with disk passthrough for the install target SD/USB (or image file),
 analogously as for QEMU described here.
