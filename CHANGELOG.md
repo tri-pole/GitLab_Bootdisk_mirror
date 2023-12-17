@@ -6,7 +6,7 @@ It covers all tools/codes for building Linux images and and the script
 
 __Bootdisks:__ We no longer provide tracked releases of complete bootdisks
 with `Petitboot` or `u-root`. (The old changelog is at the end of this file.)
-These bootdisks have been superceeded by `multi-bootdisk` which is discussed
+These bootdisks have been superseded by `multi-bootdisk` which is discussed
 `README_petit-bootdisk.md` and `README_u-root-bootdisk.md` (where also a
 download location is provided).
 
@@ -175,7 +175,7 @@ download location is provided).
 ### Added
  - First commit.
 
-# Discontinued tools
+# Discontinued:
 
 # u-root-bootdisk:
 

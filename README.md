@@ -93,8 +93,8 @@ Images built using this script can be downloaded from
 [here](https://mega.nz/folder/3AUj0RKB#hpWS6VSQUfIZshvVR04PJg).
 
 __Tribuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
-possible to produce Ubuntu images (Focal, Jammy, Kinetic, Lunar) using a daily
-official build of the Ubuntu
+possible to produce Ubuntu images (Focal, Jammy, Kinetic, Lunar, Mantic) using
+a daily official build of the Ubuntu
 [rootfs](https://cdimage.ubuntu.com/ubuntu-base) as a base for the OS and
 with a locally provided kernel, for instance the `koop-3pole` kernel
 described below or an
