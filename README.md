@@ -19,9 +19,9 @@ Both `Petitboot` and `u-root` employ a
 [chainloading](https://en.wikipedia.org/wiki/Chain_loading) mechanism
 utilizing the Linux [`kexec`](https://en.wikipedia.org/wiki/Kexec)
 [system call](https://wiki.archlinux.org/title/Kexec).
-The `Petitboot` bootloader provides a somewhat nicer UI and can boot
-[grub](https://wiki.archlinux.org/title/GRUB) configurations defined in
-`grub.cfg` whereas the `u-root` bootloader can boot (simple) grub
+The `Petitboot` bootloader provides a somewhat nicer UI (cf. screenshots below)
+and can boot [grub](https://wiki.archlinux.org/title/GRUB) configurations
+defined in `grub.cfg` whereas the `u-root` bootloader can boot (simple) grub
 configurations as well as a subset of
 [syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
 configurations,

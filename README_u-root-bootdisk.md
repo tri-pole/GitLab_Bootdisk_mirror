@@ -42,6 +42,10 @@ More information about `u-root` can be found [here](https://u-root.org).
 The general purpose commands available at the `u-root` shell prompt are listed
 [here](https://github.com/u-root/u-root/tree/main/cmds/core).
 
+The information provided here is directly applicable to Amlogic based
+TV-boxes/SBCs but but should also be applicable to other SOCs with the
+proper modifications of the usage of `u-boot` in the boot process.
+
 Variants
 --------
 
@@ -51,9 +55,10 @@ resident/vendor `u-boot` together with boot scripts on the `u-root-bootdisk`).
 The latter non chainloaded version enables a faster boot process but may not
 work for all TV-boxes/SBCs (this depends on the resident/vendor version of
 `u-boot` and the kernel used to boot `u-root`) whereas the bootdisk using
-chainloading can probably be made to work for most TV-boxes/SBCs (several
-alternative `u-boot.ext` are available on the `multi-bootdisk`, see below).
-The non chainloaded disk is the easiest to set up, however.
+chainloading can probably be made to work for most (Amlogic based)
+TV-boxes/SBCs (several alternative `u-boot.ext` are available on the
+`multi-bootdisk`, see below). The non chainloaded disk is the easiest to set
+up, however.
 
 Note: The term chainloading is used to describe two diffrent things here.
 First, the bootdisk itself which is chainloaded by the board resident/vendor
