@@ -41,6 +41,7 @@
 
 # Kernel configs to start with:
 # https://github.com/ophub/amlogic-s9xxx-armbian
+# https://gitlab.manjaro.org/manjaro-arm/packages/core/linux
 # https://github.com/armbian/build/
 
 # ------------------------------- parameters ---------------------------------
@@ -50,15 +51,19 @@
 # (if you (re)compile one kernel series often) are collected near the top.)
 
 # It is assumed below that the kernel source is compressed with xz and that
-# the compressed kernel source tarball name is of the form linux-6.5.11.tar.xz
+# the compressed kernel source tarball name is of the form linux-x.y.z.tar.xz
+# (or possibly linux-x.y.tar.xz).
 
-# Kernel version number for kernel (e.g. 6.5.11).
-kern_ver_num=6.1.67
+# Kernel version number for kernel in x.y.z format.
+# Note: Kernel version numbers here (in $kern_ver_num) must be in the format
+# x.y.z so for an x.y kernel (e.g. 6.7) you must here add (pad with) a zero to
+# make into x.y.z format (e.g. 6.7.0).
+kern_ver_num=6.1.71
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
 # CONFIG_LOCALVERSION=""
-# CONFIG_LOCALVERSION_AUTO is not set
+# # CONFIG_LOCALVERSION_AUTO is not set
 kern_tag_str="-koop-3pole"
 kern_out_str=${kern_ver_num}${kern_tag_str}
 
@@ -75,7 +80,6 @@ loc_patch_dir=dummy_dir
 # List of names for SoC vendor for which you want to create a dtb package
 # (tarball). (All of these SoCs must be enabled in the kernel config.)
 socdtbs_list=("amlogic" "allwinner" "rockchip")
-#socdtbs_list=("amlogic")
 
 # If you want legacy u-boot images of kernel and initramfs (uImage, uInitd) to
 # be made, say yes here (see also kernel load address and starting point below).
@@ -321,7 +325,11 @@ fi
 
 patch_src_dir_full=$(readlink -f $patch_src_dir)
 if [[ -d $patch_src_dir_full ]]; then
-    echo "Patches directory: $patch_src_dir_full"
+    if [[ -z $(ls -A $patch_src_dir_full) ]]; then
+        echo "Patches directory (empty): $patch_src_dir_full"
+    else
+        echo "Patches directory: $patch_src_dir_full"
+    fi
 fi
 
 echo -e "\nMake sure that you have enough space: up to ~${required_MiB} MB +some.\n"
@@ -387,6 +395,8 @@ echo -e ${k_msg}" Done."
 echo -n -e ${i_msg}" Unpacking the kernel source tarball..."
 tar -xf ${tmpfile_dir}/${kern_txz_name} -C $kern_src_dir
 sync
+# Handle the case with kernels with numbers x.y only (instead of x.y.z).
+mv ${kern_src_dir}/linux-* ${kern_src_dir}/linux-${kern_ver_num}
 echo " Done."
 
 echo -n -e ${i_msg}" Setting up directories for kernel output files..."

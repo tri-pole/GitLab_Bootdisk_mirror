@@ -85,7 +85,7 @@ reference to the Debian installer iso file (as a cdrom disk).
 Since the QEMU terminal window environment is then text-only the Linux
 image will come up in text mode (in a serial console mode).
 
-During the install the package quemu-guest-agent may be installed
+During the install the package qemu-guest-agent may be installed
 (since the installer detects the QEMU environment) and this package
 can be removed when the image is run natively on a TV-box/SBC.
 
