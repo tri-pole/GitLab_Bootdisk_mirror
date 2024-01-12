@@ -13,7 +13,7 @@
 # x86_64/amd64.
 # The generated image can be booted with resident/vendor u-boot (using the boot
 # scripts on the fat partition) or via bootdisk (using the grub.cfg file on the
-# rootfs partition). Another alternative is chainloader u-boot.ext (included).
+# rootfs partition). Another alternative is chainloader u-boot.ext (see below).
 
 # Usage: ./debuntu_dbstrap distro
 #        where distro is one of: ubuntu, debian

@@ -387,8 +387,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   indicated in the initramfs name.
 
   __Tweaks:__ A few script files have been added to the Petitboot initramfs,
-  most notably a hack to produce a `shutdown` command and a fake `dmidecode`
-  command.
+  such as a fake `dmidecode` command (to provide platform info in the UI).
   In the `init` script/file a few additions/changes have been made in order to
   enable a smooth boot up and turning off of network connections etc.
   Similarly, in `u-root`, a small delay followed by autostart of the `boot`
