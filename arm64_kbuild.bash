@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 # arm64_kbuild.bash
@@ -58,7 +59,7 @@
 # Note: Kernel version numbers here (in $kern_ver_num) must be in the format
 # x.y.z so for an x.y kernel (e.g. 6.7) you must here add (pad with) a zero to
 # make into x.y.z format (e.g. 6.7.0).
-kern_ver_num=6.1.71
+kern_ver_num=6.1.72
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
@@ -461,7 +462,8 @@ echo -e ${k_msg}" Done installing modules in local dir."
 
 echo -n -e ${i_msg}" Packing modules..."
 cd ${kern_out_dir}/modules/lib/modules
-tar -czf ${kern_out_dir}/${kern_out_str}/modules-${kern_out_str}.tar.gz *
+tar --exclude={build,source} \
+  -czf ${kern_out_dir}/${kern_out_str}/modules-${kern_out_str}.tar.gz *
 echo " Done."
 
 echo -n -e ${i_msg}" Extracting header files..."
