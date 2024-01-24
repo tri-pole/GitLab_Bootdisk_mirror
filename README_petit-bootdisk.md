@@ -155,7 +155,8 @@ Platforms tested
 ----------------
 
 The `petit-bootdisk`(s) have been tested on two Amlogic s922x TV-boxes; the
-Beelink GT King Pro and the Ugoos Am6 plus.
+Beelink GT King Pro and the Ugoos Am6 plus, and on one Rockchip rk3318 box;
+the h96max v11.
 The initramfs that implements `Petitboot` is generic and should work with any
 other SoC but the kernel on the bootdisk that runs `Petitboot` might only work
 with Amlogic boxes (although the kernel on the bootidsk has been compiled
