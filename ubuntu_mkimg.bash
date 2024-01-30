@@ -117,7 +117,7 @@
 # A: Well, as always, "it depends". (Best to browse through them all, I guess.)
 
 distro_name=Ubuntu   # Used for the image name and in grub.cfg
-distro_edition=Jammy # Tested with Focal, Jammy, Kinetic, Lunar, Mantic
+distro_edition=Jammy # Tested with Focal, Jammy, Kinetic, Lunar, Mantic, Noble
 
 # Host name for image.
 host_name=opbu
@@ -129,7 +129,7 @@ compressed_img=yes # {yes,no}
 # Example for Ophub/Flippy kernel.
 # krnver_str="6.1.65-ophub" # Kernel name/release str., plain text.
 # Example for koop-3pole kernel.
-krnver_str="6.6.4-kotr-3pole" # Kernel name/release str., plain text.
+krnver_str="6.7.2-koop-3pole" # Kernel name/release str., plain text.
 
 # The selected zram compression method here must match what the kernel supports
 # (if unsure, set to zstd). See /etc/default/zramswap
@@ -176,6 +176,11 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # (2) Release build of a non LTS release (e.g. Kinetic).
 # (3) Daily build of an LTS release (e.g. Focal, Jammy).
 case "$distro_release" in
+    "noble")
+        distro_buildfile=noble-base-arm64.tar.gz
+        distro_urlbase=$distro_urlbase/daily
+        distro_buildurl=${distro_urlbase}/current/${distro_buildfile}
+    ;;
     "mantic")
         distro_buildfile=ubuntu-base-23.10-base-arm64.tar.gz
         distro_urlbase=$distro_urlbase/releases
