@@ -78,10 +78,11 @@ an x86_64 Ubuntu/Debian machine (using qemu-aarch64-static) to generate an
 ARM64 image.
 
 __Debuntu:__ Debian (Bullseye, Bookworm, Trixie) and Ubuntu (Focal, Jammy,
-Kinetic, Lunar, Mantic) images of "standard" type (with Debian/Ubuntu kernel)
-can be produced with the script [`debuntu_dbstrap.bash`](debuntu_dbstrap.bash)
-which employs the [debootstrap](https://wiki.debian.org/Debootstrap) mechanism
-to create the base system.
+Kinetic, Lunar, Mantic, Noble) images of "standard" type (with Debian/Ubuntu
+kernel) can be produced with the script
+[`debuntu_dbstrap.bash`](debuntu_dbstrap.bash) which employs the
+[debootstrap](https://wiki.debian.org/Debootstrap) mechanism to create the
+base system.
 Images built using this script can be downloaded from
 [here](https://mega.nz/folder/CBM0hCTD#GDw2iXQpfeoqgWJ45E2Seg).
 
@@ -94,8 +95,8 @@ Images built using this script can be downloaded from
 [here](https://mega.nz/folder/3AUj0RKB#hpWS6VSQUfIZshvVR04PJg).
 
 __Tribuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
-possible to produce Ubuntu images (Focal, Jammy, Kinetic, Lunar, Mantic) using
-a daily official build of the Ubuntu
+possible to produce Ubuntu images (Focal, Jammy, Kinetic, Lunar, Mantic, Noble)
+using a daily official build of the Ubuntu
 [rootfs](https://cdimage.ubuntu.com/ubuntu-base) as a base for the OS and
 with a locally provided kernel, for instance the `koop-3pole` kernel
 described below or an
