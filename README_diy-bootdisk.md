@@ -120,7 +120,7 @@
   able to boot newer kernels.
 
   - *Only for chainloaded disk*
-  
+
   The `u-boot.ext` file must be placed in the root directory of the disk.
 
   ### Set up the necessary files
@@ -217,6 +217,11 @@ and for a direct booted (non chainloaded) disk it could look like this
   other ways than described above but the basic working of `u-boot` and the
   usage of the boot configuration files (e.g. `extlinux.conf`, see below) is
   similar.
+  (The Linux Foundation channel on youtube has a number of good videos on
+  various aspects of `u-boot` and booting on embedded systems in general.
+  A concise summary of the booting process is provided by the first 6mins of
+  [this video](https://youtu.be/DV5S_ZSdK0s) and a more in depth exposition is
+  given [here](https://youtu.be/GXFw8SV-51g).)
 
   It should be noted that the script files described here are (as with much of
   the material in these README files) mostly applicable to the older versions
@@ -281,9 +286,9 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   disk) is placed at the top level of the bootdisk, as indicated above.
   The `uImage` file is just a `u-boot` tagged version of a `vmlinuz` file
   which is made using the `mkimage` command like so
-  
+
   `$ mkimage -n "uImage" -A arm64 -O linux -T kernel -C none -a 0x1080000 -e 0x1080000 -d vmlinuz uImage`
-  
+
   (The load address `-a` and entry point `-e` parameters here are recommended
   for [Amlogic SoCs](https://linux-meson.com/howto.html), for other SoCs they
   may need to be adjusted.
@@ -320,32 +325,32 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   The resulting file is called `uInitrd` (as in the listing above).
   This conversion operation has been done using the `mkimage` command
   (details are given below).
-  
+
   Next we outline the contents of the initramfs and how to edit/adapt the
   initramfs, and where to find sources and how to recreate the initramfs.
 
   ##### Packing and unpacking the initramfs
 
   The file `initramfs.cpio.gz` can be straightforwardly unpacked like so
-  
+
   `$ mkdir tmp ; cd tmp ; gunzip -c ../initramfs.cpio.gz | cpio -vi`
-  
+
   and after some editing/adaptations it can be packed up again like so
 
   `find . | cpio -H newc -o | gzip -c > ../initramfs-new.cpio.gz`
 
   The header in the file `uInitrd` can be stripped off like so
-  
+
   `dd if=uInitrd of=initrd.cpio.gz bs=64 skip=1`
-  
+
   where the result `initrd.cpio.gz` can be further unpacked like above.
 
   To add an `u-boot` header to `initrd.cpio.gz` do
-  
+
   `mkimage -n 'my bootdisk' -A arm64 -O linux -T ramdisk -C gzip -d initrd.cpio.gz uInitrd`
-  
+
   and the result will appear in `uInitrd`.
-  
+
   ##### Doing customizations of the initramfs
 
   __Petitboot:__ The initramfs for `Petitboot` has been compiled and assembled
