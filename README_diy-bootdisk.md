@@ -210,18 +210,13 @@ and for a direct booted (non chainloaded) disk it could look like this
   [7Ji's blog](https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html)
   where also more details about the script files discussed above are given (see
   also [here](https://github.com/FauthD/amlogic-u-boot-scripts)).
-  (It can also be helpful to study the default `u-boot` boot procedure as it is
+  It can also be helpful to study the default `u-boot` boot procedure as it is
   defined without boot scripts in the `u-boot` source code file
-  `include/config_distro_bootcmd.h`.)
+  `include/config_distro_bootcmd.h`.
   For other SoC brands than Amlogic the boot order of `u-boot` is defined in
   other ways than described above but the basic working of `u-boot` and the
   usage of the boot configuration files (e.g. `extlinux.conf`, see below) is
-  similar.
-  (The Linux Foundation channel on youtube has a number of good videos on
-  various aspects of `u-boot` and booting on embedded systems in general.
-  A concise summary of the booting process is provided by the first 6mins of
-  [this video](https://youtu.be/DV5S_ZSdK0s) and a more in depth exposition is
-  given [here](https://youtu.be/GXFw8SV-51g).)
+  similar. (See also the links provided below).
 
   It should be noted that the script files described here are (as with much of
   the material in these README files) mostly applicable to the older versions
@@ -510,6 +505,12 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
 
   The following is not needed to set up a bootdisk but might help understand
   and utilize better the booting process on e.g. TV-boxes.
+
+  More information about `u-boot` and booting on embedded systems in general
+  can be found on the Linux Foundation channel on youtube.
+  For instance, a concise summary of the booting process is provided by the
+  first 6mins of [this video](https://youtu.be/DV5S_ZSdK0s) and a more in
+  depth exposition is given [here](https://youtu.be/GXFw8SV-51g).
 
   #### Adding a ("hidden") bootloader
 
