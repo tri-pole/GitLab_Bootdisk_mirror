@@ -150,6 +150,9 @@ uboot_ext_local_url="https://mega.nz/folder/bIdjwI6B#mojtTtZPufsHD9v7gTkjdQ"
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
 
+# Link to growpart for resizing second partition (rootfs) to desired size.
+growpart_url="https://raw.githubusercontent.com/canonical/cloud-utils/main/bin/growpart"
+
 # The string root=UUID=${rootfs_UUID} will be prepended below once UUID exists.
 kernel_cmdline_opts="quiet splash"
 
@@ -854,6 +857,17 @@ if [[ $? -ne 0 ]]; then
 else
     cp ${tmpfile_dir}/g12_sound.sh ${rootfs_mnt}/usr/local/bin
     chmod 0755 ${rootfs_mnt}/usr/local/bin/g12_sound.sh
+    echo -e ${k_msg}" Done."
+fi
+
+# This script (Canonical) provides an alternative method for resizing rootfs.
+echo -e ${i_msg}" Installing script at /usr/local/bin/growpart.sh ..."
+wget -P $tmpfile_dir -nv $growpart_url
+if [[ $? -ne 0 ]]; then
+    echo -e ${w_msg}" Unable to download the script growpart.sh"
+else
+    cp ${tmpfile_dir}/growpart ${rootfs_mnt}/usr/local/bin/growpart.sh
+    chmod 0755 ${rootfs_mnt}/usr/local/bin/growpart.sh
     echo -e ${k_msg}" Done."
 fi
 

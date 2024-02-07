@@ -126,10 +126,8 @@ host_name=opbu
 compressed_img=yes # {yes,no}
 
 # Name and tag for resulting disk image (uncomment and edit to taste).
-# Example for Ophub/Flippy kernel.
-# krnver_str="6.1.65-ophub" # Kernel name/release str., plain text.
-# Example for koop-3pole kernel.
-krnver_str="6.7.2-koop-3pole" # Kernel name/release str., plain text.
+# Example for koop-3pole kernel:
+krnver_str="6.6.16-koop-3pole" # Kernel name/release str., plain text.
 
 # The selected zram compression method here must match what the kernel supports
 # (if unsure, set to zstd). See /etc/default/zramswap
@@ -209,6 +207,9 @@ esac
 
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
+
+# Link to growpart for resizing second partition (rootfs) to desired size.
+growpart_url="https://raw.githubusercontent.com/canonical/cloud-utils/main/bin/growpart"
 
 # The string root=UUID=${rootfs_UUID} will be prepended below once UUID exists.
 kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 loglevel=1"
@@ -749,13 +750,12 @@ EOF
 README_altkernels=$(cat <<"EOF"
 There is no mechanism implemented for automatically updating the kernel (unless
 the Ubuntu kernel is used, see below). However, updating the kernel manually is
-easy since Ophub provides tarballs with kernels (and pre built initramfs) from
-several branches at https://github.com/ophub/amlogic-s9xxx-armbian
-The Ubuntu kernel can also be installed in the usual way via e.g. apt or
-aptitude (the package name is linux-image-generic).
-There are also some Tripole builds of kernels (using kernel.org source)
-available at
+easy, for both Tripole and Ophub kernels, since they are packaged in simple
+tarballs (with pre built initramses), see
 https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw
+https://github.com/ophub/amlogic-s9xxx-armbian
+The Ubuntu kernel (e.g. linux-image-generic) can also be installed in the
+usual way via e.g. apt or aptitude.
 EOF
 )
 
@@ -910,6 +910,17 @@ if [[ $? -ne 0 ]]; then
 else
     cp ${tmpfile_dir}/g12_sound.sh ${rootfs_mnt}/usr/local/bin
     chmod 0755 ${rootfs_mnt}/usr/local/bin/g12_sound.sh
+    echo -e ${k_msg}" Done."
+fi
+
+# This script (Canonical) provides an alternative method for resizing rootfs.
+echo -e ${i_msg}" Installing script at /usr/local/bin/growpart.sh ..."
+wget -P $tmpfile_dir -nv $growpart_url
+if [[ $? -ne 0 ]]; then
+    echo -e ${w_msg}" Unable to download the script growpart.sh"
+else
+    cp ${tmpfile_dir}/growpart ${rootfs_mnt}/usr/local/bin/growpart.sh
+    chmod 0755 ${rootfs_mnt}/usr/local/bin/growpart.sh
     echo -e ${k_msg}" Done."
 fi
 
