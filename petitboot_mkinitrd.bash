@@ -83,7 +83,7 @@ no_e2fsprogs=false # {true,false}
 # can be set to true or false. If set to false it is assumed that the 
 # correctly named tarball is already placed in ${temp_dir}/downloads and if
 # set to true it will be downloaded there.
-kexectools_ver="2.0.27"
+kexectools_ver="2.0.28"
 kexectools_url_base="https://github.com/horms/kexec-tools/archive/refs/tags"
 kexectools_tarball_rpo=v${kexectools_ver}.tar.gz
 kexectools_tarball_loc=kexectools-v${kexectools_ver}.tar.gz
@@ -110,7 +110,7 @@ e2fsprogs_tarball_rpo=v${e2fsprogs_ver}.tar.gz
 e2fsprogs_tarball_loc=e2fsprogs-$e2fsprogs_tarball_rpo
 dload_e2fsprogs_tarball=true
 
-petitboot_ver="1.14"
+petitboot_ver="1.15"
 petitboot_url_base="https://github.com/open-power/petitboot/releases/download"/v${petitboot_ver}
 petitboot_tarball_rpo=petitboot-v${petitboot_ver}.tar.gz
 petitboot_tarball_loc=$petitboot_tarball_rpo
