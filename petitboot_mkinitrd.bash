@@ -61,6 +61,11 @@
 # - There seems to be an option for Petitboot named petitboot.debug that can
 #   be passed via the kernel command line, what is it? Investigate...
 
+# Final note: I'm aware (now, D'oh!) that the name of the program is a bit of a
+# misnomer since the program creates an initramfs (file system), not an initrd
+# (ramdisk). However, in bootloader contexts (e.g. u-boot) the two (initramfs
+# and initrd) are often collectively referred to as "initrd".
+
 # --------------------------------- Parameters -------------------------------
 
 # If used, this tag  is inserted inside the header in the Petitboot main menu
@@ -352,7 +357,7 @@ EOF
 )
 
 # Bash does not support null characters '\0' (they will be mangled when a here
-# doc is written fto ile). Therefore, we apply sed below to replace Q -> '\0'
+# doc is written to file). Therefore, we apply sed below to replace Q -> '\0'
 sbin_sysinfo=$(cat << "EOF"
 #!/bin/sh
 

@@ -45,9 +45,9 @@ question (various Internet sources describe this).
 ## Distributions
 
 In general, the requirements for a Linux ARM64 image to boot and run from USB
-on a TV-box/SBC is that there is a kernel and initramfs available on the image
-with sufficient support for the boot medium (here USB) and for the TV-box/SBC
-(SoC) in question.
+on a TV-box/SBC is that there is a kernel and initrd file available on the
+image with sufficient support for the boot medium (here USB) and for the
+TV-box/SBC (SoC) in question.
 For some of the Linux distributions everything is in place on the (raw) images
 already as posted on the download site (or as provided by the installer), on
 others only minor tweaks are needed (such as setting up a `grub.cfg` file).
@@ -231,8 +231,8 @@ through the following steps (as a template):
 
 - Edit `/etc/fstab` to reflect the new UUID of the new rootfs on the USB.
 
-- Sometimes needed for first boot: Copy over a "a first boot kernel+initramfs"
-  which is known to work for the TV-box in question (e.g. one of
+- Sometimes needed for first boot: Copy over a kernel+initrd combo for first
+  boot which is known to work for the TV-box in question (e.g. from one of
   [Ophub's kernels](https://github.com/ophub/amlogic-s9xxx-armbian)).
 
 - Do a first boot and upgrade e.g. to the final kernel desired, and then do the

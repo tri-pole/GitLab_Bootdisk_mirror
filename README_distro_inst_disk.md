@@ -32,8 +32,8 @@ disk is as follows
 /boot/grub/grub.cfg
 /boot/dtbfile.dtb
 
-where linux and initrd is the installer kernel and initramfs and dtbfile.dtb
-is a dtb file for kernel 5.x matching your box.
+where linux and initrd is the kernel and initrd files for the installer, and
+dtbfile.dtb is a dtb file matching your box.
 
 For openSuse, the files linux and initrd are taken from here
 [download.opensuse.org](https://download.opensuse.org/ports/aarch64/factory/repo/oss/boot/aarch64)
