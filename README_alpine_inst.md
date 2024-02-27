@@ -22,8 +22,8 @@
   transfer to e.g. an USB, be booted with any of the bootdisks `petit-bootdisk`
   or `u-root-bootdisk`.
   The USB image can also be adapted to booting with resident/vendor u-boot by
-  repurposing the EFI partition (by installing boot scripts and possibly a
-  chainloader `u-boot.ext`), see e.g.
+  repurposing the EFI partition (by installing a kernel, initramfs, boot
+  scripts and possibly a chainloader `u-boot.ext`), see e.g.
   [`README_diy-bootdisk.md`](README_diy-bootdisk.md)
 
 ## Outline
@@ -43,27 +43,32 @@
     for ARM64 (aarch64).
 
   - Do a normal installation using the QEMU method into a image (typically an
-    image file mounted via a loop device, see
-	[`README_QEMU_inst.md`](README_QEMU_inst.md)).
+    image file mounted via a loop device), see
+	[`README_QEMU_inst.md`](README_QEMU_inst.md).
     The installation will create a three-partition setup; one EFI partition,
     one swap partition and one rootfs partition (ext4). You will be asked to
     set up (just) a root account but it can be good to setup a user account
     also (e.g. at first boot) for remote login via ssh (enabled by default).
 
-  - Verify that the installed image is working properly in QEMU (with the
-    installed default Alpine kernel `linux-lts`) and check that networking
-	works etc.
+  - Verify that the installed Alpine image is working properly by booting it in
+    QEMU (with the installed default Alpine kernel `linux-lts`) and check that
+	networking works etc. (again, see
+	[`README_QEMU_inst.md`](README_QEMU_inst.md).
 
   - Get a recent `koop-3pole` kernel (6.6.y or above) from
-    [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ)
+    [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
     In the following we will assume that the kernel `6.6.16-koop-3pole` is used.
 
   - With the Alpine Linux standard image up and running in QEMU, install into
-    this image the `koop-3pole` kernel package. This amounts only to un-tarring
-    a tarball, with some sub-tarballs, see the READMEs in the download location
-    for `koop-3pole` kernels. The sub-tarball with boot files contains several
-    versions of kernel, initramfs etc. but only the `vmlinuz` kernel file is
-    needed.
+    this image the `koop-3pole` kernel package. (To get the `koop-3pole` into
+	the image, either copy it onto the image file when it is not running or
+	use a machine on you local network as middle-man with e.g. ssh from the
+	Alpine image running in QEMU.)
+	Installing the `koop-3pole` kernel package in Alpine amounts only to
+	un-tarring a tarball, with some sub-tarballs; see the READMEs in the
+	download location for `koop-3pole` kernels. The sub-tarball with boot
+	files contains several versions of kernel, initramfs etc. but only the
+	`vmlinuz` kernel file is needed.
 
   - In the Alpine image running in QEMU, make a new initramfs for the
     `koop-3pole` kernel like so:
