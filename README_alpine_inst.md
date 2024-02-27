@@ -56,7 +56,7 @@
   - Verify that the installed Alpine image is working properly by booting it in
     QEMU (with the installed default Alpine kernel `linux-lts`) and check that
 	networking works etc. (again, see
-	[`README_QEMU_inst.md`](README_QEMU_inst.md).
+	[`README_QEMU_inst.md`](README_QEMU_inst.md)).
 
   - Get a recent `koop-3pole` kernel (6.6.y or above) from
     [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
@@ -65,14 +65,14 @@
 
   - With the Alpine Linux standard image up and running in QEMU, install into
     this image the `koop-3pole` kernel package. (To get the `koop-3pole` into
-    the image, either copy it onto the image file when it is not running or
-    use a machine on you local network as middle-man with e.g. ssh from the
-    Alpine image running in QEMU.)
+    the Alpine image, either copy it onto the image file using a loop device
+    mount when the Alpine image is not running or use e.g. ssh from the Alpine
+    image running in QEMU to get the `koop-3pole` tarball from outside.)
     Installing the `koop-3pole` kernel package in Alpine amounts only to
     un-tarring a tarball, with some sub-tarballs; see the READMEs in the
     download location for `koop-3pole` kernels. The sub-tarball with boot
     files contains several versions of kernel, initramfs etc. but only the
-    `vmlinuz` kernel file is needed.
+    `vmlinuz` kernel file is needed (and of course the modules tree).
 
   - In the Alpine image running in QEMU, make a new initramfs for the
     `koop-3pole` kernel like so:
@@ -95,13 +95,13 @@ menuentry 'Alpine Linux v3.19, with Linux 6.6.16-koop-3pole' {
 }
 ```
 
-  - Kernel command line options: The noautodetect option is passed to the init
+  - Kernel command line options: The `noautodetect` option is passed to the init
     process and it disables the script `/init.d/hwdrivers` which will otherwise
     bork (i.e. a workaround).
-    The ro option (not necessary) is taken from the original Alpine `grub.cfg`
+    The `ro` option (not necessary) is taken from the original Alpine `grub.cfg`
     since the Alpine boot process is designed to first mount the rootfs
     read-only.
-	
+
   - Edit `/etc/inittab` to reflect the correct terminal(s); comment out the
     ttyAMA0 line and add one line for ttyAML0:
 
@@ -114,7 +114,7 @@ menuentry 'Alpine Linux v3.19, with Linux 6.6.16-koop-3pole' {
     the image to a USB stick (unless the QEMU image uses the USB directly as
     disk). (It is advisable to use e.g. `gdisk` and make sure that the second
     GPT table is placed at the end of the physical space of the USB disk.
-    A simple way to do this is to just enter `gdisk` with the USB as target and
+    A simple way to do this is to enter `gdisk` with the USB as target and
     then just issue a "write" command; `gdisk` will then (possibly) ask you if
     you want to fix the incorrectly positioned second GPT table.)
 
