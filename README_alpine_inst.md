@@ -29,13 +29,13 @@
 ## Outline
 
   We describe first how to install Alpine on a disk image (or directly to
-  SD/USB) wihich will give a standard UEFI image with the default Alpine
+  SD/USB) which will give a standard UEFI image with the default Alpine
   kernel installed (`linux-lts`).
   After this, we discuss hos to install a kernel with Amlogic/meson support
   and set up the required `grub.cfg` file with the necessary adaptions to get
   the kernel to work properly and avoid some quirks in the Alpine init process.
 
-## Install Alpine to an image file
+## Install Alpine
  
   The install process can be summarized as follows:
 
@@ -59,10 +59,10 @@
     In the following we will assume that the kernel `6.6.16-koop-3pole` is used.
 
   - With the Alpine Linux standard image up and running in QEMU, install into
-    this image the `koop-3pole` kernel package. This amounts only to untarring
+    this image the `koop-3pole` kernel package. This amounts only to un-tarring
     a tarball, with some sub-tarballs, see the READMEs in the download location
     for `koop-3pole` kernels. The sub-tarball with boot files contains several
-    versions of kernel, initramfs etc. but only the vmlinuz kernel file is
+    versions of kernel, initramfs etc. but only the `vmlinuz` kernel file is
     needed.
 
   - In the Alpine image running in QEMU, make a new initramfs for the
@@ -79,8 +79,10 @@
 
 ```
 menuentry 'Alpine Linux v3.19, with Linux 6.6.16-koop-3pole' {
+
         linux   /boot/vmlinuz-6.6.16-koop-3pole root=UUID=4f9f9f1b-859c-463a-b6cf-3f912eba88b6 ro  rootfstytpe=ext4 console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0 noautodetect
         initrd  /boot/initramfs-6.6.16-koop-3pole
+
 }
 ```
     The noautodetect option is passed to the init process and it disables the
@@ -101,8 +103,8 @@ menuentry 'Alpine Linux v3.19, with Linux 6.6.16-koop-3pole' {
     the image to a USB stick (unless the QEMU image uses the USB directly as
 	disk). (It is advisable to use e.g. `gdisk` and make sure that the second
 	GPT table is placed at the end of the physical space of the USB disk.
-	A simple way to do this is to just enter gdisk with the USB as target and
-	then just issue a "write" command; gdisk will then (possibly) ask you if
+	A simple way to do this is to just enter `gdisk` with the USB as target and
+	then just issue a "write" command; `gdisk` will then (possibly) ask you if
 	you want to fix the incorrectly positioned second GPT table.)
 
   - The USB image should now be bootable on your TV-box using a bootdisk and
