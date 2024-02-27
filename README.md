@@ -146,7 +146,9 @@ or using the debootstrap mechanism as in
 [`README_ubuntu_inst.md`](README_ubuntu_inst.md),
 [`README_debian_inst.md`](README_debian_inst.md).
 (These procedures can serve as instructive examples but in general
-the QEMU install method above would be preferrable.)
+the QEMU install method above would be preferrable. The QEMU install method
+can also be used to create hybrid images; an example is given in
+[`README_alpine_inst.md`](README_alpine_inst.md).)
 
 ### ARM64 Linux kernel
 
