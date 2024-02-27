@@ -25,13 +25,16 @@
   repurposing the EFI partition (by installing a kernel, initramfs, boot
   scripts and possibly a chainloader `u-boot.ext`), see e.g.
   [`README_diy-bootdisk.md`](README_diy-bootdisk.md)
+  In the example below we use a `koop-3pole` kernel to provide the necessary
+  Amlogic support but another good alternative is Ophub's kernels (which employ
+  the same simple tarball packaging).
 
 ## Outline
 
   We describe first how to install Alpine on a disk image (or directly to
   SD/USB) which will give a standard UEFI image with the default Alpine
   kernel installed (`linux-lts`).
-  After this, we discuss hos to install a kernel with Amlogic/meson support
+  After this, we discuss how to install a kernel with Amlogic/meson support
   and set up the required `grub.cfg` file with the necessary adaptions to get
   the kernel to work properly and avoid some quirks in the Alpine init process.
 
@@ -57,18 +60,19 @@
 
   - Get a recent `koop-3pole` kernel (6.6.y or above) from
     [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
-    In the following we will assume that the kernel `6.6.16-koop-3pole` is used.
+    In the following we will assume that the kernel `6.6.16-koop-3pole` is
+    used.
 
   - With the Alpine Linux standard image up and running in QEMU, install into
     this image the `koop-3pole` kernel package. (To get the `koop-3pole` into
-	the image, either copy it onto the image file when it is not running or
-	use a machine on you local network as middle-man with e.g. ssh from the
-	Alpine image running in QEMU.)
-	Installing the `koop-3pole` kernel package in Alpine amounts only to
-	un-tarring a tarball, with some sub-tarballs; see the READMEs in the
-	download location for `koop-3pole` kernels. The sub-tarball with boot
-	files contains several versions of kernel, initramfs etc. but only the
-	`vmlinuz` kernel file is needed.
+    the image, either copy it onto the image file when it is not running or
+    use a machine on you local network as middle-man with e.g. ssh from the
+    Alpine image running in QEMU.)
+    Installing the `koop-3pole` kernel package in Alpine amounts only to
+    un-tarring a tarball, with some sub-tarballs; see the READMEs in the
+    download location for `koop-3pole` kernels. The sub-tarball with boot
+    files contains several versions of kernel, initramfs etc. but only the
+    `vmlinuz` kernel file is needed.
 
   - In the Alpine image running in QEMU, make a new initramfs for the
     `koop-3pole` kernel like so:
@@ -78,9 +82,9 @@
     The result will be a file called `initramfs-3pole` and it can be good to
     rename it to `initramfs-6.6.16-koop-3pole`
 
-  - Make a backup copy of `/boot/grub/grub.cfg` then create a new version of 
-    this file with a boot entry for the `koop-3pole` kernel.
-	A simple version of such a boot entry can look like so:
+  - Make a backup copy of `/boot/grub/grub.cfg` and then create a new version
+    of this file with a boot entry for the `koop-3pole` kernel.
+    A simple version of such a boot entry can look like so:
 
 ```
 menuentry 'Alpine Linux v3.19, with Linux 6.6.16-koop-3pole' {
@@ -90,14 +94,16 @@ menuentry 'Alpine Linux v3.19, with Linux 6.6.16-koop-3pole' {
 
 }
 ```
-    The noautodetect option is passed to the init process and it disables the
-	script `/init.d/hwdrivers` which will otherwise bork (i.e. a workaround).
-	The ro option (not necessary) is taken from the original Alpine `grub.cfg`
-	since the Alpine boot process is designed to first mount the rootfs
-	read-only.
+
+  - Kernel command line options: The noautodetect option is passed to the init
+    process and it disables the script `/init.d/hwdrivers` which will otherwise
+    bork (i.e. a workaround).
+    The ro option (not necessary) is taken from the original Alpine `grub.cfg`
+    since the Alpine boot process is designed to first mount the rootfs
+    read-only.
 	
   - Edit `/etc/inittab` to reflect the correct terminal(s); comment out the
-    ttyAMA0 line and add one for ttyAML0:
+    ttyAMA0 line and add one line for ttyAML0:
 
     `# ttyAMA0::respawn:/sbin/getty -L 0 ttyAMA0 vt100`
     `ttyAML0::respawn:/sbin/getty -L 0 ttyAML0 vt100`
@@ -106,11 +112,11 @@ menuentry 'Alpine Linux v3.19, with Linux 6.6.16-koop-3pole' {
 
   - Shut down the Alpine image running in QEMU and then burn (e.g. using dd)
     the image to a USB stick (unless the QEMU image uses the USB directly as
-	disk). (It is advisable to use e.g. `gdisk` and make sure that the second
-	GPT table is placed at the end of the physical space of the USB disk.
-	A simple way to do this is to just enter `gdisk` with the USB as target and
-	then just issue a "write" command; `gdisk` will then (possibly) ask you if
-	you want to fix the incorrectly positioned second GPT table.)
+    disk). (It is advisable to use e.g. `gdisk` and make sure that the second
+    GPT table is placed at the end of the physical space of the USB disk.
+    A simple way to do this is to just enter `gdisk` with the USB as target and
+    then just issue a "write" command; `gdisk` will then (possibly) ask you if
+    you want to fix the incorrectly positioned second GPT table.)
 
   - The USB image should now be bootable on your TV-box using a bootdisk and
     by chosing the boot entry for Alpine Linux with the `koop-3pole` kernel at
