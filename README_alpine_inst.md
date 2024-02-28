@@ -28,6 +28,9 @@
   In the example below we use a `koop-3pole` kernel to provide the necessary
   Amlogic support but another good alternative is Ophub's kernels (which employ
   the same simple tarball packaging).
+  The method outlined here has been tested on an Ugoos AM6 plus with the
+  Alpine install from `alpine-standard-3.19.1-aarch64.iso` and the
+  6.6.16 and 6.7.6 `koop-3pole` kernels.
 
 ## Outline
 
