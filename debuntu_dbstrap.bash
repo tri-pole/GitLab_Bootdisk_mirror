@@ -165,8 +165,8 @@ dtbfile_name=meson-g12b-gtking-pro.dtb
 # - The min skip (gap) size (before 1st part) is 1MB (2048 sectors, 512B each).
 # - The boot fs type is vfat/fat32 and the root fs type is one of {ext4,btrfs}.
 # Note: The boot fs is only for u-boot formatted copies of kernel +initramfs.
-gap_MiB=2
-boot_MiB=300
+gap_MiB=16
+boot_MiB=500
 root_MiB=6000
 rootfs_type=ext4
 

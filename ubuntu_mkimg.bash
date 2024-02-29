@@ -127,7 +127,7 @@ compressed_img=yes # {yes,no}
 
 # Name and tag for resulting disk image (uncomment and edit to taste).
 # Example for koop-3pole kernel:
-krnver_str="6.6.16-koop-3pole" # Kernel name/release str., plain text.
+krnver_str="6.6.18-koop-3pole" # Kernel name/release str., plain text.
 
 # The selected zram compression method here must match what the kernel supports
 # (if unsure, set to zstd). See /etc/default/zramswap
@@ -219,9 +219,9 @@ kernel_cmdline_opts="rootdelay=5 rootflags=data=writeback rw console=ttyAML0,115
 # - The min skip (gap) size (before 1st part) is 1MB (2048 sectors, 512B each).
 # - The boot fs type is vfat/fat32 and the root fs type is one of {ext4,btrfs}.
 # Note: The boot fs is only for u-boot formatted copies of kernel +initramfs.
-gap_MiB=2
-boot_MiB=200
-root_MiB=5000
+gap_MiB=16
+boot_MiB=500
+root_MiB=6000
 rootfs_type=ext4
 bootfs_label=UBNT_BOOT
 rootfs_label=UBNT_ROOT

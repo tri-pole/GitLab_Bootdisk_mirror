@@ -82,9 +82,9 @@
   Sectors 4096-S: Partition 1, partition type 'c' in fdisk, formatted with vfat.
 
   The reason why we recommend a 2M gap is that the gap can be good to have if
-  we later decide to install a "hidden" (`u-boot`) bootloader.
+  we later decide to install a "hidden" (`u-boot`) bootloader, see below.
   Such a bootloader is not required for normal use of the bootdisks but is
-  useful if a bootdisk is later converted into a rescue disk, see below.
+  useful if a bootdisk is later converted into a rescue disk.
 
   The value of S in the second "Sectors" line above above is mostly dependent
   on how many kernels are needed (for experimentation); a value of S which
@@ -551,6 +551,10 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   and then the body of the bootloader code in sector 1 and onward in the gap
   before first partition (cf. e.g.
   [`u-boot` for w400](https://docs.u-boot.org/en/latest/board/amlogic/w400.html).)
+
+  While a gap size of 2-4M is usually sufficient, a gap size of 16M should work
+  in almost all situations (including eMMC installations; some resident/vendor
+  `u-boot` installations use 16M gap).
 
   #### A final note on eMMC and booting
 

@@ -110,7 +110,7 @@ compressed_img=yes # {yes,no}
 
 if [[ "$distro_name" == "Manjaro" ]]; then
     # Use Manjaro native or locally provided kernel (see below).
-    use_local_kern=no # {yes,no}
+    use_local_kern=yes # {yes,no}
 
     # Name of Manjaro kernel package (when not using locally provided kernel).
     mnjo_kern_name=linux-lts
@@ -137,7 +137,7 @@ if [[ "$distro_name" == "Manjaro" ]]; then
     # Locally provided kernel.
     # The packages (boot-,modules-,dtb-,header-) must have same form as Ophub's,
     # e.g. be the result of a kernel compil. using Ophob's build environment.
-    krnver_str="6.1.46-koop-3pole" # Kernel name/release str., plain text.
+    krnver_str="6.6.12-koop-3pole" # Kernel name/release str., plain text.
 
     bootfs_label=MNJO_BOOT
     rootfs_label=MNJO_ROOT
@@ -198,9 +198,9 @@ dtbfile_name=meson-g12b-gtking-pro.dtb
 # - The min skip (gap) size (before 1st part) is 1MB (2048 sectors, 512B each).
 # - The boot fs type is vfat/fat32 and the root fs type is one of {ext4,btrfs}.
 # Note: The boot fs is only for u-boot formatted copies of kernel +initramfs.
-gap_MiB=2
-boot_MiB=200
-root_MiB=5000
+gap_MiB=16
+boot_MiB=500
+root_MiB=6000
 rootfs_type=ext4
 
 # These two parameters define the kernel memory load address and starting point,
@@ -358,7 +358,7 @@ EOF
 # (The double quotes around the limit string EOF prevents command substitution.)
 manjaro_custom_extra=$(cat <<"EOF"
 pacman -S --noconfirm man-db pacman-contrib alsa-utils networkmanager
-systemctl enable NetworkManager systemd-resolved
+systemctl enable NetworkManager systemd-resolved lzop linux-firmware
 EOF
 )
 
@@ -735,6 +735,8 @@ https://github.com/FauthD/amlogic-u-boot-scripts
 Yet another setup (which is probably more versatile but may require bootloader
 u-boot.bin flashed to the boot sector and gap before first partition) is the
 scripts used on Ophub's images https://github.com/ophub/amlogic-s9xxx-armbian
+An in-depth description of how boot scripts work on Amlogic can be found in
+https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
 EOF
 )
 
