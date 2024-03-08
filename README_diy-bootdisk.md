@@ -81,10 +81,11 @@
 
   Sectors 4096-S: Partition 1, partition type 'c' in fdisk, formatted with vfat.
 
-  The reason why we recommend a 2M gap is that the gap can be good to have if
-  we later decide to install a "hidden" (`u-boot`) bootloader, see below.
-  Such a bootloader is not required for normal use of the bootdisks but is
-  useful if a bootdisk is later converted into a rescue disk.
+  The reason why we recommend a 2M gap (including MBR) before first partition
+  is that the gap can be good to have if we later decide to install a "hidden"
+  (`u-boot`) bootloader, see below. Such a bootloader is not required for
+  normal use of the bootdisks but is useful if a bootdisk is later converted
+  into a rescue disk.
 
   The value of S in the second "Sectors" line above above is mostly dependent
   on how many kernels are needed (for experimentation); a value of S which
@@ -314,6 +315,13 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   For a chainloaded disk, the initramfs file that contains either `Petitboot`
   or `u-root` is contained in a file with a name like `initramfs.cpio.gz` (as
   in the listing above).
+  Note: The name of the initramfs varies between `Petitboot` and `u-root`,
+  and between editions/builds. The initramfs is however always a gzipped cpio
+  archive. (This can be checked by using the `file` command, first on the
+  initramfs file itself and then on a gunzipped version of it). Similar
+  remarks apply to the versions that have been converted to `u-boot` format,
+  see below.
+
   For the non chainloaded disk, the gzipped cpio archive containing the
   initramfs has been converted to `u-boot` format by adding a small header to
   the file.
@@ -552,9 +560,11 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   before first partition (cf. e.g.
   [`u-boot` for w400](https://docs.u-boot.org/en/latest/board/amlogic/w400.html).)
 
-  While a gap size of 2-4M is usually sufficient, a gap size of 16M should work
-  in almost all situations (including eMMC installations; some resident/vendor
-  `u-boot` installations use 16M gap).
+  While a gap size of 2-4M is usually sufficient, a gap size of 16M may be
+  needed in some situations (some `u-boot` installations require 16M gap).
+  However, some resident/vendor `u-boot` may not boot from the first (vfat)
+  partition if the gap is too large. (For instance, when booting from SD on
+  Ugoos AM6 plus a 2M (empty) gap works but not a 16M (empty) gap.)
 
   #### A final note on eMMC and booting
 
