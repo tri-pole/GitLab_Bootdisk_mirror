@@ -562,9 +562,6 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
 
   While a gap size of 2-4M is usually sufficient, a gap size of 16M may be
   needed in some situations (some `u-boot` installations require 16M gap).
-  However, some resident/vendor `u-boot` may not boot from the first (vfat)
-  partition if the gap is too large. (For instance, when booting from SD on
-  Ugoos AM6 plus a 2M (empty) gap works but not a 16M (empty) gap.)
 
   #### A final note on eMMC and booting
 
