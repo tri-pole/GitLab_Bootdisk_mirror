@@ -149,13 +149,6 @@ download location is provided).
 ### Added
  - First commit.
 
-# tridora_mkimg.bash:
-
-## [v0.1] 23-06-25
-
-### Added
- - First commit.
-
 # devuan_dbstrap.bash:
 
 ## [v0.1] 23-07-16
@@ -176,6 +169,13 @@ download location is provided).
  - First commit.
 
 # Discontinued:
+
+# tridora_mkimg.bash:
+
+## [v0.1] 23-06-25
+
+### Added
+ - First commit.
 
 # u-root-bootdisk:
 

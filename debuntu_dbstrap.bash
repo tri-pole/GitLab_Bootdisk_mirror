@@ -82,9 +82,10 @@
 #   time zone, keyboard and root password.
 # - Basic configuration: You might want to configure zram (and optionally set
 #   up swap), see e.g. /etc/default/zramswap and https://wiki.debian.org/ZRam
-# - Pro tip: Generate the image cheaply, say 4G rootfs (so that burn to SD/USB
-#   goes quickly). Then, (before first boot) enlarge the rootfs partition on
-#   SD/USB to desired size, e.g. with (100% here uses all of the SD/USB):
+# - Pro tip: Generate the image cheaply, say 6G rootfs (so that burn to SD/USB
+#   goes quickly). Then, enlarge the rootfs partition on the SD/USB either by
+#   using the growpart tool (see below) on first boot or (e.g. before first
+#   boot) using parted, resizepart and resize2fs like so (tweak the percentage):
 #   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
 #   Finally, to make sure that the resized partition will be recognized also as
 #   a valid GPT partition, repair it with gdisk as follows. First, start gdisk;
@@ -107,7 +108,7 @@
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
 ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic, Lunar, Mantic, Noble
 debian_name=Debian      # Used for the image name and in grub.cfg
-debian_edition=Bullseye # Tested with Bullseye, Bookworm, Trixie
+debian_edition=Bookworm # Tested with Bullseye, Bookworm, Trixie
 
 # Host name for image.
 host_name=debu

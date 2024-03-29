@@ -163,8 +163,9 @@ kernels which use a kernel
 from Ophub.
 This kernel is adapted for Amlogic TV-boxes but has support also for Rockchip
 and Allwinner.
-Compiled packages of the `koop-3pole` series of kernels (and a few more) can
-be found [here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
+Compiled packages of the `koop-3pole` series of kernels (and a few more kernel
+series) can be found
+[here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
 ## Screenshots
 

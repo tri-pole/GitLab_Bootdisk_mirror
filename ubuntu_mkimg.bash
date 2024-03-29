@@ -93,9 +93,10 @@
 #   unnecessary packages/functionality (in particular snapd), e.g. by doing
 #   # systemctl disable spice-vdagent.service --now
 #   # apt remove snapd && apt autoremove
-# - Pro tip: Generate the image cheaply, say 3G rootfs (so that burn to SD/USB
-#   goes quickly). Then, (before first boot) enlarge the rootfs partition on
-#   SD/USB to desired size, e.g. with (100% here uses all of the SD/USB):
+# - Pro tip: Generate the image cheaply, say 6G rootfs (so that burn to SD/USB
+#   goes quickly). Then, enlarge the rootfs partition on the SD/USB either by
+#   using the growpart tool (see below) on first boot or (e.g. before first 
+#   boot) using parted, resizepart and resize2fs like so (tweak the percentage):
 #   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
 #   Finally, to make sure that the resized partition will be recognized also as
 #   a valid GPT partition, repair it with gdisk as follows. First, start gdisk;
@@ -120,14 +121,14 @@ distro_name=Ubuntu   # Used for the image name and in grub.cfg
 distro_edition=Jammy # Tested with Focal, Jammy, Kinetic, Lunar, Mantic, Noble
 
 # Host name for image.
-host_name=opbu
+host_name=tribu
 
 # Compression (xz) takes some extra time (beyond the estimate above).
 compressed_img=yes # {yes,no}
 
 # Name and tag for resulting disk image (uncomment and edit to taste).
 # Example for koop-3pole kernel:
-krnver_str="6.6.18-koop-3pole" # Kernel name/release str., plain text.
+krnver_str="6.6.23-koop-3pole" # Kernel name/release str., plain text.
 
 # The selected zram compression method here must match what the kernel supports
 # (if unsure, set to zstd). See /etc/default/zramswap
