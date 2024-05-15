@@ -128,7 +128,7 @@ compressed_img=yes # {yes,no}
 
 # Name and tag for resulting disk image (uncomment and edit to taste).
 # Example for koop-3pole kernel:
-krnver_str="6.6.23-koop-3pole" # Kernel name/release str., plain text.
+krnver_str="6.8.9-koop-3pole" # Kernel name/release str., plain text.
 
 # The selected zram compression method here must match what the kernel supports
 # (if unsure, set to zstd). See /etc/default/zramswap
@@ -176,9 +176,9 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # (3) Daily build of an LTS release (e.g. Focal, Jammy).
 case "$distro_release" in
     "noble")
-        distro_buildfile=noble-base-arm64.tar.gz
-        distro_urlbase=$distro_urlbase/daily
-        distro_buildurl=${distro_urlbase}/current/${distro_buildfile}
+        distro_buildfile=ubuntu-base-24.04-base-arm64.tar.gz
+        distro_urlbase=$distro_urlbase/releases
+        distro_buildurl=${distro_urlbase}/noble/release/${distro_buildfile}
     ;;
     "mantic")
         distro_buildfile=ubuntu-base-23.10-base-arm64.tar.gz
