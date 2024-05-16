@@ -176,7 +176,7 @@ and for a direct booted (non chainloaded) disk it could look like this
   (see also the script `armbian-install` in
   [Ophub's repo](https://github.com/ophub/amlogic-s9xxx-armbian)).
   These files are basically text files but with a binary header added with an
-  Amlogic signature.
+  `u-boot` signature.
   The header equipped files are produced with the `mkimage` command (often
   found in the `u-boot-tools` package).
 
