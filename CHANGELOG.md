@@ -134,6 +134,14 @@ download location is provided).
 
 # arm64_kbuild.bash:
 
+## [v0.13] 24-06-02
+
+### Added
+ - Allow for kernel with 2 digit version number.
+
+### Changed
+ - Updated paths to rootfs.
+
 ## [v0.12] 23-11-12
 
 ### Changed
@@ -156,7 +164,7 @@ download location is provided).
 ### Added
  - First commit.
 
-# petitboot_mkinitrd.bash
+# petitboot_mkinitrd.bash:
 
 ## [v0.11] 23-10-12
 

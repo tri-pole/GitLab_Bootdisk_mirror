@@ -1,8 +1,7 @@
-
 #!/bin/bash
 
 # arm64_kbuild.bash
-# 23-11-12: v0.12
+# 24-06-02: v0.13
 # Author: Tripole
 
 # Script to compile the Linux kernel for ARM64 and package the result (together
@@ -59,7 +58,7 @@
 # Note: Kernel version numbers here (in $kern_ver_num) must be in the format
 # x.y.z so for an x.y kernel (e.g. 6.7) you must here add (pad with) a zero to
 # make into x.y.z format (e.g. 6.7.0).
-kern_ver_num=6.1.72
+kern_ver_num=6.8.12
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
@@ -81,6 +80,7 @@ loc_patch_dir=dummy_dir
 # List of names for SoC vendor for which you want to create a dtb package
 # (tarball). (All of these SoCs must be enabled in the kernel config.)
 socdtbs_list=("amlogic" "allwinner" "rockchip")
+#socdtbs_list=("amlogic")
 
 # If you want legacy u-boot images of kernel and initramfs (uImage, uInitd) to
 # be made, say yes here (see also kernel load address and starting point below).
@@ -112,10 +112,15 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # (2) Release build of a non LTS release (e.g. Kinetic).
 # (3) Daily build of an LTS release (e.g. Focal, Jammy).
 case "$distro_release" in
-    "mantic")
-        distro_buildfile=mantic-base-arm64.tar.gz
+    "noble")
+        distro_buildfile=noble-base-arm64.tar.gz
         distro_urlbase=$distro_urlbase/daily
         distro_buildurl=${distro_urlbase}/current/${distro_buildfile}
+    ;;
+    "mantic")
+        distro_buildfile=ubuntu-base-23.10-base-arm64.tar.gz
+        distro_urlbase=$distro_urlbase/releases
+        distro_buildurl=${distro_urlbase}/mantic/release/${distro_buildfile}
     ;;
     "lunar")
         distro_buildfile=ubuntu-base-23.04-base-arm64.tar.gz
@@ -397,7 +402,11 @@ echo -n -e ${i_msg}" Unpacking the kernel source tarball..."
 tar -xf ${tmpfile_dir}/${kern_txz_name} -C $kern_src_dir
 sync
 # Handle the case with kernels with numbers x.y only (instead of x.y.z).
-mv ${kern_src_dir}/linux-* ${kern_src_dir}/linux-${kern_ver_num}
+linux_in_pkg_name=$(readlink -nf ${kern_src_dir}/linux-*)
+linux_our_name=$(readlink -nf ${kern_src_dir}/linux-${kern_ver_num})
+if [[ $linux_in_pkg_name != $linux_our_name ]]; then
+    mv -v $linux_in_pkg_name $linux_our_name
+fi
 echo " Done."
 
 echo -n -e ${i_msg}" Setting up directories for kernel output files..."

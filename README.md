@@ -129,7 +129,7 @@ there).
 #### Image creation using QEMU
 
 A convenient way to create an ARM64 Linux image is to run a native
-ARM64 installer (e.g. in an iso file) in QEMU on e.g. an x86_64 host
+ARM64 installer (e.g. in iso file format) in QEMU on e.g. an x86_64 host
 and install directly onto an SD/USB attached to the host.
 These images will typically be UEFI images and can be booted on a
 TV-box/SBC using e.g. Petitboot/u-root.
