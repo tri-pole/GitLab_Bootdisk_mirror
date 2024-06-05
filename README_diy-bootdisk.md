@@ -299,7 +299,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   should work with Amlogic, Allwinner or Rockchip SoCs (see the `config-*`
   files on e.g. `petit-bootdisk`).
   On newer/recent versions of the bootdisks the kernels are from our own kernel
-  builds, such as the `koop-3pole` line of kernels (cf. [README.md](README.md)).
+  builds, such as the `3pole` line of kernels (cf. [README.md](README.md)).
   A few extra options have been enabled over the default kernel config such as
   kexec and support for btrfs and iso file systems, see the `config-` files on
   the bootdisks.

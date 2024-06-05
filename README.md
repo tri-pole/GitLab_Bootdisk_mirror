@@ -98,8 +98,8 @@ __Tribuntu:__ With the script [`ubuntu_mkimg.bash`](ubuntu_mkimg.bash) it is
 possible to produce Ubuntu images (Focal, Jammy, Kinetic, Lunar, Mantic, Noble)
 using a daily official build of the Ubuntu
 [rootfs](https://cdimage.ubuntu.com/ubuntu-base) as a base for the OS and
-with a locally provided kernel, for instance the `koop-3pole` kernel
-described below or an
+with a locally provided kernel, for instance the `3pole` kernels described
+below or an
 [Ophub kernel](https://github.com/ophub/kernel/releases/tag/kernel_stable).
 Images built according to this concept can be downloaded from
 [here](https://mega.nz/folder/KJdAwK4Q#r4HNsKQRkLgT7HTD2s1GLg).
@@ -112,9 +112,9 @@ Images built using this script can be downloaded from
 
 __Trinjaro:__ With the script [`archlnx_mkimg.bash`](archlnx_mkimg.bash) it is
 also possible to produce Manjaro images with a Manjaro kernel or a locally
-provided kernel, for instance one of the `koop-3pole` kernels mentioned above
-or an Ophub kernel.
-An image built using this recipe with a `koop-3pole` kernel can be downloaded
+provided kernel, for instance one of the `3pole` kernels mentioned above or an
+Ophub kernel.
+An image built using this recipe with a `3pole` kernel can be downloaded
 from [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
 (Note: The Trinjaro images are very crude compared to the polished high
 quality images produced by [Manjaro ARM](https://github.com/manjaro-arm).
@@ -157,14 +157,10 @@ The script [`arm64_kbuild.bash`](arm64_kbuild.bash) can be used to produce
 natively on an ARM64 Ubuntu Jammy host) kernels with source from
 [kernel.org](https://kernel.org) and with kernel config and patches provided
 locally.
-For instance, it can be used to produce the `koop-3pole` line of ARM64
-kernels which use a kernel
-[config](https://github.com/ophub/amlogic-s9xxx-armbian/tree/main/compile-kernel/tools/config)
-from Ophub.
-This kernel is adapted for Amlogic TV-boxes but has support also for Rockchip
-and Allwinner.
-Compiled packages of the `koop-3pole` series of kernels (and a few more kernel
-series) can be found
+For instance, it can be used to produce the `3pole` line of ARM64 kernels.
+These kernels are adapted for Amlogic TV-boxes but has support also for
+Rockchip and Allwinner.
+Compiled packages of the `3pole` series of kernels
 [here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
 ## Screenshots
