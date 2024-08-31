@@ -105,7 +105,7 @@ kern_txz_url=${kern_url_base}/${kern_txz_name}
 
 # Official Ubuntu rootfs tarball (used to make the initramfs).
 # (Pick a release that "is close" to what you intend to run the kernel on.)
-distro_release=jammy # {focal,jammy,kinetic,lunar} (small caps)
+distro_release=noble # {focal,jammy,kinetic,lunar} (small caps)
 distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # At cdimage.ubuntu.com, three different formats for URLs seem to be used:
 # (1) Daily build of a development edition (e.g. Lunar).
@@ -113,9 +113,9 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # (3) Daily build of an LTS release (e.g. Focal, Jammy).
 case "$distro_release" in
     "noble")
-        distro_buildfile=noble-base-arm64.tar.gz
-        distro_urlbase=$distro_urlbase/daily
-        distro_buildurl=${distro_urlbase}/current/${distro_buildfile}
+        distro_buildfile=ubuntu-base-24.04.1-base-arm64.tar.gz
+        distro_urlbase=$distro_urlbase/releases
+        distro_buildurl=${distro_urlbase}/noble/release/${distro_buildfile}
     ;;
     "mantic")
         distro_buildfile=ubuntu-base-23.10-base-arm64.tar.gz
@@ -420,6 +420,7 @@ cd ${kern_src_dir}/linux-${kern_ver_num}
 if [[ ! -z "$(ls -A $patch_src_dir)" ]]; then
     echo -e ${i_msg}" Applying patches..."
         for my_patch_file in $(ls -A ${patch_src_dir}/*.patch) ; do
+            echo -e ${i_msg}" Processing patch file "${my_patch_file##*/}
             patch -N -p1 < $my_patch_file
             if [[ $? -ne 0 ]]; then
                 echo -e ${w_msg}" Patch was not applied cleanly!"
