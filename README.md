@@ -1,5 +1,10 @@
 # bootdisk
 
+__TL;DR:__ On a TV-box/SBC with working u-boot you can get a boot
+manager+loader by replacing the default Linux initramfs with an initramfs
+containing `Petitboot` or `u-root` (provided you default Linux kernel has
+`kexec()`).
+
 This repo contains information about some
 [bootloaders](https://en.wikipedia.org/wiki/Bootloader) and
 [bootdisks](https://en.wikipedia.org/wiki/Boot_disk) for
@@ -158,6 +163,8 @@ natively on an ARM64 Ubuntu Jammy host) kernels with source from
 [kernel.org](https://kernel.org) and with kernel config and patches provided
 locally.
 For instance, it can be used to produce the `3pole` line of ARM64 kernels.
+(The `3-pole` kernels have `kexec()` enabled and can be used with
+`Petitboot/u-root`).
 These kernels are adapted for Amlogic TV-boxes but has support also for
 Rockchip and Allwinner.
 Compiled packages of the `3pole` series of kernels
