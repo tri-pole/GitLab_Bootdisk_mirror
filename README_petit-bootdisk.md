@@ -75,7 +75,8 @@ at the link above can be used as a basis when building a bootdisk from a
 tarball (just uncompress the tarball onto the skeleton image).
 
 Builds of the initramfs for `Petitboot` as well as a very small s922x only
-`petit-bootdisk` can be found [here](https://mega.nz/fm/LRcGBTaC).
+`petit-bootdisk` can be found
+[here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw).
 
 Caveats
 -------

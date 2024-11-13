@@ -94,7 +94,7 @@ at the link above can be used as a basis when building a bootdisk from a
 tarball (just uncompress the tarball onto the skeleton image).
 
 Builds of the initramfs for `u-root` can be found
-[here](https://mega.nz/fm/ndMWCBKJ).
+[here](https://mega.nz/folder/SMt1VLSY#VTR2-eZv4jC7PH4hASp0tg).
 
 Caveats
 -------
