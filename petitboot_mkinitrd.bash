@@ -6,26 +6,34 @@
 
 # Script to compile and pack Petitboot for ARM64 in the form of an initramfs.
 
-# Requires: ARM64 build host with normal build environment (see also below).
-# Tested on a Ubuntu Jammy build host running in qemu-system-aarch64 on x86_64.
-# The user running the script must be in the sudo group.
+# Requirements: ARM64 build host with normal build environment (see below)
+# where the user running the script must be in the sudo group.
 
-# Dependencies: GNU build tools and compiler suite, and installed dependencies
-# for the packages kexec, busybox, iproute2, e2fsprogs, petitboot and eudev.
-# Also, some (perhaps nonstandard) utilities such as tree (see below).
+# Tested on: Ubuntu Jammy and Debian Bookworm build hosts running in
+# qemu-system-aarch64 on x86_64. (Cross compilation is not directly possible
+# since some libs are copied from the build host to the initramfs, see below.)
 
-# To get started: The simplest way is probably to try to first separately
-# compile each of the packages listed above. Once this works, it should be
-# straightforward to resolve any remaining dependencies in the code below.
+# Dependencies: GNU build tools w/ compiler suite, installed dependencies for
+# the packages kexec, busybox, iproute2, e2fsprogs, petitboot and eudev.
+# For example, on a default installation of debian-12.8.0-arm64-netinst.iso
+# all the dependencies could be satisfied by installing the following packages
+# (which, in turn, will install additional packages so satisfy dependencies):
+# build-essential, autoconf, pkg-config, bison, flex, gettext, libncurses-dev,
+# libudev-dev, zlib1g-dev, liblzma-dev, libelf-dev, libdw-dev, libblkid-dev,
+# libdevmapper-dev, libgpgme-dev, libssl-dev, gperf, gawk, tree, u-boot-tools
 
-# Usage: The script can be run as an ordinary user but near the end ut will
-# ask for the user password to execute sudo command to change ownership of
-# the files in the initramfs. During execution of this script, two directories
-# be created in the same directory as this script; one result directory and
-# one temporary file directory hearchy. (Near the end of this script you will
-# be asked which of the temp dirs you want to delete.)
+# Usage: The script can be run as an ordinary user but near the end it will ask
+# for the user password to execute a sudo command to change ownership of the
+# files in the initramfs. During execution of this script, two directories will
+# be created in the same directory as this script; one result directory and one
+# temporary file directory hearchy. (Near the end of this script you will be
+# asked which of the temp dirs you want to delete.)
 
 # Inspiration: https://www.raptorengineering.com/content/kb/1.html
+
+# About the build: By default, the build config files etc. for each component
+# are stored also in the resulting initramfs; search for build.tgz in the code
+# below (these files are small, but you can omit them to save space).
 
 # Things to note about Petitboot:
 # - The dmidecode command is fake and is just a link to /sbin/sysinfo which is
@@ -88,7 +96,7 @@ no_e2fsprogs=false # {true,false}
 # can be set to true or false. If set to false it is assumed that the 
 # correctly named tarball is already placed in ${temp_dir}/downloads and if
 # set to true it will be downloaded there.
-kexectools_ver="2.0.28"
+kexectools_ver="2.0.29"
 kexectools_url_base="https://github.com/horms/kexec-tools/archive/refs/tags"
 kexectools_tarball_rpo=v${kexectools_ver}.tar.gz
 kexectools_tarball_loc=kexectools-v${kexectools_ver}.tar.gz
@@ -102,14 +110,14 @@ busybox_tarball_loc=busybox-v${busybox_ver}.tar.bz2
 # busybox_git_url="https://git.busybox.net/busybox"
 dload_busybox_tarball=true
 
-iproute2_ver="6.5.0"
+iproute2_ver="6.11.0"
 iproute2_url_base="https://github.com/iproute2/iproute2/archive/refs/tags"
 # iproute2_url_base="https://git.kernel.org/pub/scm/network/iproute2/iproute2.git/snapshot"
 iproute2_tarball_rpo=v${iproute2_ver}.tar.gz
 iproute2_tarball_loc=iproute2-$iproute2_tarball_rpo
 dload_iproute2_tarball=true
 
-e2fsprogs_ver="1.47.0"
+e2fsprogs_ver="1.47.1"
 e2fsprogs_url_base="https://github.com/tytso/e2fsprogs/archive/refs/tags"
 e2fsprogs_tarball_rpo=v${e2fsprogs_ver}.tar.gz
 e2fsprogs_tarball_loc=e2fsprogs-$e2fsprogs_tarball_rpo
@@ -141,10 +149,9 @@ dyn_linked_exe_list_noe2fs=("/sbin/kexec"
                             "/usr/bin/udevd" "/usr/bin/udevadm" "/usr/bin/collect"
                             "/bin/ip" "/usr/sbin/pb-event" "/usr/sbin/pb-config"
                             "/usr/sbin/pb-discover" "/usr/sbin/petitboot-nc"
-                            "/usr/share/petitboot/30-dtb-updates" "/usr/bin/gpg"
-                            "/usr/lib/udev/scsi_id" "/usr/lib/udev/ata_id"
-                            "/usr/lib/udev/cdrom_id" "/usr/lib/udev/dmi_memory_id"
-                            "/usr/lib/udev/fido_id")
+                            "/usr/bin/gpg" "/usr/lib/udev/scsi_id"
+                            "/usr/lib/udev/ata_id" "/usr/lib/udev/cdrom_id"
+                            "/usr/lib/udev/dmi_memory_id" "/usr/lib/udev/fido_id")
 dyn_linked_exe_list_e2fs=("/sbin/mke2fs" "/sbin/e2fsck" "/sbin/badblocks"
                           "/sbin/tune2fs" "/sbin/resize2fs" "/sbin/dumpe2fs"
 )
@@ -620,7 +627,7 @@ cd ${temp_dir}/petitboot/petitboot-v${petitboot_ver}
 echo -e ${i_msg}" Applying Petitboot patches ..."
 pb_patches_applied_ok=true
 case "$petitboot_ver" in
-    "1.13" | "1.14")
+    "1.13" | "1.14" | "1.15")
         patch -N -p1 --ignore-whitespace <\
           ${this_script_dir}/${pb_patch_dir}/${pb_1v13_add_grubcfg_path_patch_fname}
         if [[ "$?" != 0 ]]; then
@@ -666,8 +673,7 @@ chmod +x ${temp_dir}/initramfs/usr/sbin/pb-udhcpc
 strip ./ui/ncurses/petitboot-nc -o ${temp_dir}/initramfs/usr/sbin/petitboot-nc
 cp ./utils/scsi-rescan ${temp_dir}/initramfs/usr/sbin
 cp ./utils/bb-kexec-reboot ${temp_dir}/initramfs/usr/share/petitboot
-cp ./utils/hooks/* ${temp_dir}/initramfs/usr/share/petitboot
-rm ${temp_dir}/initramfs/usr/share/petitboot/*.{o,c}
+cp ./utils/hooks/{01,20,90}-* ${temp_dir}/initramfs/usr/share/petitboot
 echo " Done."
 echo -e ${k_msg}" Finished building and installing Petitboot."
 

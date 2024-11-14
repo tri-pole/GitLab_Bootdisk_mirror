@@ -21,6 +21,9 @@ based version of an installer, e.g. Debian, in a terminal window on
 the host.
 Thus, a certain familiarity with "classical" Linux installers is
 helpful.
+An alternate source of information for how to run a Linux installer in QEMU
+can be found at
+[kernel.org.](https://cdn.kernel.org/pub/linux/kernel/people/will/docs/qemu/qemu-arm64-howto.html)
 
 #### Prerequisites
 

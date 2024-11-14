@@ -50,7 +50,10 @@ in the file [`README_diy-bootdisk.md`](README_diy-bootdisk.md)
 An initramfs for `Petitboot` can be built from the C source either manually,
 as outlined in [`README_diy-bootdisk.md`](README_diy-bootdisk.md), or e.g.
 using the script [`petitboot_mkinird.bash`](petitboot_mkinitrd.bash).
-Initramfses with `Petitboot` built using this script can be found at the
+(This script can be executed natively on an ARM64 host or an ARM64 build host
+run in a QEMU emulator, cf. [`README_QEMU_inst.md`](README_QEMU_inst.md).)
+Initramfses with `Petitboot` built using the script
+[`petitboot_mkinird.bash`](petitboot_mkinitrd.bash) can be found at the
 download location listed in
 [`README_petit-bootdisk.md`](README_petit-bootdisk.md).
 
