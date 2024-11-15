@@ -62,7 +62,7 @@
 	[`README_QEMU_inst.md`](README_QEMU_inst.md)).
 
   - Get a recent `koop-3pole` kernel (6.6.y or above) from
-    [here](https://mega.nz/folder/qY8RXIDQ#0ZTPEXzlmEk4S3Z_UYdbCQ).
+    [here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
     In the following we will assume that the kernel `6.6.16-koop-3pole` is
     used.
 
