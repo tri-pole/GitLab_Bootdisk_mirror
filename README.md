@@ -147,7 +147,7 @@ is given in [`README_QEMU_inst.md`](README_QEMU_inst.md).
 #### Image creation using bare hands
 
 There are also some (by now largely obsolete) README files describing
-procedures for manually creating Ubuntu of Debian images using e.g.
+procedures for manually creating Ubuntu or Debian images using e.g.
 conversion of a Raspberry Pi image as in
 [`README_ubuntu_frompi.md`](README_ubuntu_frompi.md)
 or using the debootstrap mechanism as in

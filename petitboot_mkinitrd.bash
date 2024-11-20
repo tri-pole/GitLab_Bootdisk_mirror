@@ -1,35 +1,41 @@
 #!/bin/bash
 
 # petitboot_mkinitrd.bash
-# 23-10-12: v0.11
+# 24-11-20: v0.13
 # Author: Tripole
 
-# Script to compile and pack Petitboot for ARM64 in the form of an initramfs.
+# Script to build and pack Petitboot for ARM64 or RISCV64 in an initramfs. 
 
-# Requirements: ARM64 build host with normal build environment (see below)
-# where the user running the script must be in the sudo group.
+# Requirements: ARM64 or RISCV64 build host with normal build environment (see
+# below) where the user running the script must be in the sudo group. (At the
+# end of the build proper ownership of files in the initramfs need to be set.)
 
-# Tested on: Ubuntu Jammy and Debian Bookworm build hosts running in
-# qemu-system-aarch64 on x86_64. (Cross compilation is not directly possible
-# since some libs are copied from the build host to the initramfs, see below.)
+# Tested on: Ubuntu 22.04.5 (ARM64,RISCV64) and Debian 12.8 (ARM64) build
+# hosts running in qemu-system-aarch64 on x86_64. (Cross compilation is not
+# possible since some libs/utils are copied from the build host, see below.)
 
 # Dependencies: GNU build tools w/ compiler suite, installed dependencies for
 # the packages kexec, busybox, iproute2, e2fsprogs, petitboot and eudev.
 # For example, on a default installation of debian-12.8.0-arm64-netinst.iso
-# all the dependencies could be satisfied by installing the following packages
-# (which, in turn, will install additional packages so satisfy dependencies):
-# build-essential, autoconf, pkg-config, bison, flex, gettext, libncurses-dev,
-# libudev-dev, zlib1g-dev, liblzma-dev, libelf-dev, libdw-dev, libblkid-dev,
-# libdevmapper-dev, libgpgme-dev, libssl-dev, gperf, gawk, tree, u-boot-tools
+# or Ubuntu Server 22.04.5 all the dependencies could be satisfied by
+# installing the following packages (along with their dependencies):
+# autoconf bison build-essential flex gawk gettext gperf libasprintf-dev
+# libblkid-dev libdevmapper-dev libdw-dev libelf-dev libgd-tools
+# libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev libssl-dev libtool
+# libudev-dev pkg-config tree u-boot-tools
 
-# Usage: The script can be run as an ordinary user but near the end it will ask
-# for the user password to execute a sudo command to change ownership of the
-# files in the initramfs. During execution of this script, two directories will
-# be created in the same directory as this script; one result directory and one
-# temporary file directory hearchy. (Near the end of this script you will be
-# asked which of the temp dirs you want to delete.)
+# Patches: There are some patches for Petitboot to enhance/adjust functionality
+# and there are patches needed to get RISCV64 support in kexec-tools (see code
+# below). The kexec-tools patches are only tested with kexec-tools v2.0.29.
 
-# Inspiration: https://www.raptorengineering.com/content/kb/1.html
+# Usage: The script can be run as an ordinary user but near the end it will
+# ask for the user password to execute a sudo command to change ownership of
+# the files in the initramfs. During execution of this script, two dirs will
+# be created in the same directory as this script; one result dir and one
+# temp file directory hearchy. (Near the end of this script you will be asked
+# which of the temp dirs you want to delete.)
+
+# Inspiration taken from: https://www.raptorengineering.com/content/kb/1.html
 
 # About the build: By default, the build config files etc. for each component
 # are stored also in the resulting initramfs; search for build.tgz in the code
@@ -101,6 +107,9 @@ kexectools_url_base="https://github.com/horms/kexec-tools/archive/refs/tags"
 kexectools_tarball_rpo=v${kexectools_ver}.tar.gz
 kexectools_tarball_loc=kexectools-v${kexectools_ver}.tar.gz
 dload_kexectools_tarball=true
+kt_patch_dir="kexectools_patches" # Relative to dir of this script.
+kt_add_riscv64_support_patch_fname="add_riscv64_support.patch"
+kt_riscv_hotplug_patch_fname="riscv_hotplug.patch"
 
 busybox_ver="1.36.1"
 busybox_url_base="https://busybox.net/downloads"
@@ -163,16 +172,6 @@ else
 fi
 
 stat_linked_exe_list=("/bin/busybox")
-
-# Tag to be applied to the name of the resulting initrd (and the uInitrd).
-if [[ $use_build_ver_tag == true ]]; then
-    initrd_pb_tag=v${petitboot_ver}-${build_ver_tag}
-else
-    initrd_pb_tag=v${petitboot_ver}
-fi
-initrd_pb_name=initrd-petitboot-${initrd_pb_tag}
-uInitrd_pb_name=uInitrd-petitboot-${initrd_pb_tag}
-
 
 # Bling? Yes, we like.
 i_msg="[\033[94m Info \033[0m]"
@@ -335,9 +334,9 @@ else
     $pb_discover_cmd 2>/dev/null &
 fi
 
-# This hack with a delay + some writing to the tty seems to be necessary for
-# the ncurses menu/UI to come up correctly. Also, some time may be needed for
-# pb-discover to detect all devices and read partitions properly.
+# This hack with a delay + some writing to the tty seems to be needed for the
+# ncurses menu/UI to come up correctly (on some monitors/ttys). Also, some time
+# may be needed for pb-discover to detect all devices and partitions properly.
 echo -n "Starting Petitboot UI in ...3..."
 sleep 1s
 echo -n "2..."
@@ -421,10 +420,34 @@ do_download() {
 
 # ------------------------------- Preliminaries -----------------------------
 
-if [[ $no_e2fsprogs != true ]]; then
-    echo -e ${i_msg}" -- Builting the Petitboot initramfs (with e2fsprogs) --"
+this_arch=$(arch)
+
+case $this_arch in
+    "aarch64")
+        uboot_arch=arm64
+    ;;
+    "riscv64")
+        uboot_arch=riscv
+    ;;
+    *)
+    echo -e ${e_msg}" -- Unsupported arch: ${this_arch}, exiting. --"
+    exit 1
+    ;;
+esac
+
+# Tag to be applied to the name of the resulting initrd (and the uInitrd).
+if [[ $use_build_ver_tag == true ]]; then
+    initrd_pb_tag=v${petitboot_ver}-${this_arch}-${build_ver_tag}
 else
-    echo -e ${i_msg}" -- Builting the Petitboot initramfs (without e2fsprogs) --"
+    initrd_pb_tag=v${petitboot_ver}-${this_arch}
+fi
+initrd_pb_name=initrd-pb-${initrd_pb_tag}
+uInitrd_pb_name=uInitrd-pb-${initrd_pb_tag}
+
+if [[ $no_e2fsprogs != true ]]; then
+    echo -e ${i_msg}" -- Builting the Petitboot initramfs for $this_arch (with e2fsprogs) --"
+else
+    echo -e ${i_msg}" -- Builting the Petitboot initramfs for $this_arch (without e2fsprogs) --"
 fi
 
 echo -e -n ${i_msg}" Setting up initramfs directory structure ..."
@@ -454,7 +477,7 @@ mkdir ${temp_dir}/initramfs/tmp
 mkdir ${temp_dir}/initramfs/usr
 mkdir ${temp_dir}/initramfs/usr/bin
 mkdir ${temp_dir}/initramfs/usr/lib
-mkdir ${temp_dir}/initramfs/usr/lib/aarch64-linux-gnu
+mkdir ${temp_dir}/initramfs/usr/lib/${this_arch}-linux-gnu
 mkdir ${temp_dir}/initramfs/usr/lib/udev
 mkdir ${temp_dir}/initramfs/usr/lib/udev/rules.d
 mkdir ${temp_dir}/initramfs/usr/lib/terminfo
@@ -498,7 +521,10 @@ ln -s sysinfo dmidecode
 echo " Done."
 
 echo -e -n ${i_msg}" Copying terminfo files and gpg to initramfs tree ..."
-cp -R /usr/lib/terminfo/* ${temp_dir}/initramfs/usr/lib/terminfo
+# The terminal used by Petitboot is defined in ${pb_build}/utils/pb-console
+# as TERM=linux which is typically defined in /lib/terminfo/l/linux (but note
+# that we have sýmliked /lib to /usr/lib above).
+cp -R /lib/terminfo/* ${temp_dir}/initramfs/usr/lib/terminfo
 cp /usr/bin/gpg ${temp_dir}/initramfs/usr/bin
 echo " Done."
 
@@ -547,6 +573,34 @@ fi
 echo -e ${i_msg}" Building kexec-tools ..."
 tar -xf ${temp_dir}/downloads/${kexectools_tarball_loc} -C ${temp_dir}/kexectools
 cd ${temp_dir}/kexectools/kexec-tools-${kexectools_ver}
+
+if [[ $this_arch == "riscv64" ]]; then
+    echo -e ${i_msg}" Applying kexec-tools patches for $this_arch ..."
+    kt_patches_applied_ok=true
+    case "$kexectools_ver" in
+        "2.0.29")
+            patch -N -p1 <\
+              ${this_script_dir}/${kt_patch_dir}/${kt_add_riscv64_support_patch_fname}
+            if [[ "$?" != 0 ]]; then
+                kt_patches_applied_ok=false
+            fi
+            patch -N -p1 <\
+              ${this_script_dir}/${kt_patch_dir}/${kt_riscv_hotplug_patch_fname}
+            if [[ "$?" != 0 ]]; then
+                kt_patches_applied_ok=false
+            fi
+        ;;
+        *)
+            echo " (No patches available for version $kexectools_ver of kexec-tools.)"
+        ;;
+    esac
+    if [[ $kt_patches_applied_ok == true ]]; then
+        echo -e ${k_msg}" All kexec-tools patches applied successfully."
+    else
+        echo -e ${w_msg}" Not all kexec-tools patches applied successfully, check messages."
+    fi
+fi
+
 autoupdate
 ./bootstrap
 ./configure --prefix=/usr
@@ -624,6 +678,7 @@ fi
 echo -e ${i_msg}" Building Petitboot ..."
 tar -xf ${temp_dir}/downloads/${petitboot_tarball_loc} -C ${temp_dir}/petitboot
 cd ${temp_dir}/petitboot/petitboot-v${petitboot_ver}
+
 echo -e ${i_msg}" Applying Petitboot patches ..."
 pb_patches_applied_ok=true
 case "$petitboot_ver" in
@@ -644,9 +699,9 @@ case "$petitboot_ver" in
     ;;
 esac
 if [[ $pb_patches_applied_ok == true ]]; then
-   echo -e ${k_msg}" All Petitboot patches applied successfully."
+    echo -e ${k_msg}" All Petitboot patches applied successfully."
 else
-   echo -e ${w_msg}" Not all Petitboot patches applied successfully, check messages."
+    echo -e ${w_msg}" Not all Petitboot patches applied successfully, check messages."
 fi
 
 if [[ $use_build_ver_tag == true ]]; then
@@ -713,9 +768,17 @@ for exe_name in ${dyn_linked_exe_list[@]}; do
     exe_name_full=${pre_path}${exe_name}
     # libs_this_exe=$(objdump -p $exe_name_full | grep "NEEDED" | sed 's/NEEDED//g' | tr -d " ") # Note reliable
     # The next line is perhaps not reliable, but for now it will do.
-    # The virtual (kernel) file linux-vdso.so.1 and the linker
-    # ld-linux-aarch64.so.1 are omitted from the list.
-    libs_this_exe=$(ldd $exe_name_full | grep -vE "linux-vdso.so.1|ld-linux-aarch64.so.1" | cut -d "(" -f1 | cut -d ">" -f2 | tr -d ' ')
+    # The virtual (kernel) file linux-vdso.so.1 and the interpreter
+    # ld-linux-aarch64.so.1/ld-linux-riscv64-lp64d.so.1 are omitted from the list.
+    case $this_arch in
+        "aarch64")
+            libs_this_exe=$(ldd $exe_name_full | grep -vE "linux-vdso.so.1|ld-linux-aarch64.so.1" | cut -d "(" -f1 | cut -d ">" -f2 | tr -d ' ')
+        ;;
+        "riscv64")
+            libs_this_exe=$(ldd $exe_name_full | grep -vE "linux-vdso.so.1|ld-linux-riscv64-lp64d.so.1" | cut -d "(" -f1 | cut -d ">" -f2 | tr -d ' ')
+        ;;
+    esac
+
     echo "Libs (except virtual) required by ${exe_name}:"
     echo $libs_this_exe
     lib_file_list+=($libs_this_exe)
@@ -735,11 +798,22 @@ for list_item in ${lib_file_list_sorted[@]}; do
     echo $lib_file_inst_full
 done
 
-echo -e ${i_msg}" Copying libraries from host to initramfs tree ..."
-cp /usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 ${temp_dir}/initramfs/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1
-cd ${temp_dir}/initramfs/usr/lib
-ln -s aarch64-linux-gnu/ld-linux-aarch64.so.1 ld-linux-aarch64.so.1
-for list_item in ${lib_file_inst_list[@]}; do
+echo -e ${i_msg}" Copying interpreter and libraries from host to initramfs tree ..."
+case $this_arch in
+    "aarch64")
+        # Copy the interpreter and set up the soft link.
+        cp -v /usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 ${temp_dir}/initramfs/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1
+        cd ${temp_dir}/initramfs/usr/lib
+        ln -s aarch64-linux-gnu/ld-linux-aarch64.so.1 ld-linux-aarch64.so.1
+    ;;
+    "riscv64")
+        # Copy the interpreter and set up the soft link.
+        cp -v /usr/lib/riscv64-linux-gnu/ld-linux-riscv64-lp64d.so.1 ${temp_dir}/initramfs/usr/lib/riscv64-linux-gnu/ld-linux-riscv64-lp64d.so.1
+        cd ${temp_dir}/initramfs/usr/lib
+        ln -s riscv64-linux-gnu/ld-linux-riscv64-lp64d.so.1 ld-linux-riscv64-lp64d.so.1
+    ;;
+esac
+for list_item in ${lib_file_inst_list[@]}; do # in ${temp_dir}/initramfs/usr/lib
     lib_file_inst_full=$(realpath $list_item)
     cp -v ${lib_file_inst_full} ${temp_dir}/initramfs${lib_file_inst_full}
 done
@@ -766,7 +840,7 @@ which_mkimage=$(which mkimage)${temp_dir}
 test_which_mkimage=$?
 if [[ $test_which_mkimage == 0 ]]; then
     echo -e -n "Making u-boot tagged version of the initramfs ..."
-    mkimage -n "Petitboot-v${petitboot_ver}" -A arm64 -O linux -T ramdisk \
+    mkimage -n "Petitboot-v${petitboot_ver}" -A $uboot_arch -O linux -T ramdisk \
       -C gzip -d ${result_dir}/${initrd_pb_name} ${result_dir}/${uInitrd_pb_name}
     echo " Done."
     echo "Result: ${uInitrd_pb_name}"

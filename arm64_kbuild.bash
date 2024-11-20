@@ -13,8 +13,8 @@
 
 # The script is configured to run make menuconfig using the kernel config given
 # on the command line as default config (or using a defconfig, if no config is
-# supplied). (If you do edits at the menu, remember to save the config under
-# the name .config before exiting; compilation will then start automatically.)
+# supplied). If you do edits at the menu, remember to save the config under
+# the name .config before exiting; compilation will then start automatically.
 
 # As part of the build process an initramfs is produced, based on an official
 # Ubuntu rootfs (e.g. Jammy), and u-boot tagged versions of both kernel and
@@ -29,10 +29,12 @@
 # and, if applicable, cross compiling tools such as gcc-aarch64-linux-gnu.
 # The Linux kernel also requires (depending on config) things as libssl-dev.)
 
-# The script has been tested on x86_64 VMs (running in qemu-system-x86_64) with
-# Ubuntu Focal and Jammy, respectively and on ARM64 Jammy (qemu-system-aarch64).
-# This script should be considered as a template or proof-of-concept, nothing
-# more (so please fork it, adapt it, improve it).
+# The script has been tested on x86_64 VMs (running in qemu-system-x86_64)
+# with Ubuntu Focal and Jammy, and "natively" on an ARM64 VM (running in
+# qemu-system-aarch64) with Jammy. This script should be considered as a
+# template or proof-of-concept, nothing more (so please fork it, adapt it,
+# improve it). The script has been verified for building kernels from 5.15.y
+# to 6.11.y.
 
 # Inspiration taken from:
 # https://www.kernel.org/doc/html/latest/index.html
@@ -58,13 +60,13 @@
 # Note: Kernel version numbers here (in $kern_ver_num) must be in the format
 # x.y.z so for an x.y kernel (e.g. 6.7) you must here add (pad with) a zero to
 # make into x.y.z format (e.g. 6.7.0).
-kern_ver_num=6.8.12
+kern_ver_num=6.6.62
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
 # CONFIG_LOCALVERSION=""
 # # CONFIG_LOCALVERSION_AUTO is not set
-kern_tag_str="-koop-3pole"
+kern_tag_str="-aarch64-koop-3pole"
 kern_out_str=${kern_ver_num}${kern_tag_str}
 
 # Alternatively, a locally provided kernel source tarball can be used.
@@ -75,7 +77,8 @@ use_loc_kern_src=no # {yes,no}
 loc_kern_tarball_dir=dummy_dir
 
 # Path to local patch dir (see $patch_src_dir below).
-loc_patch_dir=dummy_dir
+loc_patch_dir=patches/tripole/6.6
+#loc_patch_dir=dummy_dir
 
 # List of names for SoC vendor for which you want to create a dtb package
 # (tarball). (All of these SoCs must be enabled in the kernel config.)

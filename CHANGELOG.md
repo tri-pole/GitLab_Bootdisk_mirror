@@ -166,6 +166,11 @@ download location is provided).
 
 # petitboot_mkinitrd.bash:
 
+## [v0.13] 24-11-20
+
+### Added
+ - Support for RISCV64.
+
 ## [v0.11] 23-10-12
 
 ### Added
