@@ -4,16 +4,15 @@
 # 23-06-12: v0.13
 # Author: Tripole
 
-# - Introduction -
-# Template script to create a Debian or Ubuntu Linux ARM64 (CLI, "server") image
-# for Amlogic TV-boxes/SBCs. The base system is obtained using the debootstrap
-# mechanism of either the Debian (Bullseye) or Ubuntu (Jamy) repositories.
-# The script must be executed (as root) on an Ubuntu/Debian type machine, either
+# This is a script to create Debian or Ubuntu Linux ARM64 (CLI, "server")
+# images for Amlogic TV-boxes/SBCs. The base system is obtained by using the
+# debootstrap mechanism of either the Debian or Ubuntu repositories. The
+# script must be executed (as root) on an Ubuntu/Debian type machine, either
 # natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static) on
-# x86_64/amd64.
-# The generated image can be booted with resident/vendor u-boot (using the boot
-# scripts on the fat partition) or via bootdisk (using the grub.cfg file on the
-# rootfs partition). Another alternative is chainloader u-boot.ext (see below).
+# x86_64/amd64. The generated image can be booted with resident/vendor u-boot
+# (using the boot scripts on the fat partition) or via bootdisk (using the
+# grub.cfg file on the rootfs partition). Another alternative is chainloading
+# with u-boot.ext (see below).
 
 # Usage: ./debuntu_dbstrap distro
 #        where distro is one of: ubuntu, debian
@@ -45,7 +44,7 @@
 #   (You can always later manually do dpkg-reconfigure keyboard-configuration)
 # - The image can always be booted via grub (e.g. using bootdisk) and most
 #   often via (a recent) chainloader (uboot.ext, using extlinux/extlinux.conf
-#   on the bootfs). However, it may not boot via resident/vendor u-boot
+#   on the vfat bootfs). However, it may not boot via resident/vendor u-boot
 #   (loading uImage and uInitrd via boot scripts), unless the vendor u-boot is
 #   recent. (One reason for this is that the standard initramfs compression
 #   method (in /etc/initramfs-tools/initramfs.conf) is zstd, but older u-boot
@@ -106,7 +105,7 @@
 # ------------------------------- parameters ---------------------------------
 
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
-ubuntu_edition=Jammy    # Tested with Focal, Jammy, Kinetic, Lunar, Mantic, Noble
+ubuntu_edition=Noble    # Tested with Focal, Jammy, Kinetic, Lunar, Mantic, Noble
 debian_name=Debian      # Used for the image name and in grub.cfg
 debian_edition=Bookworm # Tested with Bullseye, Bookworm, Trixie
 
@@ -683,33 +682,9 @@ Petitboot and u-root
 It is easy to install the bootmanager/bootloader Petitboot or u-root onto this
 bootfs and use the bootloader/bootmanager as a middle stage in the booting
 process. With such an installation it is possible to have multiple kernels
-installed to choose from at the bootmanager prompt. It is also possible to boot
-kernels (and Linux OSes) installed on other attached removable media.
-For more info on such "bootdisk" booting, see
-https://gitlab.com/tripole-inc/bootdisk
-
-To install e.g. Petitboot onto this bootfs, do the following:
-
-(1) Download the latest tarball with the Petitboot/u-root bootloaders, e.g. in
-    the form of multi-bootdisk-<version>.tgz (see Gitlab linked to above)
-(2) Unpack the tarball in some temporary directory.
-(3) Copy one of the vmlinuz files from the unpacked tarball to the top level
-    on the bootfs and likewise copy the initrd for Petitboot from the unpacked
-    tarball to the top level of the bootfs.
-(4) Add a default entry in extlinux.conf corresponding to the vmlinuz/initramfs
-(5) Reboot into Petitboot
-
-The procedure is similar when using a bootdisk with the u-root bootloader.
-
-The above will (most likely) work when the Linux image with Petitboot/u-root is
-on SD but might not work on USB (or the opposite might hold); this depends on
-the boot order set in the u-boot environment variables (and possibly on the
-kernel configuration and patches applied). It should work also when the Linux
-image is installed on eMMC. (The cases with installation on SD and eMMC have
-been tested with recent versions of the Petitboot initramfs and recent
-koop-3pole kernels, and u-root has also been verified to work on eMMC. On this
-Linux image there are no tools for copying the Linux system onto eMMC but it is
-not difficult to do by hand, see e.g. README_diy-bootdisk.md at Gitlab).
+installed to choose from at the bootmanager prompt and to boot kernels (and
+Linux OSes) installed on other attached removable media. For more info on such
+"bootdisk" booting, see https://gitlab.com/tripole-inc/bootdisk
 
 Hidden bootloader
 -----------------
@@ -1104,7 +1079,7 @@ losetup -d $loop_dev 2>/dev/null
 echo " Done."
 
 imgfile_name_full=${distro_name}_${distro_edition}_${kernel_version}_${img_tag}.img
-echo -n -e ${i_msg}" Renaming image file to $imgfile_name_full"
+echo -n -e ${i_msg}" Renaming image file to $imgfile_name_full ..."
 imgfile_loc_full=${imgfile_dir}/${imgfile_name_full}
 mv $imgfile_loc $imgfile_loc_full
 echo " Done."

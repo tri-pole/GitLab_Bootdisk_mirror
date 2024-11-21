@@ -4,16 +4,15 @@
 # 23-07-16: v0.1
 # Author: Tripole
 
-# - Introduction -
-# Template script to create a Devuan Linux ARM64 (CLI, "server") image for
+# This is a script to create a Devuan Linux ARM64 (CLI, "server") image for
 # Amlogic TV-boxes/SBCs. The base system is obtained using the debootstrap
 # mechanism to access the Devuan repositories and install the packages.
 # The script must be executed (as root) on an Ubuntu/Debian type machine,
 # either natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static)
-# on x86_64/amd64.
-# The generated image can be booted with resident/vendor u-boot (using the boot
-# scripts on the fat partition) or via bootdisk (using the grub.cfg file on the
-# rootfs partition). Another alternative is chainloader u-boot.ext (included).
+# on x86_64/amd64.  The generated image can be booted with resident/vendor
+# u-boot (using the boot scripts on the fat partition) or via bootdisk (using
+# the grub.cfg file on the rootfs partition). Another alternative is
+# chainloader u-boot.ext (included).
 
 # Usage: ./devuan_dbstrap
 
@@ -82,7 +81,7 @@
 #   time zone, keyboard and root password.
 # - Basic configuration: You might want to configure zram (and optionally set
 #   up swap), see e.g. /etc/default/zramswap and https://wiki.debian.org/ZRam
-# - Pro tip: Generate the image cheaply, say 4G rootfs (so that burn to SD/USB
+# - Pro tip: Generate the image cheaply, say 2G rootfs (so that burn to SD/USB
 #   goes quickly). Then, (before first boot) enlarge the rootfs partition on
 #   SD/USB to desired size, e.g. with (100% here uses all of the SD/USB):
 #   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
@@ -562,29 +561,6 @@ installed to choose from at the bootmanager prompt. It is also possible to boot
 kernels (and Linux OSes) installed on other attached removable media.
 For more info on such "bootdisk" booting, see
 https://gitlab.com/tripole-inc/bootdisk
-
-To install e.g. Petitboot onto this bootfs, do the following:
-
-(1) Download the latest tarball with the Petitboot/u-root bootloaders, e.g. in
-    the form of multi-bootdisk-<version>.tgz (see Gitlab linked to above)
-(2) Unpack the tarball in some temporary directory.
-(3) Copy one of the vmlinuz files from the unpacked tarball to the top level
-    on the bootfs and likewise copy the initrd for Petitboot from the unpacked
-    tarball to the top level of the bootfs.
-(4) Add a default entry in extlinux.conf corresponding to the vmlinuz/initramfs
-(5) Reboot into Petitboot
-
-The procedure is similar when using a bootdisk with the u-root bootloader.
-
-The above will (most likely) work when the Linux image with Petitboot/u-root is
-on SD but might not work on USB (or the opposite might hold); this depends on
-the boot order set in the u-boot environment variables (and possibly on the
-kernel configuration and patches applied). It should work also when the Linux
-image is installed on eMMC. (The cases with installation on SD and eMMC have
-been tested with recent versions of the Petitboot initramfs and recent
-koop-3pole kernels, and u-root has also been verified to work on eMMC. On this
-Linux image there are no tools for copying the Linux system onto eMMC but it is
-not difficult to do by hand, see e.g. README_diy-bootdisk.md at Gitlab).
 
 Hidden bootloader
 -----------------

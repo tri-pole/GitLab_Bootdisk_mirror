@@ -71,6 +71,7 @@
 # - Pro tip: Generate the image cheaply, say 2G rootfs (so that burn to SD/USB
 #   goes quickly). Then, (before first boot) enlarge the rootfs partition on
 #   SD/USB to desired size, e.g. with (100% here uses all of the SD/USB):
+#   boot) using parted, resizepart and resize2fs like so (tweak the percentage):
 #   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
 #   Finally, to make sure that the resized partition will be recognized also as
 #   a valid GPT partition, repair it with gdisk as follows. First, start gdisk;
@@ -110,7 +111,7 @@ compressed_img=yes # {yes,no}
 
 if [[ "$distro_name" == "Manjaro" ]]; then
     # Use Manjaro native or locally provided kernel (see below).
-    use_local_kern=yes # {yes,no}
+    use_local_kern=no # {yes,no}
 
     # Name of Manjaro kernel package (when not using locally provided kernel).
     mnjo_kern_name=linux-lts
@@ -137,7 +138,7 @@ if [[ "$distro_name" == "Manjaro" ]]; then
     # Locally provided kernel.
     # The packages (boot-,modules-,dtb-,header-) must have same form as Ophub's,
     # e.g. be the result of a kernel compil. using Ophob's build environment.
-    krnver_str="6.6.12-koop-3pole" # Kernel name/release str., plain text.
+    krnver_str="6.6.21-koop-3pole" # Kernel name/release str., plain text.
 
     bootfs_label=MNJO_BOOT
     rootfs_label=MNJO_ROOT
@@ -709,20 +710,6 @@ is first in the boot chain, as defined by aml_autoscript), the bootloader will
 start and scan the SD and other attached USB devices for bootable configurations
 which can be conveniently selected and booted via a text based UI. For more
 info on such "bootdisk" booting, see https://gitlab.com/tripole-inc/bootdisk
-
-To install e.g. Petitboot on this bootfs (same for u-root), do the following:
-
-(1) Download the latest tarball with Petitboot in the non chainloaded version,
-    e.g. petit-bootdisk-nc_0v24.tgz
-(2) Unpack the tarball in some temporary directory.
-(3) Copy the existing Image and uInitrd on the bootfs to some backup location.
-(4) Copy the Image (or zImage; it is an Image) from the tarball to Image on the
-    bootfs and copy the uInitrd from the tarball to uInitrd on the bootfs.
-(5) Make a uImage from Image/zImage using the script /usr/local/bin/mkuimg.bash
-(6) Reboot into Petitboot.
-
-(The procedure is similar when starting Petitboot via chainloader u-boot.ext
-check the scripts and structure in e.g. petit-bootdisk-0v24.tgz)
 EOF
 )
 

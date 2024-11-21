@@ -118,7 +118,7 @@
 # A: Well, as always, "it depends". (Best to browse through them all, I guess.)
 
 distro_name=Ubuntu   # Used for the image name and in grub.cfg
-distro_edition=Jammy # Tested with Focal, Jammy, Kinetic, Lunar, Mantic, Noble
+distro_edition=Noble # Tested with Focal, Jammy, Noble
 
 # Host name for image.
 host_name=tribu
@@ -128,7 +128,7 @@ compressed_img=yes # {yes,no}
 
 # Name and tag for resulting disk image (uncomment and edit to taste).
 # Example for koop-3pole kernel:
-krnver_str="6.8.9-koop-3pole" # Kernel name/release str., plain text.
+krnver_str="6.10.13-koma-3pole" # Kernel name/release str., plain text.
 
 # The selected zram compression method here must match what the kernel supports
 # (if unsure, set to zstd). See /etc/default/zramswap
@@ -176,35 +176,21 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # (3) Daily build of an LTS release (e.g. Focal, Jammy).
 case "$distro_release" in
     "noble")
-        distro_buildfile=ubuntu-base-24.04-base-arm64.tar.gz
-        distro_urlbase=$distro_urlbase/releases
-        distro_buildurl=${distro_urlbase}/noble/release/${distro_buildfile}
+        distro_buildfile=ubuntu-base-24.04.1-base-arm64.tar.gz
     ;;
-    "mantic")
-        distro_buildfile=ubuntu-base-23.10-base-arm64.tar.gz
-        distro_urlbase=$distro_urlbase/releases
-        distro_buildurl=${distro_urlbase}/mantic/release/${distro_buildfile}
+    "jammy")
+        distro_buildfile=ubuntu-base-22.04.5-base-arm64.tar.gz
     ;;
-    "lunar")
-        distro_buildfile=ubuntu-base-23.04-base-arm64.tar.gz
-        distro_urlbase=$distro_urlbase/releases
-        distro_buildurl=${distro_urlbase}/lunar/release/${distro_buildfile}
-    ;;
-    "kinetic")
-        distro_buildfile=ubuntu-base-22.10-base-arm64.tar.gz
-        distro_urlbase=$distro_urlbase/releases
-        distro_buildurl=${distro_urlbase}/kinetic/release/${distro_buildfile}
-    ;;
-    "focal" | "jammy")
-        distro_buildfile=${distro_release}-base-arm64.tar.gz
-        distro_urlbase=$distro_urlbase/${distro_release}
-        distro_buildurl=${distro_urlbase}/daily/current/${distro_buildfile}
+    "focal")
+        distro_buildfile=ubuntu-base-20.04.5-base-arm64.tar.gz
     ;;
     *)
         echo "The distro release $distro_release is unknown, exiting."
         exit 1
     ;;
 esac
+distro_urlbase=$distro_urlbase/releases
+distro_buildurl=${distro_urlbase}/noble/release/${distro_buildfile}
 
 # Link to g12_sound.sh for enabling sound on some boxes (run as local user).
 g12_sound_url="https://gitlab.manjaro.org/manjaro-arm/packages/community/oc4-post-install/-/raw/master/g12_sound.sh"
@@ -709,21 +695,6 @@ aml_autoscript), the bootloader will start and scan the SD and other attached
 USB devices for bootable configurations which can be conveniently selected and
 booted via a text based UI. For more info on such "bootdisk" booting, see
 https://gitlab.com/tripole-inc/bootdisk
-
-To install e.g. Petitboot on this bootfs (similar for u-root), do the following:
-
-(1) Download the latest tarball with the Petitboot/u-root bootloaders, e.g. in
-    the form of multi-bootdisk-<version>.tgz (see Gitlab linked to above).
-(2) Unpack the tarball in some temporary directory.
-(3) Copy the existing uImage and uInitrd on the bootfs to some backup location.
-(4) Copy the kernel uImage file from the unpacked tarball to uImage on the
-    bootfs and copy the uInitrd from the unpacked tarball to uInitrd on the
-    bootfs. (In the tarball, there are several versions of uImage and uInitrd
-    available, apart from the default ones, uImage and uInitrd.)
-(5) Reboot into Petitboot.
-
-The procedure is similar when starting Petitboot via chainloader u-boot.ext
-check the scripts and structure in e.g. multi-bootdisk-<version>.tgz
 
 A note about u-boot: To boot this disk image with u-boot requires a working
 resident/vendor u-boot bootloader but this restriction can be removed if a
