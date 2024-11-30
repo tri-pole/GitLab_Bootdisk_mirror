@@ -1,9 +1,12 @@
 # bootdisk
 
-__TL;DR:__ On an ARM64 TV-box/SBC with working u-boot you can get a boot
+__TL;DR:__ On a SBC or TV-box with working u-boot you can get a boot
 manager+loader by replacing the default Linux initramfs with an initramfs
 containing `Petitboot` or `u-root` (provided your default Linux kernel has
 `kexec()`).
+
+__News:__ We have added some documentation and material for RISCV64, such as an
+image build script (tested on VisionFive 2).
 
 This repo contains information about some
 [bootloaders](https://en.wikipedia.org/wiki/Bootloader) and
@@ -50,8 +53,8 @@ in the file [`README_diy-bootdisk.md`](README_diy-bootdisk.md)
 An initramfs for `Petitboot` can be built from the C source either manually,
 as outlined in [`README_diy-bootdisk.md`](README_diy-bootdisk.md), or e.g.
 using the script [`petitboot_mkinird.bash`](petitboot_mkinitrd.bash).
-(This script can be executed natively on an ARM64 host or an ARM64 build host
-run in a QEMU emulator, cf. [`README_QEMU_inst.md`](README_QEMU_inst.md).)
+(This script can be executed natively on an ARM64/RISCV64 host or an
+ARM64/RISCV64 build host run in a QEMU emulator, see below.)
 Initramfses with `Petitboot` built using the script
 [`petitboot_mkinird.bash`](petitboot_mkinitrd.bash) can be found at the
 download location listed in
@@ -134,16 +137,6 @@ you can build an image of Debian, Devuan or Ubuntu for several well
 known families of SoCs/boards (cf. the `defconfig` and `lib/boards` folders
 there).
 
-#### Image creation using QEMU
-
-A convenient way to create an ARM64 Linux image is to run a native
-ARM64 installer (e.g. in iso file format) in QEMU on e.g. an x86_64 host
-and install directly onto an SD/USB attached to the host.
-These images will typically be UEFI images and can be booted on a
-TV-box/SBC using e.g. Petitboot/u-root.
-A short description of how use QEMU for image creation like this
-is given in [`README_QEMU_inst.md`](README_QEMU_inst.md).
-
 #### Image creation using bare hands
 
 There are also some (by now largely obsolete) README files describing
@@ -154,9 +147,26 @@ or using the debootstrap mechanism as in
 [`README_ubuntu_inst.md`](README_ubuntu_inst.md),
 [`README_debian_inst.md`](README_debian_inst.md).
 (These procedures can serve as instructive examples but in general
-the QEMU install method above would be preferrable. The QEMU install method
+the QEMU install method below would be preferrable. The QEMU install method
 can also be used to create hybrid images; an example is given in
 [`README_alpine_inst.md`](README_alpine_inst.md).)
+
+### RISCV64 Linux images
+
+Linux images with Debian or Ubuntu for RISCV64 can be created with the script
+[`debuntu_dbstrap_riscv64.bash`](debuntu_dbstrap_riscv64.bash).
+Images built with this script can be downloaded from
+[here](https://mega.nz/folder/PAtXyRgA#SI9z7Hgz2n-S7BLk2SuM2A).
+
+### Image creation using QEMU
+
+A convenient way to create an ARM64/RISCV64 Linux image is to run a native
+ARM64/RISCV64 installer (e.g. in iso file format) in QEMU on e.g. an x86_64
+host and install directly onto an SD/USB attached to the host.
+These images will typically be UEFI images and can be booted on a
+SBC/TV-box using e.g. Petitboot/u-root.
+A short description of how use QEMU for image creation like this
+is given in [`README_QEMU_inst.md`](README_QEMU_inst.md).
 
 ### ARM64 Linux kernel
 
