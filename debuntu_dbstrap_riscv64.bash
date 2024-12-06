@@ -1,19 +1,19 @@
 #!/bin/bash
 
 # debuntu_dbstrap_riscv64.bash
-# 24-11-30: v0.10
+# 24-12-06: v0.12
 # Author: Tripole
 
 # Script to create a (small, CLI) Debian or Ubuntu Linux RISCV64 image using
-# using the debootstrap mechanism. The script must be executed (as root) on an
-# Ubuntu/Debian type machine, either natively on RISCV64 or virtualized (with
-# qemu-riscv64-static) on x86_64/amd64. The generated image can be booted with
-# board resident (e.g. QSPI) openSBI+u-boot (using extlinux.conf on the image).
-# (The partition layout allows for manual addition of SPL and openSPI+u-boot,
-# if needed.) The images are tailored to StarFive's VisionFive 2 but can easily
-# be adapted to other RISCV64 SBCs (by changing dtb file and editing uEnv.txt).
+# debootstrap. The script must be executed (as root) on an Ubuntu/Debian type
+# machine, either natively on RISCV64 or virtualized (with qemu-riscv64-static)
+# on x86_64/amd64. The generated image can be booted with board resident (e.g.
+# QSPI) openSBI+u-boot (using extlinux.conf on the image). (The partition
+# layout has two leading empty 2M+4M partitions for manual addition SPL and
+# openSPI+u-boot, if needed.) The images are tailored to VisionFive 2 but can
+# easily be adapted to other RISCV64 SBCs (by updating the dtb and uEnv.txt).
 
-# Usage: ./debuntu_dbstrap distro
+# Usage: ./debuntu_dbstrap_riscv64.bash distro
 #        where distro is one of: ubuntu, debian
 
 # Requires: Standard basic functionality incl. blkid, dd, losetup, mkfs, xz,
@@ -41,6 +41,8 @@
 # - The dtb files on the image are located at
 #   /usr/lib/linux-image-<kernel version>-riscv64 (Debian)
 #   /usr/lib/firmware/<kernel version>-generic/device-tree (Ubuntu)
+#   A link to the default dtb must exist as /etc/default/dtb (as set up by this
+#   script) in order for the kernel postinst extlinux.conf update hook to work.
 # - The image can always be booted via (board resident) u-boot (extlinux.conf)
 #   but also using e.g. Petitboot (w/ e.g. grub.cfg, as set up on the image).
 # - The kernel and initramfs files on the bootfs are not automatically updated
@@ -59,7 +61,8 @@
 #   the bootloader, cf. the README files at Gitlab about Petitboot/u-root.
 # - On VisionFive 2 the graphics support is not yet in mainline kernel so the
 #   the next remark about desktop environments is not (yet) relevant (and you
-#   have to use serial console or ssh, for now).
+#   have to use serial console or ssh, for now). (On VF2 there is also some
+#   confusion about naming re. uEnv.txt/vf2_uEnv.txt, see comments below).
 # - On Ubuntu a simple working desktop environment can be obtained by
 #   installing e.g. xubuntu-core, ubuntu-desktop-minimal or kubuntu-desktop.
 # - The Ubuntu snap system can cause trouble (so one can do;
@@ -75,7 +78,7 @@
 # - You will be asked to configure three things at runtime (near the end):
 #   time zone, keyboard and root password (this can be later adjusted with
 #   dpkg-reconfigure tzdata or dpkg-reconfigure keyboard-configuration).
-# - You might want to configure zram (and optionally set up swap), see e.g.
+# - You might want to (re)configure zram (and optionally set up swap), see e.g.
 #   /etc/default/zramswap and https://wiki.debian.org/ZRam
 # - Tip: Generate a small image, say 6G rootfs (so that burning of the image
 #   goes quickly). Then, enlarge the rootfs partition on the image either by
@@ -125,6 +128,12 @@ kernel_cmdline_opts="quiet splash"
 # in the kernel source tree at arch/riscv/boot/dts)
 dtb_mfg=starfive
 dtbfile_name=jh7110-starfive-visionfive-2-v1.3b.dtb
+dtbfile_path=/boot/dtbs/${dtb_mfg}/${dtbfile_name} # Full path, starts w/ /boot
+
+# The selected zram compression method here must match what the kernel supports
+# (if unsure, set to zstd). See /etc/default/zramswap
+zram_compression=lzo-rle # {zstd,lzo,lzo-rle,...}
+zram_percent=35 # Amount of RAM to be used for zram.
 
 # The generated Linux image has a GPT disk label and is partitioned as
 # [ part1 (not used), part2 (not used), bootfs, rootfs ]. Details about
@@ -134,7 +143,7 @@ p1_size=4096     # Recommended to not change
 p2_start=8192    # Recommended to not change
 p2_size=8192     # Recommended to not change
 p3_start=16384   # Recommended not to change
-bootfs_MiB=300   # In general, use at least 300 MiB.
+bootfs_MiB=500   # In general, use at least 300 MiB, 500 MiB recommended.
 rootfs_MiB=6000  # In general, use at least 5000 MiB.
 rootfs_type=ext4 # Must be ext4 currently.
 
@@ -145,8 +154,8 @@ tmpfile_dir=${imgfile_dir}/temp_files
 # Mount point for the debootstrap process.
 # Temporary mount points (dirs) used during image creation.
 rootfs_mnt=${imgfile_dir}/rootfs_tmp
-bootfs_dir=boot/bootfs # No leading slash needed; local path.
-bootfs_mnt=${rootfs_mnt}/${bootfs_dir}
+bootfs_dir=/boot # Incl. leading slash.
+bootfs_mnt="${rootfs_mnt}""${bootfs_dir}"
 
 # Do we want to clean up all temporary files and directories afterwards?
 docleanup_after=yes # {yes,no}
@@ -449,9 +458,6 @@ dpkg-reconfigure keyboard-configuration
 
 echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
-
-echo "Creating /boot/grub/grub.cfg"
-rootfsUUID=$rootfs_UUID bash -c '/usr/local/bin/mkgrubcfg_simple.bash'
 EOF
 )
 
@@ -480,42 +486,159 @@ apt -y install console-setup
 
 echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
-
-echo "Creating /boot/grub/grub.cfg"
-rootfsUUID=$rootfs_UUID bash -c '/usr/local/bin/mkgrubcfg_simple.bash'
 EOF
 )
 
-extlinux_conf=$(cat <<EOF
-# For more info about this file see (and the links therein)
-# https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX
-# (Note: u-boot's parsing of this file may be slightly different/incomplete.)
+# We split this file in two; one part with parameter substitution and one w/o.
+mkextlinux_conf_p1=$(cat <<EOF
+#!/bin/bash
 
-# The path to the dtb file can be defined by using the FDT or FDTDIR directive,
-# and both of these can be overridden by use of the u-boot conf. file uEnv.txt
-# For example, on VisionFive 2 the current dtb file is
-# jh7110-starfive-visionfive-2-v1.3b.dtb
-# and that can be specified here by
-# FDT /dtbs/starfive/jh7110-starfive-visionfive-2-v1.3b.dtb
-# When using the FDTDIR directive there may be caveats since the FDTDIR
-# directive relies on the value of u-boot's CONFIG_DEFAULT_DEVICE_TREE
-# For example, if we here use the directive
-# FDTDIR /dtbs
-# then the physical name/location for the dtb file to be the generic
-# /dtbs/starfive/starfive_visionfive2.dtb
+# Scans for vmlinu[x,z]-* in /boot and sets up an extlinux.conf file in
+# /boot/extlinux
+# Usage: /usr/local/bin/mkextlinux_conf.bash /boot/path/to/dtb/file/ where
+# /boot/path/to/dtb/file/ is the full path under /boot to the dtb file.
+# The path can alternatively be given in the env. variable dtb_path (command
+# line has precedence). The dtb name can be a symlink; the full dtb name
+# will be inserted into extlinux.conf) Normally, the script is run from a
+# mounted rootfs and then the UUID of the rootfs is discovered using the blkid
+# comand (see below). However, for use e.g. inside a chroot jail the rootfs
+# UUID can also be given as an environment variable prepended on the command
+# line, e.g. like so (note the single quotes):
+# chroot . /bin/bash -c 'rootfsUUID=f3cab04c-...-faec36aace3f /usr/local/bin/mkextlinux_conf.bash <path-to-dtb-file>'
 
-MENU TITLE <DEBUNTU-BOOT>
-DEFAULT DEBNT_DEFAULT
+# The kernel command line parameters here may need tweaking.
+kernel_cmdline_pars_="$kernel_cmdline_opts"
 
-# Waiting time before booting the first entry below, if there are several
-# entries (in units of 0.1s).
-TIMEOUT 20
+EOF
+)
 
-LABEL DEBNT_DEFAULT
-  LINUX  /$kernel_img_name_short
-  INITRD /initrd.img
-  FDT    /dtbs/${dtb_mfg}/${dtbfile_name}
-  APPEND $kernel_cmdline
+mkextlinux_conf_p2=$(cat <<"EOF1"
+
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: /usr/local/bin/mkextlinux_conf.bash /boot/path/to/dtb/file"
+    echo "  where /boot/path/to/dtb/file/ is the full path (under /boot) to the dtb file."
+    echo "  The path can alternatively be given in the environment variable dtb_path"
+    echo "  (command line has precedence). More info inside the script."
+    exit 1
+fi
+
+if [[ $# -eq 1 ]]; then
+    dtb_path=$1
+fi
+
+dtbpath_full=$(readlink -f $dtb_path)
+if [[ -f $dtbpath_full ]]; then
+    dtbpath_rel_boot=${dtbpath_full#/boot/}
+else
+    "The dtb file $dtbpath_full is missing, exiting."
+    exit 1
+fi
+
+distro_name_lc=$(cat /etc/os-release | grep -E "^ID=" | cut -d "=" -f2)
+distro_edition_lc=$(cat /etc/os-release | grep VERSION_CODENAME | cut -d "=" -f2)
+
+# First letter to uppercase.
+distro_name="$(tr '[:lower:]' '[:upper:]' <<< ${distro_name_lc:0:1})""${distro_name_lc:1}"
+distro_edition="$(tr '[:lower:]' '[:upper:]' <<< ${distro_edition_lc:0:1})""${distro_edition_lc:1}"
+
+if [[ -z "$rootfsUUID" ]]; then
+    rootfs_uuid=$(blkid -s UUID $(mount | grep -E "/ " | cut -d " " -f 1) | cut -d "\"" -f2)
+else
+    rootfs_uuid=$rootfsUUID
+fi
+
+# The next line is a default kernel command line and may have to be adjusted for each kernel.
+kernel_cmdline_rootfsuuid="root=UUID="${rootfs_uuid}
+kernel_cmdline=${kernel_cmdline_rootfsuuid}" "${kernel_cmdline_pars_}
+
+echo "Parameters used to set up extlinux.conf :"
+echo "Devicetree: $dtbpath_full"
+echo "Rootfs UUID: $rootfs_uuid"
+echo "Kernel cmd line: $kernel_cmdline"
+
+cd /boot
+
+if [[ -f extlinux/extlinux.conf ]]; then
+    mv extlinux/extlinux.conf extlinux/extlinux.conf.bak
+fi
+
+# Note: The leading tabs in the here-document below are important.
+	cat <<-EOF > extlinux/extlinux.conf
+	# For more info about this file see the URLs (and the links therein):
+	# https://docs.u-boot.org/en/latest/develop/distro.html
+	# https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX
+	# For the tags (tokens) in extlinux.conf that u-boot actually parses, see
+	# e.g. the code in the u-boot source file pxe_utils.c
+	
+	# The path to the dtb file can be defined by either the FDT or FDTDIR tag in
+	# this file, or by using the variable fdtfile in uEnv.txt. The tag FDT has
+	# has priority over FDTDIR but the role of fdtfile in uEnv.txt depends on
+	# the boot methods defined in u-boot's environment. It should in general be
+	# sufficient to have the correct dtb file specification here. The FDTDIR tag
+	# is not well documented (even in the u-boot docs) but for VF2, v1.3b, the
+	# following two alternatives work:
+	# FDT /dtbs/starfive/jh7110-starfive-visionfive-2-v1.3b.dtb
+	# FDTDIR /dtbs
+	# provided the actual dtb path is /dtbs/starfive/starfive_visionfive2.dtb
+	
+	MENU TITLE <DEBUNTU-BOOT>
+	DEFAULT DEBNT_DEFAULT
+	
+	# When several entries are present; waiting time in units of 0.1s.
+	TIMEOUT 20
+	EOF
+
+item_counter=0
+default_label=""
+# The sort command in the $(ls ...) statement below is mostly a placeholder.
+for kernel_name in $(ls | grep -E "vmlinu[x,z]-" | sort -d) ; do
+    item_counter=$((item_counter +1))
+
+    kernel_vers=$(cut -d '-' -f 2- <<< $kernel_name)
+    initrd_name=initrd.img-${kernel_vers}
+
+    kernel_path=/boot/$kernel_name
+    initrd_path=/boot/$initrd_name
+
+    label=$kernel_name
+
+    add_msg="Added extlinux.conf menu entry: $label"
+    if [[ $item_counter -eq 1 ]]; then
+        default_label=$label
+        add_msg="$add_msg"" (default)"
+    fi
+    echo $add_msg
+
+    # Note: The leading tabs in the here-document below are important.
+	cat <<-EOF >> extlinux/extlinux.conf
+	
+	LABEL $label
+	  LINUX  /${kernel_name}
+	  INITRD /${initrd_name}
+	  FDT    /${dtbpath_rel_boot}
+	  APPEND $kernel_cmdline
+	
+	EOF
+done
+
+sed -i "s/DEBNT_DEFAULT/$default_label/g" /boot/extlinux/extlinux.conf
+
+EOF1
+)
+
+mkextlinux_conf="${mkextlinux_conf_p1}""${mkextlinux_conf_p2}"
+
+extlinux_update_hook=$(cat <<EOF
+#!/bin/bash
+echo "Running kernel postinst hook for extlinux.conf ..."
+
+if [[ -z /etc/default/dtb ]]; then
+    echo -e "\nThe link /etc/default/dtb to the default dtb does not exist, exiting."
+    exit 1
+fi
+
+dtbfile_path=$(readlink -f /etc/default/dtb)
+rootfsUUID=$rootfs_UUID dtb_path=$dtbfile_path bash -c '/usr/local/bin/mkextlinux_conf.bash'
 EOF
 )
 
@@ -542,7 +665,7 @@ The scripts in /usr/local/bin can be used to assist in kernel handling.
 
 For booting via grub (e.g. via bootdisk) the script mkgrubcfg_simple.bash can
 be used to generate simple grub entries for vmlinu[x,z]- kernels and
-accompanying initramfs.img- files residing in /boot (see instructions inside
+accompanying initramfs.img- files residing in /boot (see instrcutions inside
 the script generating this image).
 EOF
 )
@@ -579,13 +702,37 @@ mkgrubcfg_simple_p1=$(cat <<EOF
 # rootfs is discovered using the blkid comand (see below). However, for use
 # e.g. inside a chroot jail the rootfs UUID can also be given as an environment
 # variable prepended on the command line, e.g. like so (note the single quotes):
-# chroot . /bin/bash -c 'rootfsUUID=f3cab04c-...-faec36aace3f ; /usr/local/bin/mkgrubcfg_simple.bash [path-to-dtb-file]'
+# chroot . /bin/bash -c 'rootfsUUID=f3cab04c-...-faec36aace3f /usr/local/bin/mkgrubcfg_simple.bash [path-to-dtb-file]'
 
 kernel_cmdline_pars_="$kernel_cmdline_opts"
 EOF
 )
 
 mkgrubcfg_simple_p2=$(cat <<"EOF1"
+
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: /usr/local/bin/mkgrubcfg_sumple.bash /boot/path/to/dtb/file"
+    echo "  where /boot/path/to/dtb/file/ is the full path (under /boot) to the dtb file."
+    echo "  The path can alternatively be given in the environment variable dtb_path"
+    echo "  (command line has precedence). More info inside the script."
+    exit 1
+fi
+
+if [[ $# -eq 1 ]]; then
+    dtb_path=$1
+fi
+
+# In grub.cfg it is not always necessary to specify the dtb file, for instance
+# when grub.cfg is used during a kexec call where no new dtb is to be loaded
+# (in which case the the already loaded dtb is reused).
+devicetree_str="# devicetree /path/to/dtbfile # not used currently"
+devicetree_msg="Devicetree:  No dtb file specified or dtb file missing."
+dtbpath_full=$(readlink -f $dtb_path)
+if [[ -f $dtbpath_full ]]; then
+    dtbpath_rel_boot=${dtbpath_full#/boot/}
+    devicetree_str="devicetree $dtbpath_full"
+    devicetree_msg="Devicetree:  $dtbpath_full"
+fi
 
 distro_name_lc=$(cat /etc/os-release | grep -E "^ID=" | cut -d "=" -f2)
 distro_edition_lc=$(cat /etc/os-release | grep VERSION_CODENAME | cut -d "=" -f2)
@@ -599,22 +746,15 @@ if [[ -z "$rootfsUUID" ]]; then
 else
     rootfs_uuid=$rootfsUUID
 fi
-echo "Rootfs UUID: $rootfs_uuid"
 
 # The next line is a default kernel command line and may have to be adjusted for each kernel.
 kernel_cmdline_rootfsuuid="root=UUID="${rootfs_uuid}
 kernel_cmdline=${kernel_cmdline_rootfsuuid}" "${kernel_cmdline_pars_}
 
-devicetree_str="# devicetree /path/to/dtbfile # not used currently"
-devicetree_msg="Devicetree:  No dtb file specified or dtb file missing."
-if [[ "$#" -eq 1 ]]; then
-    dtbfile_full=$(readlink -f $1)
-    if [[ -f $dtbfile_full ]]; then
-        devicetree_str="devicetree $dtbfile_full"
-        devicetree_msg="Devicetree:  $dtbfile_full"
-    fi
-fi
+echo "Parameters used to set up grub.cfg :"
 echo $devicetree_msg
+echo "Rootfs UUID: $rootfs_uuid"
+echo "Kernel cmd line: $kernel_cmdline"
 
 cd /boot
 
@@ -622,13 +762,14 @@ if [[ -f grub/grub.cfg ]]; then
     mv grub/grub.cfg grub/grub.cfg.bak
 fi
 
-for kernel_name in $(ls | grep -E "vmlinu[x,z]-") ; do
-    kernel_vers=$(cut '-' -f 2- <<< $kernel_name)
+# The sort command in the $(ls ...) statement below is mostly a placeholder.
+for kernel_name in $(ls | grep -E "vmlinu[x,z]-" | sort -d) ; do
+    kernel_vers=$(cut -d '-' -f 2- <<< $kernel_name)
     initrd_name=initrd.img-${kernel_vers}
 
     kernel_path=/boot/$kernel_name
     initrd_path=/boot/$initrd_name
-    echo "Adding menu entry: $distro_name $distro_edition (kernel $kernel_vers)"
+    echo "Added grub.cfg menu entry: $distro_name $distro_edition (kernel $kernel_vers)"
     # Note: The leading tabs in the here-document below are important.
 	cat <<-EOF >> grub/grub.cfg
 	menuentry "$distro_name $distro_edition (kernel $kernel_vers)" {
@@ -646,7 +787,18 @@ EOF1
 
 mkgrubcfg_simple="${mkgrubcfg_simple_p1}""${mkgrubcfg_simple_p2}"
 
+# It is for fw_printenv,fw_setenv from libubootenv-tool. To read the env you
+# must first have executed a setenv at the u-boot prompt (otherwise u-boot
+# uses the built-in env). The settings here are for VisionFive 2, cf. e.g.
+# https://doc-en.rvspace.org/VisionFive2/Boot_UG/JH7110_SDK/boot_address_allocation.html
+fw_env_config=$(cat <<"EOF"
+# MTD device name	Device offset	Env. size	Flash sector size	Number of sectors
+/dev/mtd1		0x0		0x10000
+EOF
+)
+
 README_auxbootldr=$(cat <<"EOF"
+
 Petitboot 
 ---------
 
@@ -693,7 +845,7 @@ prepare_for_chroot_jail () {
     echo " Done."
 }
 
-set_apt_sources_list () {
+setup_apt_sources_list () {
     echo -n -e ${i_msg}" Setting up /etc/apt/sources.list ..."
     rm -f ${rootfs_mnt}/etc/apt/sources.list
     case $1 in
@@ -710,18 +862,16 @@ set_apt_sources_list () {
 do_chroot_jail_tasks () {
     echo -e ${i_msg}" Entering chroot jail. Installing some pkgs., running some scripts ..."
     systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
-        /root/"${1}_custom_inst.bash" 
-    rm ${rootfs_mnt}/root/"${1}_custom_inst.bash"
+        /root/"${1}_custom_inst.bash"
+   rm ${rootfs_mnt}/root/"${1}_custom_inst.bash"
     sleep 2 # Just to be able to read some of the messages.
     echo "Done."
 }
 
-install_kernel_files () {
-    echo -n -e ${i_msg}" Installing kernel, initramfs and (chosen) dtb file to bootfs ..."
+setup_dtb_file () {
+    echo -n -e ${i_msg}" Copying the selected dtb file to bootfs ..."
     kern_name=$(ls ${rootfs_mnt}/boot | grep "${kernel_img_name_short}-")
     kern_vers=$(cut -d '-' -f 2- <<< $kern_name)
-    cp ${rootfs_mnt}/boot/${kern_name} ${bootfs_mnt}/${kernel_img_name_short}
-    cp ${rootfs_mnt}/boot/initrd.img-${kern_vers} ${bootfs_mnt}/initrd.img
     case $1 in
         "ubuntu")
             dtbfile_dir=${rootfs_mnt}/usr/lib/firmware/${kern_vers}/device-tree/${dtb_mfg}
@@ -863,15 +1013,41 @@ else
     echo -e ${k_msg}" Done."
 fi
 
-echo -n -e ${i_msg}" Setting up directory /boot/grub ..."
+echo -n -e ${i_msg}" Setting up directories /boot/extlinux and /boot/grub ..."
+mkdir -p -m 0755 ${rootfs_mnt}/boot/extlinux
 mkdir -p -m 0755 ${rootfs_mnt}/boot/grub
+echo " Done."
+
+echo -n -e ${i_msg}" Setting up symlink /etc/default/dtb to default dtb ..."
+mkdir -p ${rootfs_mnt}/etc/default
+ln -s ../..${dtbfile_path} ${rootfs_mnt}/etc/default/dtb
+echo " Done."
+
+echo -n -e ${i_msg}" Setting up uEnv.txt ..."
+echo -e "$uEnv_txt" >${bootfs_mnt}/uEnv.txt
+vf2_str=$(grep "visionfive-2" <<< "$dtbfile_name")
+if [[ ! -z "$vf2_str" ]]; then
+    # On some versions of u-boot on VF2 the file vf2_uEnv.txt is used to hold
+    # variables copied to the u-boot environment variable bootenv_sdk during
+    # boot and the bootenv_sdk variables are associated with a boot method
+    # which is tried before ordinary sysboot (see the u-boot environment).
+    # Therefore, either of uEnv.txt or vf2_uEnv.txt should exist if one wants
+    # to specify boot variables, and vf2_uEnv.txt is scanned first so we use
+    # that one for VF2.
+    echo -n " (VF2 install; rename to vf2_uEnv.txt)"
+    mv ${bootfs_mnt}/uEnv.txt ${bootfs_mnt}/vf2_uEnv.txt
+fi
+echo " Done."
+
+echo -n -e ${i_msg}" Setting up /etc/fw_env.config ..."
+echo -e "$fw_env_config" >${rootfs_mnt}/etc/fw_env.config
 echo " Done."
 
 echo -n -e ${i_msg}" Writing info about grub.cfg and alternate kernels ..."
 echo -e "$README_kernels" >${rootfs_mnt}/boot/README_kernels.txt
 echo " Done."
 
-echo -n -e ${i_msg}" Installing grub scripts in /usr/local/bin ..."
+echo -n -e ${i_msg}" Installing utility scripts in /usr/local/bin ..."
 # This script uses grub-mkconfig but it doesn't work inside a loop device.
 # (It is installed for later use, to produce fancier grub menus.)
 echo -e "$mkgrubcfg" >${rootfs_mnt}/usr/local/bin/mkgrubcfg.bash
@@ -879,6 +1055,22 @@ chmod 0755 ${rootfs_mnt}/usr/local/bin/mkgrubcfg.bash
 # This script produces a basic grub.cfg file and works inside a loop device.
 echo -e "$mkgrubcfg_simple" >${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
 chmod 0755 ${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
+echo -e "$mkextlinux_conf" >${rootfs_mnt}/usr/local/bin/mkextlinux_conf.bash
+chmod 0755 ${rootfs_mnt}/usr/local/bin/mkextlinux_conf.bash
+echo " Done."
+
+# The configure script for Ubuntu's package linux-image-<version>-generic by
+# default sets links in /boot but that won't work here since we use fat as
+# bootfs file system (mounted under /boot). Debian also sets up links but
+# under / (which supports them). In order to solve this dilemma we simply opt
+# for disabling links with the following trick (see man 5 kernel-img.conf).
+touch ${rootfs_mnt}/etc/kernel-img.conf
+echo "do_symlinks = no" >>${rootfs_mnt}/etc/kernel-img.conf
+echo "no_symlinks = yes" >>${rootfs_mnt}/etc/kernel-img.conf
+
+# A small sales pitch for Petitboot.
+echo -n -e ${i_msg}" Writing instructions for installing Petitboot ..."
+echo -e "$README_auxbootldr" >${bootfs_mnt}/README_auxbootldr.txt
 echo " Done."
 
 case $1 in
@@ -921,7 +1113,7 @@ case $1 in
             ${rootfs_mnt}/etc/apt/preferences.d/no-flash-kernel
         echo " Done."
 
-        set_apt_sources_list ubuntu
+        setup_apt_sources_list ubuntu
 
         prepare_for_chroot_jail ubuntu
 
@@ -936,7 +1128,7 @@ case $1 in
         echo " Done."
 
         # For Debian, this is only needed if you want custom settings.
-        # set_apt_sources_list debian
+        # setup_apt_sources_list debian
 
         prepare_for_chroot_jail debian
 
@@ -946,34 +1138,33 @@ case $1 in
     ;;
 esac
 
+setup_dtb_file $1
+
 remove_riscv64_qemu_binary
 
-install_kernel_files $1
-
-cd ${bootfs_mnt}
-
-echo -n -e ${i_msg}" Setting up extlinux.conf ..."
-mkdir extlinux
-echo -e "$extlinux_conf" >extlinux/extlinux.conf
+echo -n -e ${i_msg}" Creating extlinux.conf update hook after kernel upgrade ..."
+mkdir -p ${rootfs_mnt}/etc/kernel/postinst.d
+echo -e "$extlinux_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/yy-update-extlinux-conf
+chmod 0755 ${rootfs_mnt}/etc/kernel/postinst.d/yy-update-extlinux-conf
 echo " Done."
 
-echo -n -e ${i_msg}" Setting up uEnv.txt ..."
-echo -e "$uEnv_txt" >uEnv.txt
-# This is a hack:
-vf2_str=$(grep "visionfive-2" <<< "$dtbfile_name")
-if [[ ! -z "$vf2_str" ]]; then
-    echo -n " (VF2 install; set up also vf2_uEnv.txt)"
-    cp uEnv.txt vf2_uEnv.txt # Needed for some versions of u-boot on VF2.
-fi
-echo " Done."
+echo -e ${i_msg}" Creating /boot/extlinux/extlinux.conf ..."
+# Recall that rootfsUUID and dtb_path are hard coded in yy-update-extlinux-conf
+chroot ${rootfs_mnt} bash -c '/etc/kernel/postinst.d/yy-update-extlinux-conf'
+echo "Done."
 
-# A small sales pitch for Petitboot.
-echo -n -e ${i_msg}" Writing instructions for installing Petitboot ..."
-echo -e "$README_auxbootldr" >README_auxbootldr.txt
+echo -e ${i_msg}" Creating /boot/grub/grub.cfg ..."
+# We need to supply rootfsUUID here; not detected properly under (bare) chroot.
+chroot ${rootfs_mnt} bash -c "rootfsUUID=$rootfs_UUID /usr/local/bin/mkgrubcfg_simple.bash $dtbfile_path"
+echo "Done."
+
+echo -n -e ${i_msg}" Setting up /etc/default/zramswap ..."
+sed -i "s/.*ALGO=.*/ALGO=${zram_compression}/g" ${rootfs_mnt}/etc/default/zramswap
+sed -i "s/.*PERCENT=.*/PERCENT=${zram_percent}/g" ${rootfs_mnt}/etc/default/zramswap
 echo " Done."
 
 # Pick up the kernel version before we leave /boot.
-kernel_version=$(ls ${rootfs_mnt}/boot | grep -E "vmlinu[x,z]-" | cut -d '-' -f 2-)
+kernel_version=$(ls ${bootfs_mnt} | grep -E "vmlinu[x,z]-" | cut -d '-' -f 2-)
 
 cd $imgfile_dir
 

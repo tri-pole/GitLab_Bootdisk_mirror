@@ -12,6 +12,15 @@ download location is provided).
 
 # debuntu_dbstrap_riscv64.bash
 
+## [v0.12] 24-12-06
+
+### Added
+ - Automatic update of extlinux.conf
+
+### Changed
+ - Boot partition now mounted directly under /boot
+ - Refactoring, partial rewrite and many small fixes.
+
 ## [v0.1] 24-11-30
 
 ### Added
