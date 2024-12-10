@@ -99,17 +99,15 @@ qemu-system-riscv64 -M virt -m 2G -smp cpus=2 \
 -drive file=ubuntu-24.04.1-live-server-riscv64.img,format=raw,if=virtio
 ```
 
-The main difference (apart from syntactical) to the one above for ARM64 is
-that here in the RISCV64 case we rely on a bootloader in the form of two
-components.
+The main difference (apart from syntax) to the one above for ARM64 is that here
+in the RISCV64 case we rely on a bootloader in the form of two components.
 The first is a secondary program loader represented by the QEMU built-in combo
 of openSBI and `u-boot` SPL (invoked with the option `-bios default`) and the
 second is `u-boot` proper (invoked with the `-kernel ... u-boot.bin` option).
 (These concepts are explained in more detail in e.g.
 [a stackoverflow discussion](https://stackoverflow.com/questions/31244862/what-is-the-use-of-spl-secondary-program-loader),
 [the QEMU documentation](https://www.qemu.org/docs/master/system/target-riscv.html) and the overview
-[J. Teki, An Introduction to RISC-V Boot flow, CRVF 2019](https://crvf2019.github.io/pdf/43.pdf).
-See also [](https://cdn.kernel.org/pub/linux/kernel/people/will/docs/qemu/qemu-arm64-howto.html).)
+[J. Teki, An Introduction to RISC-V Boot flow, CRVF 2019](https://crvf2019.github.io/pdf/43.pdf).)
 
 #### Post install
 
