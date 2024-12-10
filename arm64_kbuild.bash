@@ -120,25 +120,10 @@ case "$distro_release" in
         distro_urlbase=$distro_urlbase/releases
         distro_buildurl=${distro_urlbase}/noble/release/${distro_buildfile}
     ;;
-    "mantic")
-        distro_buildfile=ubuntu-base-23.10-base-arm64.tar.gz
+    "jammy")
+        distro_buildfile=ubuntu-base-22.04-base-arm64.tar.gz
         distro_urlbase=$distro_urlbase/releases
-        distro_buildurl=${distro_urlbase}/mantic/release/${distro_buildfile}
-    ;;
-    "lunar")
-        distro_buildfile=ubuntu-base-23.04-base-arm64.tar.gz
-        distro_urlbase=$distro_urlbase/releases
-        distro_buildurl=${distro_urlbase}/lunar/release/${distro_buildfile}
-    ;;
-    "kinetic")
-        distro_buildfile=ubuntu-base-22.10-base-arm64.tar.gz
-        distro_urlbase=$distro_urlbase/releases
-        distro_buildurl=${distro_urlbase}/kinetic/release/${distro_buildfile}
-    ;;
-    "focal" | "jammy")
-        distro_buildfile=${distro_release}-base-arm64.tar.gz
-        distro_urlbase=$distro_urlbase/${distro_release}
-        distro_buildurl=${distro_urlbase}/daily/current/${distro_buildfile}
+        distro_buildurl=${distro_urlbase}/jammy/relaease/${distro_buildfile}
     ;;
     *)
         echo "The distro release $distro_release is unknown, exiting."

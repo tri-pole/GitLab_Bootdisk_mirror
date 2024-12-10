@@ -177,8 +177,8 @@ tmpfile_dir=${imgfile_dir}/temp_files
 # Mount point for the debootstrap process.
 # Temporary mount points (dirs) used during image creation.
 rootfs_mnt=${imgfile_dir}/rootfs_tmp
-bootfs_dir=/boot/aux
-bootfs_mnt=${rootfs_mnt}/${bootfs_dir}
+bootfs_dir=/boot/aux # Incl. leading slash.
+bootfs_mnt=${rootfs_mnt}${bootfs_dir}
 
 # Do we want to clean up all temporary files and directories afterwards?
 docleanup_after=yes # {yes,no}
