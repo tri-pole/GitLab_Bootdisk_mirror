@@ -83,8 +83,8 @@
 # --------------------------------- Parameters -------------------------------
 
 # If used, this tag  is inserted inside the header in the Petitboot main menu
-# where it normally says e.g. Petitboot (v1.13) so that instead it will say
-# something like Petitboot (v1.13 (mytaglinehere))
+# where it normally says e.g. Petitboot (v1.15) so that instead it will say
+# something like Petitboot (v1.15 (mytaglinehere))
 to_day=$(date +"%y%m%d")
 mytag="3pole-${to_day}"
 build_ver_tag="${mytag}"
@@ -98,11 +98,14 @@ use_build_ver_tag=true # {true_false}
 # (Note: The name tage format of the generated initrd is still the same though.)
 no_e2fsprogs=false # {true,false}
 
+# Optionally, a u-boot tagged copy of the initramfs (uInitrd-*) can be made.
+make_uboot_tagged_initrd=false # {true,false}
+
 # In the download parameter settings below the setting dload_<pkg>_tarball
 # can be set to true or false. If set to false it is assumed that the 
 # correctly named tarball is already placed in ${temp_dir}/downloads and if
 # set to true it will be downloaded there.
-kexectools_ver="2.0.29"
+kexectools_ver="2.0.30"
 kexectools_url_base="https://github.com/horms/kexec-tools/archive/refs/tags"
 kexectools_tarball_rpo=v${kexectools_ver}.tar.gz
 kexectools_tarball_loc=kexectools-v${kexectools_ver}.tar.gz
@@ -578,7 +581,7 @@ if [[ $this_arch == "riscv64" ]]; then
     echo -e ${i_msg}" Applying kexec-tools patches for $this_arch ..."
     kt_patches_applied_ok=true
     case "$kexectools_ver" in
-        "2.0.29")
+        "2.0.29" | "2.0.30")
             patch -N -p1 <\
               ${this_script_dir}/${kt_patch_dir}/${kt_add_riscv64_support_patch_fname}
             if [[ "$?" != 0 ]]; then
@@ -836,17 +839,20 @@ echo " Done."
 echo "Result: ${initrd_pb_name}"
 mv ${temp_dir}/${initrd_pb_name} $result_dir
 
-which_mkimage=$(which mkimage)${temp_dir}
-test_which_mkimage=$?
-if [[ $test_which_mkimage == 0 ]]; then
-    echo -e -n "Making u-boot tagged version of the initramfs ..."
-    mkimage -n "Petitboot-v${petitboot_ver}" -A $uboot_arch -O linux -T ramdisk \
-      -C gzip -d ${result_dir}/${initrd_pb_name} ${result_dir}/${uInitrd_pb_name}
-    echo " Done."
-    echo "Result: ${uInitrd_pb_name}"
+if [[ $make_uboot_tagged_initrd == true ]]; then
+    which_mkimage=$(which mkimage)${temp_dir}
+    test_which_mkimage=$?
+    if [[ $test_which_mkimage == 0 ]]; then
+        echo -e -n "Making u-boot tagged version of the initramfs ..."
+        mkimage -n "Petitboot-v${petitboot_ver}" -A $uboot_arch -O linux -T ramdisk \
+          -C gzip -d ${result_dir}/${initrd_pb_name} ${result_dir}/${uInitrd_pb_name}
+        echo " Done."
+        echo "Result: ${uInitrd_pb_name}"
+    else
+        echo -e ${w_msg} "Cannot find mkimage command, skipping making u-boot tagged initramfs."
+    fi
 fi
 
-echo " Done."
 cd $this_script_dir
 echo -e ${k_msg}" Finished building and packing the Petitboot initramfs."
 

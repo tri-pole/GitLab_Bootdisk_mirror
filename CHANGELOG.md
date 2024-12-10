@@ -10,6 +10,10 @@ These bootdisks have been superseded by `multi-bootdisk` which is discussed
 `README_petit-bootdisk.md` and `README_u-root-bootdisk.md` (where also a
 download location is provided).
 
+__ARM64 Linux images:__ The scripts and README files for creation of Linux
+images for ARM64 are now obsoleted and moved to the
+[`attic area`](attic/Creating_Linux_images_ARM64).
+
 # debuntu_dbstrap_riscv64.bash
 
 ## [v0.13] 24-12-10

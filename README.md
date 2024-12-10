@@ -67,17 +67,17 @@ Initramfses with `u-root` built like this can be found at the download
 location listed in
 [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md).
 
-### ARM64 Linux images
-
-There is some outdated information about Linux image creation in the
-[`attic area`](attic/Creating_Linux_images_ARM64).
-
 ### RISCV64 Linux images
 
 Linux images with Debian or Ubuntu for RISCV64 can be created with the script
 [`debuntu_dbstrap_riscv64.bash`](debuntu_dbstrap_riscv64.bash).
 Images built with this script can be downloaded from
 [here](https://mega.nz/folder/PAtXyRgA#SI9z7Hgz2n-S7BLk2SuM2A).
+
+### ARM64 Linux images
+
+There is some outdated information about Linux image creation in the
+[`attic area`](attic/Creating_Linux_images_ARM64).
 
 ### Image creation using QEMU
 
@@ -88,6 +88,19 @@ These images will typically be UEFI images and can be booted on a
 SBC/TV-box using e.g. Petitboot/u-root.
 A short description of how use QEMU for image creation like this
 is given in [`README_QEMU_inst.md`](README_QEMU_inst.md).
+
+### RISCV64 Linux kernel
+
+Kernels for RISCV64 can be created with the script
+[`riscv64_kbuild.bash`](riscv64_kbuild.bash) on a x86_64 or riscv64 build
+host.
+The script produces simple tarballs with boot files (kernel image, initramfs
+etc.), the module tree, header files and dtbs, for the board manufacturers
+selected.
+At present, it is mostly intended to produce (slimmed) kernels for the
+VisionFive 2.
+Downloads of such tarballs can be found
+[here](https://mega.nz/folder/jJdTCSQQ#he0JD-96HmJIQDow-QC-VQ).
 
 ### ARM64 Linux kernel
 
