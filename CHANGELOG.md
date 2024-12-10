@@ -12,6 +12,12 @@ download location is provided).
 
 # debuntu_dbstrap_riscv64.bash
 
+## [v0.13] 24-12-10
+
+### Changed
+ - Use PARTUUID in extlinux.conf and grub.cfg
+ - Various fixes and improvements.
+
 ## [v0.12] 24-12-06
 
 ### Added

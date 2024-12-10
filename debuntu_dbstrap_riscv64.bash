@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # debuntu_dbstrap_riscv64.bash
-# 24-12-06: v0.12
+# 24-12-10: v0.13
 # Author: Tripole
 
 # Script to create a (small, CLI) Debian or Ubuntu Linux RISCV64 image using
@@ -72,8 +72,8 @@
 #   elsewhere.
 # - Networking is handled by NetworkManager on Ubuntu and ifupdown on Debian.
 # - The numbering of eth interfaces may vary, so try both RJ45 connectors.
-# - Run time for this script is about 20m for Debian (incl. compression, on
-#   a modern computer with good network connectivity). For Ubuntu, it can take
+# - Run time for this script is about 20m for Debian (incl. compression) on
+#   a modern computer with good network connectivity. For Ubuntu, it can take
 #   almost double that time. (Check with: time ./debuntu_dbstrap.bash debian)
 # - You will be asked to configure three things at runtime (near the end):
 #   time zone, keyboard and root password (this can be later adjusted with
@@ -88,6 +88,9 @@
 #   resizepart 4 50% ; e2fsck -f /dev/mydev ; resize2fs /dev/mydev
 #   To ensure that the resized partition will be recognized as a valid GPT
 #   partition the backup GPT table may have to be recreated (using e.g. gdisk).
+# - Apart from booting considerations, this image is portable and can be
+#   transferred by e.g. rsync to other media. The hardcoded paths that need to
+#   be changed are those related to UUIDs (find them by; grep -lR UUID /etc/*).
 # - Domain name resolution is now handled (also on Debian) by systemd, see
 #   e.g. sec 2.1 in https://wiki.archlinux.org/title/Systemd-resolved
 
@@ -119,7 +122,8 @@ img_tag=3pole-$(date +"%y%m%d")
 # Link to growpart for resizing second partition (rootfs) to desired size.
 growpart_url="https://raw.githubusercontent.com/canonical/cloud-utils/main/bin/growpart"
 
-# The string root=UUID=${rootfs_UUID} will be prepended below once UUID exists.
+# The kernel command line actually used (to make extlinux.conf and grub.cfg)
+# below will be prepended by the string "root=PARTUUID=${rootfs_PARTUUID}"
 kernel_cmdline_opts="quiet splash"
 
 # The dtb file name is used in extlinux.conf and the dtb must be one of those
@@ -152,10 +156,15 @@ imgfile_dir=$PWD
 tmpfile_dir=${imgfile_dir}/temp_files
 
 # Mount point for the debootstrap process.
-# Temporary mount points (dirs) used during image creation.
+# Temporary mount points (dirs) used during image creation. (The same structure
+# is used on the image where the bootfs is mounted under /boot).
 rootfs_mnt=${imgfile_dir}/rootfs_tmp
 bootfs_dir=/boot # Incl. leading slash.
 bootfs_mnt="${rootfs_mnt}""${bootfs_dir}"
+
+# Mount options used in the fstab file on the image.
+rootfs_mnt_opts="errors=remount-ro"
+bootfs_mnt_opts="dmask=0027,errors=remount-ro"
 
 # Do we want to clean up all temporary files and directories afterwards?
 docleanup_after=yes # {yes,no}
@@ -165,7 +174,7 @@ docleanup_after=yes # {yes,no}
 # name_server_2=8.8.8.8     # Set to your backup DNS (8.8.8.8 is dns.google).
 
 # Some (but not all) commands used below to create the image.
-reqd_cmdlist=("blkid" "dd" "debootstrap" "losetup" "mkfs.vfat" "mkimage" 
+reqd_cmdlist=("blkid" "dd" "debootstrap" "losetup" "mkfs.fat" "mkimage"
               "systemd-nspawn" "tar" "wget" "xz"
 )
 
@@ -238,9 +247,10 @@ else
 fi
 
 # UUIDs can also be generated with the cmd uuidgen from the pkg uuid-runtime.
-rootfs_UUID=$(cat /proc/sys/kernel/random/uuid)
-eth0nm_UUID=$(cat /proc/sys/kernel/random/uuid)
-if [[ -z $rootfs_UUID || -z $eth0nm_UUID ]]; then
+rootfs_UUID=$(cat /proc/sys/kernel/random/uuid)     # Used in rootfs, /etc/fstab
+rootfs_PARTUUID=$(cat /proc/sys/kernel/random/uuid) # Used in extlinux.conf, grub.cfg
+eth0nm_UUID=$(cat /proc/sys/kernel/random/uuid)     # Used in Ubuntu.
+if [[ -z $rootfs_UUID || -z $rootfs_PARTUUID || -z $eth0nm_UUID ]]; then
     echo ${e_msg}" Cannot generate valid UUIDs from kernel random source, exiting."
     exit 1
 fi
@@ -294,9 +304,6 @@ gpt_bu_start=$(($p4_start +$p4_size +1))
 gpt_bu_size=34 # Trailing GPT backup table.
 imgfile_num_sectors=$(($p1_start +$p1_size +$p2_size +$p3_size +$p4_size +$gpt_bu_size))
 
-# Full kernel command line.
-kernel_cmdline="root=UUID=${rootfs_UUID} "${kernel_cmdline_opts}
-
 # For the debootstrapping.
 distro_release="$(tr [A-Z] [a-z] <<< "$distro_edition")" # To lowercase.
 
@@ -347,14 +354,14 @@ first-lba: $p1_start
 1 : start=${p1_start}, size=${p1_size}, type=2E54B353-1271-4842-806F-E436D6AF6985, name=spl
 2 : start=${p2_start}, size=${p2_size}, type=5B193300-FC78-40CD-8002-E86C45580B47, name=uboot
 3 : start=${p3_start}, size=${p3_size}, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B, name=image
-4 : start=${p4_start}, size=${p4_size}, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, name=root
+4 : start=${p4_start}, size=${p4_size}, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, name=root, uuid=$rootfs_PARTUUID
 EOF
 )
 
 # Below we add also a line for the FAT32 (ESP) boot partition.
 # (For swap we only add a stub, see https://help.ubuntu.com/community/SwapFaq)
 fstab_file=$(cat <<EOF
-UUID=$rootfs_UUID  /  $rootfs_type   errors=remount-ro  0  1
+UUID=$rootfs_UUID  /  $rootfs_type  $rootfs_mnt_opts  0  1
 # zram is normally handled by systemd, so the next line should be commented out
 # /dev/zram0      none       swap   defaults,pri=100 0 0
 # A regular swap file can also be used (also together with zram). To use a swap
@@ -495,16 +502,16 @@ mkextlinux_conf_p1=$(cat <<EOF
 
 # Scans for vmlinu[x,z]-* in /boot and sets up an extlinux.conf file in
 # /boot/extlinux
-# Usage: /usr/local/bin/mkextlinux_conf.bash /boot/path/to/dtb/file/ where
-# /boot/path/to/dtb/file/ is the full path under /boot to the dtb file.
+# Usage: /usr/local/bin/mkextlinux_conf.bash /boot/path/t/odtb/file where
+# /boot/path/to/dtb/file is the full path under /boot to the dtb file.
 # The path can alternatively be given in the env. variable dtb_path (command
-# line has precedence). The dtb name can be a symlink; the full dtb name
-# will be inserted into extlinux.conf) Normally, the script is run from a
-# mounted rootfs and then the UUID of the rootfs is discovered using the blkid
-# comand (see below). However, for use e.g. inside a chroot jail the rootfs
-# UUID can also be given as an environment variable prepended on the command
-# line, e.g. like so (note the single quotes):
-# chroot . /bin/bash -c 'rootfsUUID=f3cab04c-...-faec36aace3f /usr/local/bin/mkextlinux_conf.bash <path-to-dtb-file>'
+# line has precedence). The dtb path can be a symlink; the full dtb path
+# will be inserted into extlinux.conf Normally, the script is run from a
+# mounted rootfs and then the PARTUUID of the rootfs is discovered using the
+# blkid comand (see below). However, for use e.g. inside a chroot jail the
+# rootfs PARTUUID can also be given as an environment variable prepended on
+# the command line, e.g. like so (note the single quotes):
+# chroot . /bin/bash -c 'rootfsPARTUUID=f3cab04c-...-faec36aace3f /usr/local/bin/mkextlinux_conf.bash /boot/path/to/dtb/file'
 
 # The kernel command line parameters here may need tweaking.
 kernel_cmdline_pars_="$kernel_cmdline_opts"
@@ -516,21 +523,29 @@ mkextlinux_conf_p2=$(cat <<"EOF1"
 
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     echo "Usage: /usr/local/bin/mkextlinux_conf.bash /boot/path/to/dtb/file"
-    echo "  where /boot/path/to/dtb/file/ is the full path (under /boot) to the dtb file."
+    echo "  where /boot/path/to/dtb/file is the full path (under /boot) to the dtb file."
     echo "  The path can alternatively be given in the environment variable dtb_path"
     echo "  (command line has precedence). More info inside the script."
     exit 1
 fi
 
-if [[ $# -eq 1 ]]; then
-    dtb_path=$1
+if [[ $# == 0 && -z $dtb_path ]]; then
+    echo "A dtb file (or link) must be supplied, either as a command line argument"
+    echo "or in the environment variable dtb_path."
+    exit 1
 fi
 
-dtbpath_full=$(readlink -f $dtb_path)
+if [[ $# -eq 1 ]]; then
+    dtb_path=$1
+else
+    echo "Using environment variable dtb_path: $dtb_path"
+fi
+
+dtbpath_full=$(realpath -e $dtb_path)
 if [[ -f $dtbpath_full ]]; then
     dtbpath_rel_boot=${dtbpath_full#/boot/}
 else
-    "The dtb file $dtbpath_full is missing, exiting."
+    echo "The dtb file (${dtbpath_full}) is missing, exiting."
     exit 1
 fi
 
@@ -541,19 +556,21 @@ distro_edition_lc=$(cat /etc/os-release | grep VERSION_CODENAME | cut -d "=" -f2
 distro_name="$(tr '[:lower:]' '[:upper:]' <<< ${distro_name_lc:0:1})""${distro_name_lc:1}"
 distro_edition="$(tr '[:lower:]' '[:upper:]' <<< ${distro_edition_lc:0:1})""${distro_edition_lc:1}"
 
-if [[ -z "$rootfsUUID" ]]; then
-    rootfs_uuid=$(blkid -s UUID $(mount | grep -E "/ " | cut -d " " -f 1) | cut -d "\"" -f2)
+menu_title="--- $distro_name (${distro_edition}) ---"
+
+if [[ -z "$rootfsPARTUUID" ]]; then
+    rootfs_partuuid=$(blkid -s PARTUUID $(mount | grep -E "/ " | cut -d " " -f 1) | cut -d "\"" -f2)
 else
-    rootfs_uuid=$rootfsUUID
+    rootfs_partuuid=$rootfsPARTUUID
 fi
 
 # The next line is a default kernel command line and may have to be adjusted for each kernel.
-kernel_cmdline_rootfsuuid="root=UUID="${rootfs_uuid}
-kernel_cmdline=${kernel_cmdline_rootfsuuid}" "${kernel_cmdline_pars_}
+kernel_cmdline_rootfspartuuid="root=PARTUUID="${rootfs_partuuid}
+kernel_cmdline=${kernel_cmdline_rootfspartuuid}" "${kernel_cmdline_pars_}
 
 echo "Parameters used to set up extlinux.conf :"
 echo "Devicetree: $dtbpath_full"
-echo "Rootfs UUID: $rootfs_uuid"
+echo "Rootfs PARTUUID: $rootfs_partuuid"
 echo "Kernel cmd line: $kernel_cmdline"
 
 cd /boot
@@ -581,10 +598,11 @@ fi
 	# FDTDIR /dtbs
 	# provided the actual dtb path is /dtbs/starfive/starfive_visionfive2.dtb
 	
-	MENU TITLE <DEBUNTU-BOOT>
+	MENU TITLE $menu_title
 	DEFAULT DEBNT_DEFAULT
 	
 	# When several entries are present; waiting time in units of 0.1s.
+	# (When only one entry is present only that will show, without title.)
 	TIMEOUT 20
 	EOF
 
@@ -628,20 +646,31 @@ EOF1
 
 mkextlinux_conf="${mkextlinux_conf_p1}""${mkextlinux_conf_p2}"
 
-extlinux_update_hook=$(cat <<EOF
+# This will go into a script in /etc/kernel/postinst.d
+extlinux_update_hook_p1=$(cat <<EOF
 #!/bin/bash
 echo "Running kernel postinst hook for extlinux.conf ..."
 
-if [[ -z /etc/default/dtb ]]; then
-    echo -e "\nThe link /etc/default/dtb to the default dtb does not exist, exiting."
-    exit 1
-fi
-
-dtbfile_path=$(readlink -f /etc/default/dtb)
-rootfsUUID=$rootfs_UUID dtb_path=$dtbfile_path bash -c '/usr/local/bin/mkextlinux_conf.bash'
+rootfs_PARTUUID_="$rootfs_PARTUUID"
+dtbfile_link=/etc/default/dtb
 EOF
 )
 
+extlinux_update_hook_p2=$(cat <<"EOF"
+
+dtbpath_full=$(realpath -e $dtbfile_link)
+if [[ ! -f $dtbpath_full ]]; then
+    echo "The dtb file ($d{tbpath_full}) is missing, exiting."
+    exit 1
+fi
+
+rootfsPARTUUID=$rootfs_PARTUUID_ dtb_path=$dtbpath_full bash -c '/usr/local/bin/mkextlinux_conf.bash'
+EOF
+)
+
+extlinux_update_hook="$extlinux_update_hook_p1""$extlinux_update_hook_p2"
+
+# Template uEnv.txt but using values for VF2.
 uEnv_txt=$(cat <<EOF
 # For StartFive's VisionFive 2, taken from VF2 SBC S/W Tech Ref. Man.
 dt_high=0xffffffffffffffff
@@ -694,15 +723,17 @@ mkgrubcfg_simple_p1=$(cat <<EOF
 #!/bin/bash
 
 # Scans for vmlinu[x,z]-* in /boot and makes a simple grub.cfg in /boot/grub
-# Usage: /usr/local/bin/mkgrubcfg_simple.bash [path-to-dtb-file]
-# If a dtb file name is given as the first argument, it is inserted together
-# with a line specifying a devicetree line in each menu entry created. (The
-# dtb name can be a symlink; the full dtb name will be inserted into grub.cfg)
-# Normally, the script is run from a mounted rootfs and then the UUID of the
-# rootfs is discovered using the blkid comand (see below). However, for use
-# e.g. inside a chroot jail the rootfs UUID can also be given as an environment
-# variable prepended on the command line, e.g. like so (note the single quotes):
-# chroot . /bin/bash -c 'rootfsUUID=f3cab04c-...-faec36aace3f /usr/local/bin/mkgrubcfg_simple.bash [path-to-dtb-file]'
+# Usage: /usr/local/bin/mkgrubcfg_simple.bash /boot/path/to/dtb/file
+# where /boot/path/to/dtb/file is the full path under /boot to the dtb file.
+# The path can alternatively be given in the env. variable dtb_path (command
+# line has precedence). The dtb path can be a symlink; the full dtb name
+# will be inserted into grub.cfg (If no path is given, a grub.cfg is created
+# with only a placeholder for the path.) Normally, the script is run from a
+# mounted rootfs and then the PARTUUID of the rootfs is discovered using the
+# blkid comand (see below). However, for use e.g. inside a chroot jail the
+# rootfs PARTUUID can also be given as an environment variable prepended on
+# the command line, e.g. like so (note the single quotes):
+# chroot . /bin/bash -c 'rootfsPARTUUID=f3cab04c-...-faec36aace3f /usr/local/bin/mkgrubcfg_simple.bash /boot/path/to/dtb/file'
 
 kernel_cmdline_pars_="$kernel_cmdline_opts"
 EOF
@@ -712,7 +743,7 @@ mkgrubcfg_simple_p2=$(cat <<"EOF1"
 
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     echo "Usage: /usr/local/bin/mkgrubcfg_sumple.bash /boot/path/to/dtb/file"
-    echo "  where /boot/path/to/dtb/file/ is the full path (under /boot) to the dtb file."
+    echo "  where /boot/path/to/dtb/file is the full path (under /boot) to the dtb file."
     echo "  The path can alternatively be given in the environment variable dtb_path"
     echo "  (command line has precedence). More info inside the script."
     exit 1
@@ -720,6 +751,8 @@ fi
 
 if [[ $# -eq 1 ]]; then
     dtb_path=$1
+else
+    echo "Using environment variable dtb_path: $dtb_path"
 fi
 
 # In grub.cfg it is not always necessary to specify the dtb file, for instance
@@ -727,10 +760,10 @@ fi
 # (in which case the the already loaded dtb is reused).
 devicetree_str="# devicetree /path/to/dtbfile # not used currently"
 devicetree_msg="Devicetree:  No dtb file specified or dtb file missing."
-dtbpath_full=$(readlink -f $dtb_path)
+dtbpath_full=$(realpath -e $dtb_path 2>/dev/null)
 if [[ -f $dtbpath_full ]]; then
-    dtbpath_rel_boot=${dtbpath_full#/boot/}
-    devicetree_str="devicetree $dtbpath_full"
+    dtbpath_rel_boot=${dtbpath_full#/boot}
+    devicetree_str="devicetree $dtbpath_rel_boot"
     devicetree_msg="Devicetree:  $dtbpath_full"
 fi
 
@@ -741,19 +774,19 @@ distro_edition_lc=$(cat /etc/os-release | grep VERSION_CODENAME | cut -d "=" -f2
 distro_name="$(tr '[:lower:]' '[:upper:]' <<< ${distro_name_lc:0:1})""${distro_name_lc:1}"
 distro_edition="$(tr '[:lower:]' '[:upper:]' <<< ${distro_edition_lc:0:1})""${distro_edition_lc:1}"
 
-if [[ -z "$rootfsUUID" ]]; then
-    rootfs_uuid=$(blkid -s UUID $(mount | grep -E "/ " | cut -d " " -f 1) | cut -d "\"" -f2)
+if [[ -z "$rootfsPARTUUID" ]]; then
+    rootfs_partuuid=$(blkid -s PARTUUID $(mount | grep -E "/ " | cut -d " " -f 1) | cut -d "\"" -f2)
 else
-    rootfs_uuid=$rootfsUUID
+    rootfs_partuuid=$rootfsPARTUUID
 fi
 
 # The next line is a default kernel command line and may have to be adjusted for each kernel.
-kernel_cmdline_rootfsuuid="root=UUID="${rootfs_uuid}
-kernel_cmdline=${kernel_cmdline_rootfsuuid}" "${kernel_cmdline_pars_}
+kernel_cmdline_rootfspartuuid="root=PARTUUID="${rootfs_partuuid}
+kernel_cmdline=${kernel_cmdline_rootfspartuuid}" "${kernel_cmdline_pars_}
 
 echo "Parameters used to set up grub.cfg :"
 echo $devicetree_msg
-echo "Rootfs UUID: $rootfs_uuid"
+echo "Rootfs PARTUUID: $rootfs_partuuid"
 echo "Kernel cmd line: $kernel_cmdline"
 
 cd /boot
@@ -767,9 +800,10 @@ for kernel_name in $(ls | grep -E "vmlinu[x,z]-" | sort -d) ; do
     kernel_vers=$(cut -d '-' -f 2- <<< $kernel_name)
     initrd_name=initrd.img-${kernel_vers}
 
-    kernel_path=/boot/$kernel_name
-    initrd_path=/boot/$initrd_name
+    kernel_path=/$kernel_name
+    initrd_path=/$initrd_name
     echo "Added grub.cfg menu entry: $distro_name $distro_edition (kernel $kernel_vers)"
+
     # Note: The leading tabs in the here-document below are important.
 	cat <<-EOF >> grub/grub.cfg
 	menuentry "$distro_name $distro_edition (kernel $kernel_vers)" {
@@ -786,6 +820,34 @@ EOF1
 )
 
 mkgrubcfg_simple="${mkgrubcfg_simple_p1}""${mkgrubcfg_simple_p2}"
+
+# This will go into a script in /etc/kernel/postinst.d
+grubcfg_update_hook_p1=$(cat <<EOF
+#!/bin/bash
+echo "Running kernel postinst hook (simple version) for grub.cfg ..."
+
+rootfs_PARTUUID_="$rootfs_PARTUUID"
+dtbfile_link=/etc/default/dtb
+EOF
+)
+
+grubcfg_update_hook_p2=$(cat <<"EOF"
+
+# Here we insist on a dtb file path (even though mkgrubcfg_simple.bash
+# works without it).
+dtbpath_full=$(realpath -e $dtbfile_link)
+if [[ -f $dtbpath_full ]]; then
+    dtbfile_path=$dtbpath_full
+else
+    echo "The dtb file (${dtbpath_full}) is missing, exiting."
+    exit 1
+fi
+
+rootfsPARTUUID=$rootfs_PARTUUID_ dtb_path=$dtbfile_path bash -c '/usr/local/bin/mkgrubcfg_simple.bash'
+EOF
+)
+
+grubcfg_update_hook="$grubcfg_update_hook_p1""$grubcfg_update_hook_p2"
 
 # It is for fw_printenv,fw_setenv from libubootenv-tool. To read the env you
 # must first have executed a setenv at the u-boot prompt (otherwise u-boot
@@ -951,10 +1013,12 @@ echo -e ${i_msg}" Creating partitions in container file with sfdisk ..."
 echo -e "$sfdisk_script" >sfdisk_script
 cat sfdisk_script | sfdisk $loop_dev && rm sfdisk_script
 sync
-echo " Done."
+p4_PARTUUID=$(sfdisk --part-uuid $loop_dev 4 2>/dev/null)
+echo "Rootfs PARTUUID: $p4_PARTUUID"
+echo "Done."
 
 echo -n -e ${i_msg}" Formatting the container file partitions ..."
-mkfs.vfat -n $bootfs_label ${loop_dev}p3 >/dev/null 2>&1
+mkfs.fat -F32 -n $bootfs_label ${loop_dev}p3 >/dev/null 2>&1
 if [[ $rootfs_type == "btrfs" ]]; then
     mkfs.btrfs -f -U $rootfs_UUID -L $rootfs_label -m single ${loop_dev}p4 >/dev/null 2>&1
 else
@@ -994,7 +1058,7 @@ echo -n -e ${i_msg}" Setting up the /etc/fstab file..."
 echo -e "$fstab_file" >${rootfs_mnt}/etc/fstab
 # There is no UUID on a fat partition but in fstab the serial number works.
 bootfs_UUID=$(blkid -s UUID -o value ${loop_dev}p3)
-fstab_lastline="UUID=${bootfs_UUID}  $bootfs_dir  vfat   defaults  0  2"
+fstab_lastline="UUID=${bootfs_UUID}  $bootfs_dir  vfat $bootfs_mnt_opts  0  2"
 echo -e "$fstab_lastline" >>${rootfs_mnt}/etc/fstab
 echo " Done."
 
@@ -1032,8 +1096,8 @@ if [[ ! -z "$vf2_str" ]]; then
     # boot and the bootenv_sdk variables are associated with a boot method
     # which is tried before ordinary sysboot (see the u-boot environment).
     # Therefore, either of uEnv.txt or vf2_uEnv.txt should exist if one wants
-    # to specify boot variables, and vf2_uEnv.txt is scanned first so we use
-    # that one for VF2.
+    # to specify boot variables (u-boot will always complain about the missing
+    # one, whichever it is.) Here we choose to install v2f_uEnv.txt
     echo -n " (VF2 install; rename to vf2_uEnv.txt)"
     mv ${bootfs_mnt}/uEnv.txt ${bootfs_mnt}/vf2_uEnv.txt
 fi
@@ -1066,7 +1130,6 @@ echo " Done."
 # for disabling links with the following trick (see man 5 kernel-img.conf).
 touch ${rootfs_mnt}/etc/kernel-img.conf
 echo "do_symlinks = no" >>${rootfs_mnt}/etc/kernel-img.conf
-echo "no_symlinks = yes" >>${rootfs_mnt}/etc/kernel-img.conf
 
 # A small sales pitch for Petitboot.
 echo -n -e ${i_msg}" Writing instructions for installing Petitboot ..."
@@ -1144,18 +1207,23 @@ remove_riscv64_qemu_binary
 
 echo -n -e ${i_msg}" Creating extlinux.conf update hook after kernel upgrade ..."
 mkdir -p ${rootfs_mnt}/etc/kernel/postinst.d
-echo -e "$extlinux_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/yy-update-extlinux-conf
-chmod 0755 ${rootfs_mnt}/etc/kernel/postinst.d/yy-update-extlinux-conf
+echo -e "$extlinux_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/update-extlinux-conf
+chmod 0755 ${rootfs_mnt}/etc/kernel/postinst.d/update-extlinux-conf
 echo " Done."
 
 echo -e ${i_msg}" Creating /boot/extlinux/extlinux.conf ..."
-# Recall that rootfsUUID and dtb_path are hard coded in yy-update-extlinux-conf
-chroot ${rootfs_mnt} bash -c '/etc/kernel/postinst.d/yy-update-extlinux-conf'
+# Recall that rootfsPARTUUID and dtb_path are hard coded in update-extlinux-conf
+chroot ${rootfs_mnt} bash -c '/etc/kernel/postinst.d/update-extlinux-conf'
 echo "Done."
 
-echo -e ${i_msg}" Creating /boot/grub/grub.cfg ..."
-# We need to supply rootfsUUID here; not detected properly under (bare) chroot.
-chroot ${rootfs_mnt} bash -c "rootfsUUID=$rootfs_UUID /usr/local/bin/mkgrubcfg_simple.bash $dtbfile_path"
+echo -n -e ${i_msg}" Creating (simple) grub.cfg update hook after kernel upgrade ..."
+echo -e "$grubcfg_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/update-grub-cfg-simple
+chmod 0755 ${rootfs_mnt}/etc/kernel/postinst.d/update-grub-cfg-simple
+echo " Done."
+
+echo -e ${i_msg}" Creating /boot/grub/grub.cfg (simple version) ..."
+# Recall that rootfsPARTUUID and dtb_path are hard coded in update-grub-cfg-simple
+chroot ${rootfs_mnt} bash -c '/etc/kernel/postinst.d/update-grub-cfg-simple'
 echo "Done."
 
 echo -n -e ${i_msg}" Setting up /etc/default/zramswap ..."
