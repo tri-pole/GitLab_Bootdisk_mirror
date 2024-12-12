@@ -78,6 +78,12 @@ version of (the toolchain) `Go`, as outlined in
 Initramfses with `u-root` built like this can be found
 [here](https://mega.nz/folder/SMt1VLSY#VTR2-eZv4jC7PH4hASp0tg).
 
+__Note:__ The `kexec` functionality for RISCV64 is still in development and not
+fully functional so the initramfses for `Petitboot` and `u-root` for this arch
+do not work properly yet. (A short explanation of some of the the issues can be
+found in the README file at the download location for the `Petitboot`
+initramfses linked to above.)
+
 ### RISCV64 Linux images
 
 Linux images with Debian or Ubuntu for RISCV64 can be created with the script
