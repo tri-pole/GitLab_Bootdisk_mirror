@@ -1,0 +1,12 @@
+--- ./kexec/arch/riscv/kexec-riscv.c	2023-09-15 03:02:47.000000000 +0000
++++ ./kexec/arch/riscv/kexec-riscv-3p.c	2024-12-16 12:05:57.168465138 +0000
+@@ -184,8 +184,7 @@
+ 			       initrd_base + initrd_size);
+ 
+ 		dbgprintf("Base addr for initrd image: 0x%lX\n", initrd_base);
+-		min_usable = initrd_base;
+-		max_usable = initrd_base;
++		max_usable = initrd_base -1;
+ 	}
+ 
+ 	/* Add device tree */
