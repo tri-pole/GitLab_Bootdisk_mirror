@@ -62,6 +62,13 @@ For changelogs of older material, see the `attic` area of the repo.
 ### Added
  - First commit.
 
+# riscv64_kbuild.bash:
+
+## [v0.1] 24-11-19
+
+### Added
+ - First commit.
+
 # arm64_kbuild.bash:
 
 ## [v0.13] 24-06-02

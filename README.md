@@ -1,14 +1,14 @@
 # bootdisk
 
-__TL;DR:__ On an SBC or TV-box with working u-boot you can get a boot
-manager+loader by replacing the default Linux initramfs with an initramfs
+__TL;DR:__ On an SBC or TV-box with working u-boot you can get a versatile
+boot manager+loader by replacing the default Linux initramfs with an initramfs
 containing `Petitboot` or `u-root` (provided your default Linux kernel has
 `kexec()`).
 
-__News:__ We have added some documentation and material for RISCV64, such as
-build scripts for Linux images and kernels (both tested on VisionFive 2), and
-we have moved some material to the [attic](attic). The move reflects our change
-of focus going forward which will be less on Linux images for ARM64.
+__News:__ We have added material for RISCV64, such as build scripts for
+`Petitboot`, Linux images and kernels (all tested on VisionFive 2), and we
+have moved some material to the [attic](attic). The move reflects our change
+of focus going forward.
 
 This repo contains, mostly, information about some
 [bootloaders](https://en.wikipedia.org/wiki/Bootloader) and
@@ -16,21 +16,18 @@ This repo contains, mostly, information about some
 [SBCs](https://en.wikipedia.org/wiki/Single-board_computer) and
 [TV-boxes](https://en.wikipedia.org/wiki/Digital_media_player).
 With these bootloaders and bootdisks you can boot e.g. many ("generic") ARM64
-Linux images from major distributions that have grub boot configurations, such
-as Fedora, Ubuntu, Debian and openSuse.
+or RISCV64 Linux images from major distributions that have grub boot
+configurations, such as Fedora, Ubuntu, Debian and openSuse.
 A good use case for SBCs/TV-boxes is to have a bootdisk installed on SD and
 have several Linux distros installed on USBs to choose from.
-The bootloaders can be compiled for, and function, also on RISCV64 but the
-required `kexec` functionality (see below) is not yet fully developed for this
-architecture.
-
-The terms bootdisk should here be interpreted in a generalized sense to mean
-either a bootdisk in the traditional sense or simply a dedicated boot
+The bootdisk functionality can also be set up on non-removable media such as
+eMMC to boot e.g. several different distros installed on different partitions
+on an nvme or SATA SSD, etc.
+The term bootdisk should thus here be interpreted in a generalized sense to
+mean either a bootdisk in the traditional sense or simply a dedicated boot
 partition (used early in the boot chain) that holds one of these bootloaders
 to act as a new intermediate stage in the boot process.
-With such an inserted stage in the boot process additional capabilities can be
-added, such as the ability to boot from a variety of attached media, not only
-the primary one.
+
 Bootdisks can be built around the two bootloaders
 [`Petitboot`](https://open-power.github.io/petitboot/)
 and [`u-root`](https://u-root.org/), both of which employ a
@@ -65,11 +62,12 @@ in the file [`README_diy-bootdisk.md`](README_diy-bootdisk.md).
 
 An initramfs for `Petitboot` can be built from the C source either manually,
 as outlined in [`README_diy-bootdisk.md`](README_diy-bootdisk.md), or e.g.
-using the script [`petitboot_mkinird.bash`](petitboot_mkinitrd.bash).
-(This script can be executed natively on an ARM64/RISCV64 host or an
-ARM64/RISCV64 build host run in a QEMU emulator, see below.)
-Initramfses with `Petitboot` built using the script
-[`petitboot_mkinird.bash`](petitboot_mkinitrd.bash) can be found
+using the scripts
+[`petitboot_mkinird_riscv64.bash`](petitboot_mkinitrd_riscv64.bash) and
+[`petitboot_mkinird_aarch64.bash`](petitboot_mkinitrd_aarch64.bash).
+(The scripts can be executed natively on an RISCV64/ARM64 host or an
+RISCV64/ARM64 build host run in a QEMU emulator, see below.)
+Initramfses with `Petitboot` built using these scripts can be found
 [here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw).
 
 An initramfs for `u-root` can be built from the `Go` source using a recent
@@ -77,12 +75,6 @@ version of (the toolchain) `Go`, as outlined in
 [`README_diy-bootdisk.md`](README_diy-bootdisk.md).
 Initramfses with `u-root` built like this can be found
 [here](https://mega.nz/folder/SMt1VLSY#VTR2-eZv4jC7PH4hASp0tg).
-
-__Note:__ The `kexec` functionality for RISCV64 is still in development and not
-fully functional so the initramfses for `Petitboot` and `u-root` for this arch
-do not work properly yet. (A short explanation of some of the the issues can be
-found in the README file at the download location for the `Petitboot`
-initramfses linked to above.)
 
 ### RISCV64 Linux images
 
@@ -99,11 +91,11 @@ information should be regarded as obsolete and will not be actively maintained.
 
 ### Image creation using QEMU
 
-A convenient way to create an ARM64/RISCV64 Linux image is to run a native
+A convenient way to create an RISCV64/ARM64 Linux image is to run a native
 ARM64/RISCV64 installer (e.g. in iso file format) in QEMU on e.g. an x86_64
 host and install directly onto an SD/USB attached to the host.
 These images will typically be UEFI images and can be booted on a
-SBC/TV-box using e.g. Petitboot/u-root.
+SBC/TV-box using e.g. `Petitboot`/`u-root`.
 A short description of how use QEMU for image creation like this
 is given in [`README_QEMU_inst.md`](README_QEMU_inst.md).
 
@@ -128,7 +120,7 @@ The script produces gzipped tarballs with boot files (kernel image, initramfs
 etc.), the module tree, header files and dtbs, for the board manufacturers
 selected.
 For instance, it can be used to produce the `3pole` line of ARM64 kernels
-(which have `kexec()` enabled and can be used with `Petitboot/u-root`).
+(which have `kexec()` enabled and can be used with `Petitboot`/`u-root`).
 These kernels are adapted for Amlogic TV-boxes but has support also for
 Rockchip and Allwinner.
 Downloads of the `3pole` series of kernels can be found
