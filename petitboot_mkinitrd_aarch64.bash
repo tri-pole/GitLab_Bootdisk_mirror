@@ -1,18 +1,19 @@
 #!/bin/bash
 
-# petitboot_mkinitrd.bash
-# 24-11-20: v0.13
+# petitboot_mkinitrd_aarch64.bash
+# 24-12-18: v0.14
 # Author: Tripole
 
-# Script to build and pack Petitboot for ARM64 or RISCV64 in an initramfs. 
+# Script to build and pack Petitboot for ARM64 in an initramfs (cpio+gzip).
 
-# Requirements: ARM64 or RISCV64 build host with normal build environment (see
-# below) where the user running the script must be in the sudo group. (At the
-# end of the build proper ownership of files in the initramfs need to be set.)
+# Requirements: ARM64 build host with normal build environment (see below)
+# where the user running the script must be in the sudo group. (At the end
+# of the build proper ownership of files in the initramfs need to be set.)
 
-# Tested on: Ubuntu 22.04.5 (ARM64,RISCV64) and Debian 12.8 (ARM64) build
-# hosts running in qemu-system-aarch64 on x86_64. (Cross compilation is not
-# possible since some libs/utils are copied from the build host, see below.)
+# Tested on: Ubuntu 22.04.5 and Debian 12.8 build hosts running in QEMU
+# (qemu-system-aarch64) on x86_64. (Cross compilation is not possible since
+# some libs/utils are copied from the build host, see below.) The initramfs
+# has been tested on an Ugoos AM6 plus.
 
 # Dependencies: GNU build tools w/ compiler suite, installed dependencies for
 # the packages kexec, busybox, iproute2, e2fsprogs, petitboot and eudev.
@@ -24,9 +25,8 @@
 # libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev libssl-dev libtool
 # libudev-dev pkg-config tree u-boot-tools
 
-# Patches: There are some patches for Petitboot to enhance/adjust functionality
-# and there are patches needed to get RISCV64 support in kexec-tools (see code
-# below). The kexec-tools patches are only tested with kexec-tools v2.0.29.
+# Patches: There are some patches for Petitboot applied to enhance/adjust
+# functionality. They are downloaded and applied as part of the build.
 
 # Usage: The script can be run as an ordinary user but near the end it will
 # ask for the user password to execute a sudo command to change ownership of
@@ -52,9 +52,12 @@
 # - Some files (the libraries and gpg, cf. below) are just copied from the host.
 # - Sometimes it is necessary to hit "Rescan devices" in Petitboot in order to
 #   see all bootable devices attached.
-# - There are two kernel command line options that can be used to control
-#   autoboot and to lock Petitboot into a netns jail, see the init script below.
-#   (With the patches applied to Petitboot the autoboot timeout is set to 60s.)
+# - There are three kernel command line options that can be sent to the kernel
+#   running Petitboot and which will direct the behavior of Petitboot:
+#     pb_no_autoboot={true,false} (default fasle). No autoboot if true.
+#     pb_nonet={true,false} (default false) Will create a netns jail for
+#       Petitboot if true so that only the loopback interface will be enabled.
+#     pb_delay={0,1,2,3...} (default 3) Will delay starting main UI x seconds.
 
 # Things to note about Busybox and other utils:
 # - When entering the Busybox command line you will see an error message like
@@ -83,10 +86,10 @@
 # --------------------------------- Parameters -------------------------------
 
 # If used, this tag  is inserted inside the header in the Petitboot main menu
-# where it normally says e.g. Petitboot (v1.15) so that instead it will say
-# something like Petitboot (v1.15 (mytaglinehere))
+# where it normally says e.g. Petitboot (v1.13) so that instead it will say
+# something like Petitboot (v1.13 (mytaglinehere))
 to_day=$(date +"%y%m%d")
-mytag="3pole-${to_day}"
+mytag="3p-${to_day}"
 build_ver_tag="${mytag}"
 # If the next line is set to true, the build_ver_tag is shown in the top
 # margin in the Petitboot main menu (after the Petitboot version number)
@@ -98,21 +101,21 @@ use_build_ver_tag=true # {true_false}
 # (Note: The name tage format of the generated initrd is still the same though.)
 no_e2fsprogs=false # {true,false}
 
-# Optionally, a u-boot tagged copy of the initramfs (uInitrd-*) can be made.
-make_uboot_tagged_initrd=false # {true,false}
-
 # In the download parameter settings below the setting dload_<pkg>_tarball
 # can be set to true or false. If set to false it is assumed that the 
 # correctly named tarball is already placed in ${temp_dir}/downloads and if
-# set to true it will be downloaded there.
+# set to true it will be downloaded there. ($temp_dir is defined below.)
+
+# Patches (e.g. Petitboot) are taken from here.
+bootdisk_url="https://gitlab.com/tripole-inc/bootdisk.git"
+bootdisk_dir=bootdisk # Clone into dir, relative to $temp_dir
+
 kexectools_ver="2.0.30"
 kexectools_url_base="https://github.com/horms/kexec-tools/archive/refs/tags"
 kexectools_tarball_rpo=v${kexectools_ver}.tar.gz
 kexectools_tarball_loc=kexectools-v${kexectools_ver}.tar.gz
 dload_kexectools_tarball=true
-kt_patch_dir="kexectools_patches" # Relative to dir of this script.
-kt_add_riscv64_support_patch_fname="add_riscv64_support.patch"
-kt_riscv_hotplug_patch_fname="riscv_hotplug.patch"
+# kt_patch_dir="kexectools_patches" # Relative to dir of this script.
 
 busybox_ver="1.36.1"
 busybox_url_base="https://busybox.net/downloads"
@@ -122,7 +125,7 @@ busybox_tarball_loc=busybox-v${busybox_ver}.tar.bz2
 # busybox_git_url="https://git.busybox.net/busybox"
 dload_busybox_tarball=true
 
-iproute2_ver="6.11.0"
+iproute2_ver="6.12.0"
 iproute2_url_base="https://github.com/iproute2/iproute2/archive/refs/tags"
 # iproute2_url_base="https://git.kernel.org/pub/scm/network/iproute2/iproute2.git/snapshot"
 iproute2_tarball_rpo=v${iproute2_ver}.tar.gz
@@ -140,9 +143,10 @@ petitboot_url_base="https://github.com/open-power/petitboot/releases/download"/v
 petitboot_tarball_rpo=petitboot-v${petitboot_ver}.tar.gz
 petitboot_tarball_loc=$petitboot_tarball_rpo
 dload_petitboot_tarball=true
-pb_patch_dir="petitboot_patches" # Relative to dir of this script.
-pb_1v13_add_grubcfg_path_patch_fname="pb_1v13_add_grubcfg_path_patch.patch"
-pb_1v13_ui_and_bootcfg_patch_fname="pb_1v13_ui_and_bootcfg_patch.patch"
+
+pb_patch_dir="petitboot_patches" # Relative to $bootdisk_dir
+pb_1v13_add_grubcfg_path_patch_fname="pb_1v13_add_grubcfg_path.patch"
+pb_1v13_ui_and_bootcfg_patch_fname="pb_1v13_ui_and_bootcfg.patch"
 
 eudev_ver="3.2.14"
 eudev_url_base="https://github.com/eudev-project/eudev/releases/download"/v${eudev_ver}
@@ -290,16 +294,24 @@ init_script=$(cat << "EOF"
 # Adapted after Raptor Engineering's How-To note on Petitboot.
 # 22-07-29, 23-10-07, Tripole
 
-# This script can collect and use two arguments from the (trailing part of the)
-# kernel command line; pb_no_autoboot and pb_nonet. If pb_no_autoboot=true
-# the autoboot function is disabled and if pb_nonet=true then pb-discover is
-# started in a netns network jail so that only the loopback interface works.
+# This script can collect and use three arguments from the (trailing part of
+# the) kernel command line; pb_no_autoboot, pb_nonet and pb_delay.
+# If pb_no_autoboot=true the autoboot function is disabled and if
+# pb_nonet=true then pb-discover is started in a netns network jail so that
+# only the loopback interface works. The variable pb_delay can be used to give
+# a non negative delay time in sec before the main UI comes up (default is 3s),
+# see below.
 
 if [ "${pb_no_autoboot}" != "false"] && [ "${pb_no_autoboot}" != "true" ]; then
     pb_no_autoboot=false
 fi
 if [ "${pb_nonet}" != "false"] && [ "${pb_nonet}" != "true" ]; then
     pb_nonet=false
+fi
+if [ ! -z "${pb_delay}" ]; then
+    delay=$pb_delay
+else
+    delay=3
 fi
 
 /bin/busybox --install -s
@@ -340,12 +352,12 @@ fi
 # This hack with a delay + some writing to the tty seems to be needed for the
 # ncurses menu/UI to come up correctly (on some monitors/ttys). Also, some time
 # may be needed for pb-discover to detect all devices and partitions properly.
-echo -n "Starting Petitboot UI in ...3..."
-sleep 1s
-echo -n "2..."
-sleep 1s
-echo -n "1..."
-sleep 1s
+echo -n "Starting Petitboot UI ..."
+while [ "${delay}" -gt "0" ]; do
+    echo -n "${delay}..."
+    sleep 1s
+    delay=$((delay -1))
+done
 
 if [ "${pb_nonet}" == "true" ] ; then
     /bin/ip netns exec mininet /usr/sbin/petitboot-nc
@@ -425,18 +437,12 @@ do_download() {
 
 this_arch=$(arch)
 
-case $this_arch in
-    "aarch64")
-        uboot_arch=arm64
-    ;;
-    "riscv64")
-        uboot_arch=riscv
-    ;;
-    *)
+if [[ "$this_arch" == "aarch64" ]]; then
+    uboot_arch=arm64
+else
     echo -e ${e_msg}" -- Unsupported arch: ${this_arch}, exiting. --"
     exit 1
-    ;;
-esac
+fi
 
 # Tag to be applied to the name of the resulting initrd (and the uInitrd).
 if [[ $use_build_ver_tag == true ]]; then
@@ -533,6 +539,17 @@ echo " Done."
 
 # -------------------------------- Downloads --------------------------------
 
+# This is small so we always clone it.
+echo -e ${i_msg}" Cloning the bootdisk repo $bootdisk_url"
+echo            "         to the local dir ${temp_dir}/${bootdisk_dir}"
+git clone --depth=1 "$bootdisk_url" "${temp_dir}/${bootdisk_dir}"
+if [[ $? == 0 ]]; then
+    echo -e ${k_msg}" Done. bootdisk repo successfully cloned."
+else
+    echo -e ${e_msg}" Failed to clone bootdisk repo, exiting."
+    exit 1
+fi
+
 kexectools_pkg_url=${kexectools_url_base}/${kexectools_tarball_rpo}
 kexectools_pkg_loc=${temp_dir}/downloads/${kexectools_tarball_loc}
 if [[ "$dload_kexectools_tarball" == true ]]; then
@@ -576,40 +593,12 @@ fi
 echo -e ${i_msg}" Building kexec-tools ..."
 tar -xf ${temp_dir}/downloads/${kexectools_tarball_loc} -C ${temp_dir}/kexectools
 cd ${temp_dir}/kexectools/kexec-tools-${kexectools_ver}
-
-if [[ $this_arch == "riscv64" ]]; then
-    echo -e ${i_msg}" Applying kexec-tools patches for $this_arch ..."
-    kt_patches_applied_ok=true
-    case "$kexectools_ver" in
-        "2.0.29" | "2.0.30")
-            patch -N -p1 <\
-              ${this_script_dir}/${kt_patch_dir}/${kt_add_riscv64_support_patch_fname}
-            if [[ "$?" != 0 ]]; then
-                kt_patches_applied_ok=false
-            fi
-            patch -N -p1 <\
-              ${this_script_dir}/${kt_patch_dir}/${kt_riscv_hotplug_patch_fname}
-            if [[ "$?" != 0 ]]; then
-                kt_patches_applied_ok=false
-            fi
-        ;;
-        *)
-            echo " (No patches available for version $kexectools_ver of kexec-tools.)"
-        ;;
-    esac
-    if [[ $kt_patches_applied_ok == true ]]; then
-        echo -e ${k_msg}" All kexec-tools patches applied successfully."
-    else
-        echo -e ${w_msg}" Not all kexec-tools patches applied successfully, check messages."
-    fi
-fi
-
 autoupdate
 ./bootstrap
 ./configure --prefix=/usr
 make -j $no_comp_cores
 tar -czf ${temp_dir}/initramfs/usr/share/kexectools/build.tgz config.log configure.ac Makefile
-echo -e -n ${i_msg}" Installing kexec binary to initramfs tree..."
+echo -e -n ${i_msg}" Installing kexec binary to initramfs tree ..."
 strip ./build/sbin/kexec -o ${temp_dir}/initramfs/sbin/kexec
 echo " Done."
 echo -e ${k_msg}" Finished building and installing kexec-tools."
@@ -627,7 +616,7 @@ fi
 LDFLAGS=--static make -j $no_comp_cores
 cp .config dot_config
 tar -czf ${temp_dir}/initramfs/usr/share/busybox/build.tgz dot_config Makefile
-echo -e -n ${i_msg}" Installing Busybox binary to initramfs tree..."
+echo -e -n ${i_msg}" Installing Busybox binary to initramfs tree ..."
 cp ./busybox ${temp_dir}/initramfs/bin # This is the stripped version.
 cp ./examples/udhcp/simple.script ${temp_dir}/initramfs/usr/share/udhcpc/
 # chown 0755 ${temp_dir}/initramfs/usr/share/udhcpc/simple.script
@@ -647,7 +636,7 @@ echo -e "$etc_motd" >${temp_dir}/initramfs/etc/motd
 chmod 0644 ${temp_dir}/initramfs/etc/motd
 echo " Done."
 
-echo -e ${i_msg}" Building iproute2 (ip command)..."
+echo -e ${i_msg}" Building iproute2 (ip command) ..."
 tar -xf ${temp_dir}/downloads/${iproute2_tarball_loc} -C ${temp_dir}/iproute2
 cd ${temp_dir}/iproute2/iproute2-${iproute2_ver}
 ./configure --prefix=/usr
@@ -687,12 +676,12 @@ pb_patches_applied_ok=true
 case "$petitboot_ver" in
     "1.13" | "1.14" | "1.15")
         patch -N -p1 --ignore-whitespace <\
-          ${this_script_dir}/${pb_patch_dir}/${pb_1v13_add_grubcfg_path_patch_fname}
+          ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_1v13_add_grubcfg_path_patch_fname}
         if [[ "$?" != 0 ]]; then
             pb_patches_applied_ok=false
         fi
         patch -N -p1 --ignore-whitespace <\
-          ${this_script_dir}/${pb_patch_dir}/${pb_1v13_ui_and_bootcfg_patch_fname}
+          ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_1v13_ui_and_bootcfg_patch_fname}
         if [[ "$?" != 0 ]]; then
             pb_patches_applied_ok=false
         fi
@@ -717,7 +706,7 @@ else
 fi
 make -j $no_comp_cores
 tar -czf ${temp_dir}/initramfs/usr/share/petitboot/build.tgz config.log Makefile
-echo -e -n ${i_msg}" Installing Petitboot executable files to initramfs tree..."
+echo -e -n ${i_msg}" Installing Petitboot executable files to initramfs tree ..."
 strip ./utils/pb-config -o ${temp_dir}/initramfs/usr/sbin/pb-config
 cp ./utils/pb-console ${temp_dir}/initramfs/usr/sbin
 chmod +x ${temp_dir}/initramfs/usr/sbin/pb-console
@@ -772,16 +761,8 @@ for exe_name in ${dyn_linked_exe_list[@]}; do
     # libs_this_exe=$(objdump -p $exe_name_full | grep "NEEDED" | sed 's/NEEDED//g' | tr -d " ") # Note reliable
     # The next line is perhaps not reliable, but for now it will do.
     # The virtual (kernel) file linux-vdso.so.1 and the interpreter
-    # ld-linux-aarch64.so.1/ld-linux-riscv64-lp64d.so.1 are omitted from the list.
-    case $this_arch in
-        "aarch64")
-            libs_this_exe=$(ldd $exe_name_full | grep -vE "linux-vdso.so.1|ld-linux-aarch64.so.1" | cut -d "(" -f1 | cut -d ">" -f2 | tr -d ' ')
-        ;;
-        "riscv64")
-            libs_this_exe=$(ldd $exe_name_full | grep -vE "linux-vdso.so.1|ld-linux-riscv64-lp64d.so.1" | cut -d "(" -f1 | cut -d ">" -f2 | tr -d ' ')
-        ;;
-    esac
-
+    # ld-linux-aarch64.so.1 are omitted from the list.
+    libs_this_exe=$(ldd $exe_name_full | grep -vE "linux-vdso.so.1|ld-linux-aarch64.so.1" | cut -d "(" -f1 | cut -d ">" -f2 | tr -d ' ')
     echo "Libs (except virtual) required by ${exe_name}:"
     echo $libs_this_exe
     lib_file_list+=($libs_this_exe)
@@ -802,20 +783,10 @@ for list_item in ${lib_file_list_sorted[@]}; do
 done
 
 echo -e ${i_msg}" Copying interpreter and libraries from host to initramfs tree ..."
-case $this_arch in
-    "aarch64")
-        # Copy the interpreter and set up the soft link.
-        cp -v /usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 ${temp_dir}/initramfs/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1
-        cd ${temp_dir}/initramfs/usr/lib
-        ln -s aarch64-linux-gnu/ld-linux-aarch64.so.1 ld-linux-aarch64.so.1
-    ;;
-    "riscv64")
-        # Copy the interpreter and set up the soft link.
-        cp -v /usr/lib/riscv64-linux-gnu/ld-linux-riscv64-lp64d.so.1 ${temp_dir}/initramfs/usr/lib/riscv64-linux-gnu/ld-linux-riscv64-lp64d.so.1
-        cd ${temp_dir}/initramfs/usr/lib
-        ln -s riscv64-linux-gnu/ld-linux-riscv64-lp64d.so.1 ld-linux-riscv64-lp64d.so.1
-    ;;
-esac
+# Copy the interpreter and set up the soft link.
+cp -v /usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 ${temp_dir}/initramfs/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1
+cd ${temp_dir}/initramfs/usr/lib
+ln -s aarch64-linux-gnu/ld-linux-aarch64.so.1 ld-linux-aarch64.so.1
 for list_item in ${lib_file_inst_list[@]}; do # in ${temp_dir}/initramfs/usr/lib
     lib_file_inst_full=$(realpath $list_item)
     cp -v ${lib_file_inst_full} ${temp_dir}/initramfs${lib_file_inst_full}
@@ -828,36 +799,42 @@ echo -e ${k_msg}" Finished with libraries."
 
 # ------------------------------- Packing it up ------------------------------
 
-echo -e ${i_msg}" Packing up the initramfs tree into a gzipped cpio archive..."
+echo -e ${i_msg}" Preparing to pack up the initramfs tree into a gzipped cpio archive ..."
 cd ${temp_dir}/initramfs
 my_username=$(whoami)
 echo "Enter your password to change ownership (root) of files in initramfs tree:"
 sudo chown -R root:root ${temp_dir}/initramfs && \
   find . | cpio -H newc -o | gzip -c > ../${initrd_pb_name} && \
   chown $my_username:$my_username ../${initrd_pb_name}
-echo " Done."
-echo "Result: ${initrd_pb_name}"
 mv ${temp_dir}/${initrd_pb_name} $result_dir
+echo " Done. Resulting initramfs: ${initrd_pb_name}"
 
-if [[ $make_uboot_tagged_initrd == true ]]; then
-    which_mkimage=$(which mkimage)${temp_dir}
-    test_which_mkimage=$?
-    if [[ $test_which_mkimage == 0 ]]; then
-        echo -e -n "Making u-boot tagged version of the initramfs ..."
-        mkimage -n "Petitboot-v${petitboot_ver}" -A $uboot_arch -O linux -T ramdisk \
-          -C gzip -d ${result_dir}/${initrd_pb_name} ${result_dir}/${uInitrd_pb_name}
-        echo " Done."
-        echo "Result: ${uInitrd_pb_name}"
-    else
-        echo -e ${w_msg} "Cannot find mkimage command, skipping making u-boot tagged initramfs."
-    fi
+which_mkimage=$(which mkimage)${temp_dir}
+test_which_mkimage=$?
+if [[ $test_which_mkimage == 0 ]]; then
+    echo -e "Making also a u-boot tagged version of the initramfs ..."
+    mkimage -n "Petitboot-v${petitboot_ver}" -A $uboot_arch -O linux -T ramdisk \
+      -C gzip -d ${result_dir}/${initrd_pb_name} ${result_dir}/${uInitrd_pb_name}
+    echo " Done."
+    echo "Result: ${uInitrd_pb_name}"
 fi
 
+echo " Done."
 cd $this_script_dir
 echo -e ${k_msg}" Finished building and packing the Petitboot initramfs."
 
+echo -e -n ${k_msg}" Saving some build info to result dir ..."
 cd ${temp_dir}/
 tree initramfs >${result_dir}/initramfs_file_tree.txt
+compgen -v | while read line; do echo $line=${!line}; done \
+    | gzip -c >${result_dir}/pb_build_vars.txt.gz
+echo " Done."
+
+echo -e -n ${k_msg}" Renaming result dir (name will be displayed below) ..."
+timestamp_iso=$(date +%y%m%dT%H%M)
+result_dir_tstamped=${result_dir}_${timestamp_iso}
+mv $result_dir $result_dir_tstamped
+echo " Done."
 
 # Typically the sudo cache timeout is 5m or so so this is not needed:
 # echo "Enter your password to change back ownership (you) of initramfs tree:"
@@ -869,7 +846,7 @@ sudo chown -R $my_user:$my_user ${temp_dir}/initramfs
 echo -n "Do you want to delete the build directories?   [n/Y] >"
 read do_del_pkgblddirs
 if [[ "$do_del_pkgblddirs" != "n" ]]; then
-    rm -rf ${temp_dir}/{kexec,busybox,iproute2,e2fsprogs,petitboot,}
+    rm -rf ${temp_dir}/{bootdisk,kexectools,busybox,iproute2,e2fsprogs,petitboot,eudev}
 fi
 
 echo -n "Do you want to delete the download directory?  [n/Y] >"
@@ -885,4 +862,12 @@ if [[ "$do_del_initramfsdir" != "n" ]]; then
     sudo rm -rf ${temp_dir}/initramfs
 fi
 
-echo -e ${k_msg}" Finished ${this_script} (Output files in ./result)"
+test_empty_temp=$(ls -A ${temp_dir})
+if [[ -z "$test_empty_temp" ]]; then
+    echo -e "Removing the empty directory for temporary files (${temp_dir}) ..."
+    rmdir ${temp_dir}
+    echo " Done."
+fi
+
+echo -e ${k_msg}" Finished executing ${this_script}"
+echo -e ${i_msg}" The output files can be found in ${result_dir_tstamped}"
