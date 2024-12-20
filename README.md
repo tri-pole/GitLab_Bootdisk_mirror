@@ -107,8 +107,9 @@ host.
 The script produces simple gzipped tarballs with boot files (kernel image,
 initramfs etc.), the module tree, header files and dtbs, for the board
 manufacturers selected.
-At present, it is mostly intended to produce (slimmed) kernels for the
-VisionFive 2.
+These kernels have `kexec()` enabled and can be used to run `Petitboot`.
+At present, the script is mostly intended to produce (slimmed) kernels for
+the VisionFive 2.
 Downloads of such tarballs can be found
 [here](https://mega.nz/folder/jJdTCSQQ#he0JD-96HmJIQDow-QC-VQ).
 
@@ -120,7 +121,7 @@ The script produces gzipped tarballs with boot files (kernel image, initramfs
 etc.), the module tree, header files and dtbs, for the board manufacturers
 selected.
 For instance, it can be used to produce the `3pole` line of ARM64 kernels
-(which have `kexec()` enabled and can be used with `Petitboot`/`u-root`).
+(which have `kexec()` enabled and can be used to run `Petitboot`/`u-root`).
 These kernels are adapted for Amlogic TV-boxes but has support also for
 Rockchip and Allwinner.
 Downloads of the `3pole` series of kernels can be found

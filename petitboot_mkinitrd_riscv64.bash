@@ -58,12 +58,16 @@
 #   in starting the Petitboot main manu window to allow for all devices to be
 #   detected before the display is drawn but when many devices are connected
 #   the scan may take longer than this delay and therefore a rescan is needed.)
-# - There are four kernel command line options that can be sent to the kernel
+# - There are five kernel command line options that can be sent to the kernel
 #   running Petitboot and which will direct the behavior of Petitboot:
-#     pb_no_autoboot={true,false} (default fasle). No autoboot if true.
+#     pb_no_autoboot={true,false} (default false). No autoboot if true.
 #     pb_nonet={true,false} (default false) Will create a netns jail for
 #       Petitboot if true so that only the loopback interface will be enabled.
 #     pb_delay={0,1,2,3...} (default 3) Will delay starting main UI x seconds.
+#     pb_displ={{M,m},d,b} (default db) Determines what is displayed in the
+#       header of Petitboot's main screen. The format descriptors are:
+#       M,m = manufacturer (long,short), d = product name, b = board info
+#       string. (See also code below.)
 #     pb_mem_max=<0xXYZ> (default not set) This hex number will be used as max
 #       RAM during kexec reboot. (The option pb_mem_max does not limit the
 #       available RAM for the kernel being booted.) The limit pb_mem_max is
@@ -176,6 +180,7 @@ dload_petitboot_tarball=true
 pb_patch_dir="petitboot_patches" # Relative to dir of this script.
 pb_1v13_add_grubcfg_path_patch_fname="pb_1v13_add_grubcfg_path_patch.patch"
 pb_1v13_ui_and_bootcfg_patch_fname="pb_1v13_ui_and_bootcfg_patch.patch"
+pb_add_riscv64_functionality_patch_fname="pb_add_riscv64_functionality.patch"
 
 pb_patch_dir="petitboot_patches" # Relative to $bootdisk_dir
 pb_1v13_add_grubcfg_path_patch_fname="pb_1v13_add_grubcfg_path.patch"
@@ -324,8 +329,9 @@ EOF
 init_script=$(cat << "EOF"
 #!/bin/sh
 
-# Adapted after Raptor Engineering's How-To note on Petitboot.
 # 22-07-29, 23-10-07, Tripole
+# Adapted after Raptor Engineering's How-To note on Petitboot.
+# https://www.raptorengineering.com/content/kb/1.html
 
 # This script can collect and use three arguments from the (trailing part of
 # the) kernel command line; pb_no_autoboot, pb_nonet and pb_delay.
@@ -410,14 +416,17 @@ fi
 EOF
 )
 
-# Bash does not support null characters '\0' (they will be mangled when a here
-# doc is written to file). Therefore, we apply sed below to replace Q -> '\0'
+# sh does not support null characters '\0' (they will be mangled when a here
+# doc is written to file).
 sbin_sysinfo=$(cat << "EOF"
 #!/bin/sh
 
-# 22-07-29, 23-10-05, Tripole
-# Hack to provide the most basic sysinfo from the device tree. (May well need
-# to be adapted for other boxes. Easy to try out new hacks in Petitboot shell.)
+# 22-07-29, 23-10-05, 24-12-19, Tripole
+# Hack to provide the most basic sysinfo from the device tree in order to
+# mimic dmidecode's output which is used e.g. in the PB main menu header.
+# (This script may well need to be adapted to any particular SBC and this
+# can easily be done by cut-and-try from within the PB/Busybox shell.)
+
 # pb-discover queries /sbin/dmidecode with the following request specifiers:
 # --string=system-manufacturer
 # --string=system-product-name
@@ -425,25 +434,72 @@ sbin_sysinfo=$(cat << "EOF"
 # For Ugoos AM6, cat gives the following results (w/ null bytes in strings):
 # /proc/device-tree/compatible :  "ugoos,am6\0amlogic,s922x\0amlogic,g12b"
 # /proc/device-tree/name       :  <empty>
-# /proc/device-tree/model      :  "Ugoos AM6" # With a \0 somewhere.
+# /proc/device-tree/model      :  "Ugoos AM6" # With a null char \0 somewhere.
+# In the pipe filters below using tr we cannot use the null character \0
+# explicity since sh does not allow nulls inside strings (only at the end).
 
-# Note: In the pipe filters below using tr we cannot use the null character \0
-# explicity since Bash does not allow nulls inside strings (only at the end).
+# Busybox's version of stty is stripped down and there is no reliable way to
+# determine the column width of the screen. To determine what is displayed
+# we therefore use an environment variable from the kernel command line with
+# the name/format pb_displ={{M,m},d,b} where M,m = manufacturer (long,short),
+# d = product name, b = board info string, see below. (Note that the board
+# info string is also used in Petitboot's System information screen.)
 
-if [ "$1" == "--string=system-manufacturer" ] ; then
-  sysmfg_str=$(tr [:cntrl:] ' ' </proc/device-tree/model | cut -d ' ' -f 1)
-  echo "Manufacturer: "$sysmfg_str"  "
+if [ -z $pb_displ ]; then
+    pb_displ=db
 fi
 
-if [ "$1" == "--string=system-product-name" ] ; then
-  prodname_str=$(tr [:cntrl:] ' ' </proc/device-tree/model | cut -d ' ' -f 2)
-  echo "Model: "$prodname_str"  "
-fi
+query_str=${1#--string=}
+response_str=""
 
-if [ "$1" == "--string=system-uuid" ] ; then
-  board_str=$(tr [:cntrl:] ' ' </proc/device-tree/compatible | awk -F ' ' '{print $NF}')
-  echo "Board: "$board_str"  "
-fi
+case "$query_str" in
+    "system-manufacturer" )
+        val_str=$(tr [:cntrl:] ' ' </proc/device-tree/model | cut -d ' ' -f 1)
+        case "$pb_displ" in
+            M* )
+                lead_str="Manufacturer: "
+                response_str="${lead_str}${val_str}  "
+                break
+            ;;
+            m* )
+                lead_str="Mfg.: "
+                response_str="${lead_str}${val_str}  "
+                break
+            ;;
+            * )
+                response_str=""
+            ;;
+        esac
+    ;;
+    "system-product-name" )
+        val_str=$(tr [:cntrl:] ' ' </proc/device-tree/model | cut -d ' ' -f 2-)
+        case "$pb_displ" in
+            *d* )
+                lead_str="Model: "
+                response_str="${lead_str}${val_str}"
+                break
+            ;;
+            * )
+                response_str=""
+            ;;
+        esac
+    ;;
+    "system-uuid" )
+        val_str=$(tr [:cntrl:] ' ' </proc/device-tree/compatible | awk -F ' ' '{print $NF}')
+        case "$pb_displ" in
+            *b )
+                lead_str="Board: "
+                response_str="${lead_str}${val_str}  "
+                break
+            ;;
+            * )
+                response_str=""
+            ;;
+        esac
+    ;;
+esac
+
+echo $response_str
 EOF
 )
 
@@ -452,7 +508,7 @@ EOF
 kexec_wrapper=$(cat << "EOF"
 #!/bin/sh
 
-# 241216, Tripole
+# 24-12-16, Tripole
 
 # Here we do some filtering of the kexec call from Petitboot so that it
 # matches what the kexec for RISCVr6 created by Nick Kossifidis and Song
@@ -501,7 +557,7 @@ else
                     # do nothing
                     ;;
                     "--append="* )
-                        append_args="${arg##--append=}"
+                        append_args="${arg#--append=}"
                         append_mode=1
                     ;;
                     * )
@@ -866,6 +922,11 @@ case "$petitboot_ver" in
         fi
         patch -N -p1 --ignore-whitespace <\
           ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_1v13_ui_and_bootcfg_patch_fname}
+        if [[ "$?" != 0 ]]; then
+            pb_patches_applied_ok=false
+        fi
+	patch -N -p1 --ignore-whitespace <\
+	  ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_add_riscv64_functionality_patch_fname}
         if [[ "$?" != 0 ]]; then
             pb_patches_applied_ok=false
         fi
