@@ -722,21 +722,26 @@ EOF
 mkgrubcfg_simple_p1=$(cat <<EOF
 #!/bin/bash
 
-# Scans for vmlinu[x,z]-* in /boot and makes a simple grub.cfg in /boot/grub
+# Scans for kernel image files and makes a simple grub.cfg file in /boot/grub
+#
 # Usage: /usr/local/bin/mkgrubcfg_simple.bash /boot/path/to/dtb/file
-# where /boot/path/to/dtb/file is the full path under /boot to the dtb file.
-# The path can alternatively be given in the env. variable dtb_path (command
-# line has precedence). The dtb path can be a symlink; the full dtb name will
-# be inserted into grub.cfg (If no path is given, a grub.cfg is created with
-# only a placeholder for the path.) Normally, the script is run from a mounted
-# rootfs and then the PARTUUID of the rootfs is discovered using the blkid
-# command (see below). However, for use e.g. inside a chroot jail the rootfs
-# PARTUUID can also be given as an environment variable prepended on the
-# command line, e.g. like so (note the single quotes):
+#   where /boot/path/to/dtb/file is the full path under /boot to the dtb file.
+#
+# The full path is the path as it appears on a booted system. The full path
+# can alternatively be given in the environment variable dtb_path (command
+# line has precedence) and it can also be a symlink (e.g. /etc/default/dtb).
+# The full dtb path will be inserted into grub.cfg in the form it appears on
+# a non booted system (i.e. without the leading /boot part of the path if a
+# separate boot partition is used; this is controlled by a parameter setting
+# in the code). If no dtb path is given, a grub.cfg is created with only a
+# placeholder for the path. Normally, this script is run from a mounted rootfs
+# and then the PARTUUID of the rootfs is discovered using the blkid command
+# (see below). However, for use e.g. inside a chroot jail the rootfs PARTUUID
+# can also be given as an environment variable prepended on the command line,
+# e.g. like so (note the single quotes):
 # chroot . /bin/bash -c 'rootfsPARTUUID=f3cab04c-...-faec36aace3f /usr/local/bin/mkgrubcfg_simple.bash /boot/path/to/dtb/file'
-# The script can easily be adapted for other use cases (e.g. no separate boot
-# partition or different kernel name) by editing some of the parameters below.
 
+# First defined at script generation time. Edit to taste.
 kernel_cmdline_pars_="$kernel_cmdline_opts"
 EOF
 )
@@ -751,6 +756,18 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     exit 1
 fi
 
+# The file paths entered into in grub.cfg are relative to the top of the
+# partition from where grub.cfg is read at boot time. The prefixes below for
+# kernel and initramfs are added to their respective file names in grub.cfg.
+# Thus, if you have a separate separate boot partition, these prefixes are
+# generally the empty string "". If you do not have a separate boot partition
+# then these prefixes are generally "/boot". The same priciple applies to the
+# prefix for the dtb file (however the unprefixed file path is typically more
+# than just the filename).
+kernel_path_prefix=""
+initrd_path_prefix=""
+dtb_path_prefix=""
+
 if [[ $# -eq 1 ]]; then
     dtb_path=$1
 else
@@ -764,10 +781,16 @@ devicetree_str="# devicetree /path/to/dtbfile # not used currently"
 devicetree_msg="Devicetree:  No dtb file specified or dtb file missing."
 dtbpath_full=$(realpath -e $dtb_path 2>/dev/null)
 if [[ -f $dtbpath_full ]]; then
-    dtbpath_rel_boot=${dtbpath_full#/boot}
-    devicetree_str="devicetree $dtbpath_rel_boot"
+    dtbpath_rel_boot=${dtbpath_full#/boot} # Remove leading "/boot" by default.
+    dtbpath_in_grubcfg=${dtb_path_prefix}${dtbpath_rel_boot}
+    devicetree_str="devicetree $dtbpath_in_grubcfg"
     devicetree_msg="Devicetree:  $dtbpath_full"
 fi
+
+# To use this script on a machine where the kernel image or inird has some
+# other naming convention, change the settings below.
+kernel_name_template="vmlinu[x,z]-"
+initrd_name_template="initrd.img"
 
 distro_name_lc=$(cat /etc/os-release | grep -E "^ID=" | cut -d "=" -f2)
 distro_edition_lc=$(cat /etc/os-release | grep VERSION_CODENAME | cut -d "=" -f2)
@@ -797,31 +820,21 @@ if [[ -f grub/grub.cfg ]]; then
     mv grub/grub.cfg grub/grub.cfg.bak
 fi
 
-# To use this script on an installation without separate boot partition you
-# typically need to set the {kernel,initrd}_path_prefix here to "/boot".
-kernel_path_prefix=""
-initrd_path_prefix=""
-
-# To use this script on a machine where the kernel image or initrd has some
-# other naming convention, change the template settings here.
-kernel_name_template="vmlinu[x,z]-"
-initrd_name_template="initrd.img"
-
 # The sort command in the $(ls ...) statement below is mostly a placeholder.
 for kernel_name in $(ls | grep -E "$kernel_name_template" | sort -d) ; do
     kernel_vers=$(cut -d '-' -f 2- <<< $kernel_name)
     initrd_name=${initrd_name_template}-${kernel_vers}
 
-    kernel_path=${kernel_path_prefix}/${kernel_name}
-    initrd_path=${initrd_path_prefix}/${initrd_name}
+    kernel_path_in_grubcfg=${kernel_path_prefix}/${kernel_name}
+    initrd_path_in_grubcfg=${initrd_path_prefix}/${initrd_name}
     echo "Added grub.cfg menu entry: $distro_name $distro_edition (kernel $kernel_vers)"
 
     # Note: The leading tabs in the here-document below are important.
 	cat <<-EOF >> grub/grub.cfg
 	menuentry "$distro_name $distro_edition (kernel $kernel_vers)" {
 	
-	linux  $kernel_path $kernel_cmdline
-	initrd $initrd_path
+	linux  $kernel_path_in_grubcfg $kernel_cmdline
+	initrd $initrd_path_in_grubcfg
 	$devicetree_str
 	
 	}
