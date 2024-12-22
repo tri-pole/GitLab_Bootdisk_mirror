@@ -726,14 +726,16 @@ mkgrubcfg_simple_p1=$(cat <<EOF
 # Usage: /usr/local/bin/mkgrubcfg_simple.bash /boot/path/to/dtb/file
 # where /boot/path/to/dtb/file is the full path under /boot to the dtb file.
 # The path can alternatively be given in the env. variable dtb_path (command
-# line has precedence). The dtb path can be a symlink; the full dtb name
-# will be inserted into grub.cfg (If no path is given, a grub.cfg is created
-# with only a placeholder for the path.) Normally, the script is run from a
-# mounted rootfs and then the PARTUUID of the rootfs is discovered using the
-# blkid comand (see below). However, for use e.g. inside a chroot jail the
-# rootfs PARTUUID can also be given as an environment variable prepended on
-# the command line, e.g. like so (note the single quotes):
+# line has precedence). The dtb path can be a symlink; the full dtb name will
+# be inserted into grub.cfg (If no path is given, a grub.cfg is created with
+# only a placeholder for the path.) Normally, the script is run from a mounted
+# rootfs and then the PARTUUID of the rootfs is discovered using the blkid
+# command (see below). However, for use e.g. inside a chroot jail the rootfs
+# PARTUUID can also be given as an environment variable prepended on the
+# command line, e.g. like so (note the single quotes):
 # chroot . /bin/bash -c 'rootfsPARTUUID=f3cab04c-...-faec36aace3f /usr/local/bin/mkgrubcfg_simple.bash /boot/path/to/dtb/file'
+# The script can easily be adapted for other use cases (e.g. no separate boot
+# partition or different kernel name) by editing some of the parameters below.
 
 kernel_cmdline_pars_="$kernel_cmdline_opts"
 EOF
@@ -795,13 +797,23 @@ if [[ -f grub/grub.cfg ]]; then
     mv grub/grub.cfg grub/grub.cfg.bak
 fi
 
-# The sort command in the $(ls ...) statement below is mostly a placeholder.
-for kernel_name in $(ls | grep -E "vmlinu[x,z]-" | sort -d) ; do
-    kernel_vers=$(cut -d '-' -f 2- <<< $kernel_name)
-    initrd_name=initrd.img-${kernel_vers}
+# To use this script on an installation without separate boot partition you
+# typically need to set the {kernel,initrd}_path_prefix here to "/boot".
+kernel_path_prefix=""
+initrd_path_prefix=""
 
-    kernel_path=/$kernel_name
-    initrd_path=/$initrd_name
+# To use this script on a machine where the kernel image or initrd has some
+# other naming convention, change the template settings here.
+kernel_name_template="vmlinu[x,z]-"
+initrd_name_template="initrd.img"
+
+# The sort command in the $(ls ...) statement below is mostly a placeholder.
+for kernel_name in $(ls | grep -E "$kernel_name_template" | sort -d) ; do
+    kernel_vers=$(cut -d '-' -f 2- <<< $kernel_name)
+    initrd_name=${initrd_name_template}-${kernel_vers}
+
+    kernel_path=${kernel_path_prefix}/${kernel_name}
+    initrd_path=${initrd_path_prefix}/${initrd_name}
     echo "Added grub.cfg menu entry: $distro_name $distro_edition (kernel $kernel_vers)"
 
     # Note: The leading tabs in the here-document below are important.
@@ -1010,8 +1022,7 @@ fi
 echo " Done."
 
 echo -e ${i_msg}" Creating partitions in container file with sfdisk ..."
-echo -e "$sfdisk_script" >sfdisk_script
-cat sfdisk_script | sfdisk $loop_dev && rm sfdisk_script
+echo -e "$sfdisk_script" | sfdisk $loop_dev
 sync
 p4_PARTUUID=$(sfdisk --part-uuid $loop_dev 4 2>/dev/null)
 echo "Rootfs PARTUUID: $p4_PARTUUID"
@@ -1205,10 +1216,13 @@ setup_dtb_file $1
 
 remove_riscv64_qemu_binary
 
-echo -n -e ${i_msg}" Creating extlinux.conf update hook after kernel upgrade ..."
+echo -n -e ${i_msg}" Creating extlinux.conf update hook after kernel install/removal ..."
 mkdir -p ${rootfs_mnt}/etc/kernel/postinst.d
+mkdir -p ${rootfs_mnt}/etc/kernel/postrm.d
 echo -e "$extlinux_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/update-extlinux-conf
+echo -e "$extlinux_update_hook" > /${rootfs_mnt}/etc/kernel/postrm.d/update-extlinux-conf
 chmod 0755 ${rootfs_mnt}/etc/kernel/postinst.d/update-extlinux-conf
+chmod 0755 ${rootfs_mnt}/etc/kernel/postrm.d/update-extlinux-conf
 echo " Done."
 
 echo -e ${i_msg}" Creating /boot/extlinux/extlinux.conf ..."
@@ -1216,9 +1230,11 @@ echo -e ${i_msg}" Creating /boot/extlinux/extlinux.conf ..."
 chroot ${rootfs_mnt} bash -c '/etc/kernel/postinst.d/update-extlinux-conf'
 echo "Done."
 
-echo -n -e ${i_msg}" Creating (simple) grub.cfg update hook after kernel upgrade ..."
+echo -n -e ${i_msg}" Creating (simple) grub.cfg update hook after kernel install/removal ..."
 echo -e "$grubcfg_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/update-grub-cfg-simple
+echo -e "$grubcfg_update_hook" > /${rootfs_mnt}/etc/kernel/postrm.d/update-grub-cfg-simple
 chmod 0755 ${rootfs_mnt}/etc/kernel/postinst.d/update-grub-cfg-simple
+chmod 0755 ${rootfs_mnt}/etc/kernel/postrm.d/update-grub-cfg-simple
 echo " Done."
 
 echo -e ${i_msg}" Creating /boot/grub/grub.cfg (simple version) ..."
