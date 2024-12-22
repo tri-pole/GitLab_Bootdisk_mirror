@@ -64,10 +64,10 @@
 #     pb_nonet={true,false} (default false) Will create a netns jail for
 #       Petitboot if true so that only the loopback interface will be enabled.
 #     pb_delay={0,1,2,3...} (default 3) Will delay starting main UI x seconds.
-#     pb_displ={{M,m},d,b} (default db) Determines what is displayed in the
+#     pb_displ={{M,m},d,{b,s}} (default db) Determines what is displayed in the
 #       header of Petitboot's main screen. The format descriptors are:
 #       M,m = manufacturer (long,short), d = product name, b = board info
-#       string. (See also code below.)
+#       string, s = SoC info string (See also code below.)
 #     pb_mem_max=<0xXYZ> (default not set) This hex number will be used as max
 #       RAM during kexec reboot. (The option pb_mem_max does not limit the
 #       available RAM for the kernel being booted.) The limit pb_mem_max is
@@ -441,12 +441,13 @@ sbin_sysinfo=$(cat << "EOF"
 # Busybox's version of stty is stripped down and there is no reliable way to
 # determine the column width of the screen. To determine what is displayed
 # we therefore use an environment variable from the kernel command line with
-# the name/format pb_displ={{M,m},d,b} where M,m = manufacturer (long,short),
-# d = product name, b = board info string, see below. (Note that the board
-# info string is also used in Petitboot's System information screen.)
+# the name/format pb_displ={{M,m},d,{b,s}} where M,m = manufacturer (long,
+# short), d = product name, b = board info string, s = SoC info string, see
+# below. (Note: The board/SoC info string is also used in Petitboot's System
+# information screen.)
 
 if [ -z $pb_displ ]; then
-    pb_displ=db
+    pb_displ=ds
 fi
 
 query_str=${1#--string=}
@@ -490,6 +491,12 @@ case "$query_str" in
             *b )
                 lead_str="Board: "
                 response_str="${lead_str}${val_str}  "
+                break
+            ;;
+            *s )
+                lead_str="SoC: "
+                val_str_cut=$(echo -n $val_str | cut -d ',' -f 2)
+                response_str="${lead_str}${val_str_cut}  "
                 break
             ;;
             * )
