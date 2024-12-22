@@ -27,10 +27,12 @@ p1_size=4096     # Recommended to not change
 p2_start=8192    # Recommended to not change
 p2_size=8192     # Recommended to not change
 p3_start=16384   # Recommended not to change
-bootfs_MiB=300   # In general, use at least 100 MiB.
-bootfs_label=BOOT # FAT label.
+# For the bootfs partition use at least 300MiB. It will have the ESP (EFI)
+# partition code and if you want to share it between OSes use 500MiB or more.
+bootfs_MiB=500
+bootfs_label=BOOT # FAT partition label.
 
-tmp_mnt=/tmp/mkvf2_bootparts # Temporary mount point (created then deleted).
+tmp_mnt=/tmp/mkvf2_bootparts # Temporary mount point (created, then deleted).
 
 spl_fname="u-boot-spl.bin.normal.out"
 uboot_fname="visionfive2_fw_payload.img"
