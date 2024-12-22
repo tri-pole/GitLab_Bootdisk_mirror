@@ -129,14 +129,26 @@ Downloads of the `3pole` series of kernels can be found
 
 ## Screenshots
 
-Some (low resolution) screenshots of some of the bootdisk screens.
+Some examples of the boot screen in `Petitboot` and `u-root`.
 
 ### Petitboot
+
+`Petitboot` running on VisionFive 2 with serial console display (80x24 window).
+
+![Boot menu in Petitboot](/images/petitboot_riscv64_bootscr.png "petitboot")*The
+boot menu screen in Petitboot running on VisionFive 2 with bootable Linux images
+on SD, USB and nvme.*
+
+An older (low resolution) screenshot of `Petitboot` running on Ugoos AM6 plus
+with display on HDMI screen (1366x768 resolution).
 
 ![Boot menu in Petitboot](/images/petitboot-bootscreen.png "petitboot")*The
 boot menu screen encountered after boot with a Petitboot bootdisk.*
 
 ### u-root
+
+An older (low resolution) screenshot of `u-root` running on Ugoos AM6 plus
+with display on HDMI screen (1366x768 resolution).
 
 ![Boot menu in u-root](/images/u-root-bootmenu.png "u-root boot")*The menu
 of bootable images displayed after u-root has scanned the attached devices
