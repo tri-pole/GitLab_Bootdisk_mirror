@@ -10,20 +10,20 @@
 # where the user running the script must be in the sudo group. (At the end
 # of the build proper ownership of files in the initramfs needs to be set.)
 
-# Tested on: Ubuntu 22.04.5 and Debian 12.8 build hosts running in QEMU
-# (qemu-system-riscv64) on x86_64. (Cross compilation is not possible since
-# some libs/utils are copied from the build host, see below.) The initramfs
-# has been tested on VisionFive 2, v1.3b.
+# Tested on: Ubuntu 22.04.5 host running in QEMU (qemu-system-riscv64) on
+# x86_64 and Ubuntu 24.04.1 running on VisionFive 2. (Cross compilation is
+# not possible since some libs/utils are copied from the build host, see
+# below.) The initramfs has been tested on VisionFive 2, v1.3b.
 
 # Dependencies: GNU build tools w/ compiler suite, installed dependencies for
 # the packages kexec, busybox, iproute2, e2fsprogs, petitboot and eudev.
 # For example, on a default installation of Debian 12.8 or Ubuntu Server
-# 22.04.5 all the dependencies could be satisfied by installing the following
+# 22.04.5 all the dependencies should be satisfied by installing the following
 # packages (along with their dependencies):
 # autoconf bison build-essential flex gawk gettext git gperf libasprintf-dev
 # libblkid-dev libdevmapper-dev libdw-dev libelf-dev libgd-tools
 # libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev libssl-dev libtool
-# libudev-dev pkg-config tree u-boot-tools
+# libudev-dev pkg-config tree u-boot-tools wget
 
 # Patches: There are some patches for Petitboot applied to enhance/adjust
 # functionality and there are patches needed to get RISCV64 support in the
@@ -35,7 +35,8 @@
 # the files in the initramfs. During execution of this script, two dirs will
 # be created in the same directory as this script; one result dir and one
 # temp file directory hearchy. (Near the end of this script you will be asked
-# which of the temp dirs you want to delete.)
+# which of the temp dirs you want to delete.) Run time for the script is ~30m
+# in QEMU (on a reasonably modern box) and less than 15m on a VF2.
 
 # Inspiration taken from: https://www.raptorengineering.com/content/kb/1.html
 
@@ -185,6 +186,12 @@ pb_add_riscv64_functionality_patch_fname="pb_add_riscv64_functionality.patch"
 pb_patch_dir="petitboot_patches" # Relative to $bootdisk_dir
 pb_1v13_add_grubcfg_path_patch_fname="pb_1v13_add_grubcfg_path.patch"
 pb_1v13_ui_and_bootcfg_patch_fname="pb_1v13_ui_and_bootcfg.patch"
+
+# The terminal definition files listed here will be copied into the initramfs.
+# Petitboot uses the linux terminal per default. (The standard location for the
+# terminfo files is now /usr/share/terminfo but it can also be /lib/terminfo.)
+terminfo_dir="/lib/terminfo"
+pb_term_list="ansi dumb linux"
 
 eudev_ver="3.2.14"
 eudev_url_base="https://github.com/eudev-project/eudev/releases/download"/v${eudev_ver}
@@ -740,12 +747,28 @@ chmod +x sysinfo
 ln -s sysinfo dmidecode
 echo " Done."
 
-echo -e -n ${i_msg}" Copying terminfo files and gpg to initramfs tree ..."
-# The terminal used by Petitboot is defined in ${pb_build}/utils/pb-console
-# as TERM=linux which is typically defined in /lib/terminfo/l/linux (but note
-# that we have sýmliked /lib to /usr/lib above).
-cp -R /lib/terminfo/* ${temp_dir}/initramfs/usr/lib/terminfo
-cp /usr/bin/gpg ${temp_dir}/initramfs/usr/bin
+echo -e -n ${i_msg}" Copying terminfo files from host to initramfs ..."
+for terminfo_file in $pb_term_list ; do
+    terminfo_dir_lett=${terminfo_file:0:1}
+    terminfo_file_path=${terminfo_dir}/${terminfo_dir_lett}/${terminfo_file}
+    if [[ -f "$terminfo_file_path" ]]; then # We do not resolve symlinks here.
+        # echo "Found terminfo file ${terminfo_file}, copying."
+        mkdir -p ${temp_dir}/initramfs/usr/lib/terminfo/${terminfo_dir_lett}
+        cp $terminfo_file_path \
+          ${temp_dir}/initramfs/usr/lib/terminfo/${terminfo_dir_lett}
+    else
+        echo -e ${e_msg}" Cannot find the terminfo file ${terminfo_file}, exiting."
+        exit 1
+    fi
+done
+echo " Done."
+
+echo -e -n ${i_msg}" Copying gpg to initramfs tree ..."
+if [[ -f "/usr/bin/gpg" ]]; then
+    cp /usr/bin/gpg ${temp_dir}/initramfs/usr/bin
+else
+    echo -e ${w_msg}" Could not find the gpg binary (so no gpg in initramfs)."
+fi
 echo " Done."
 
 # -------------------------------- Downloads --------------------------------
@@ -761,7 +784,7 @@ else
     exit 1
 fi
 
-if [[ "$clone_kexectools_repo" == true ]]; then
+if [[ $clone_kexectools_repo == true ]]; then
     echo -e ${i_msg}" Cloning kexectools from"
     echo "         repo $kexectools_url"
     echo "         branch $kexectools_branch"
@@ -783,40 +806,40 @@ fi
 
 busybox_pkg_url=${busybox_url_base}/${busybox_tarball_rpo}
 busybox_pkg_loc=${temp_dir}/downloads/${busybox_tarball_loc}
-if [[ "$dload_busybox_tarball" == true ]]; then
+if [[ $dload_busybox_tarball == true ]]; then
     do_download "Busybox" $busybox_pkg_url $busybox_pkg_loc
 fi
 
 iproute2_pkg_url=${iproute2_url_base}/${iproute2_tarball_rpo}
 iproute2_pkg_loc=${temp_dir}/downloads/${iproute2_tarball_loc}
-if [[ "$dload_iproute2_tarball" == true ]]; then
+if [[ $dload_iproute2_tarball == true ]]; then
     do_download "iproute2" $iproute2_pkg_url $iproute2_pkg_loc
 fi
 
 if [[ $no_e2fsprogs != true ]]; then
     e2fsprogs_pkg_url=${e2fsprogs_url_base}/${e2fsprogs_tarball_rpo}
     e2fsprogs_pkg_loc=${temp_dir}/downloads/${e2fsprogs_tarball_loc}
-    if [[ "$dload_e2fsprogs_tarball" == true ]]; then
+    if [[ $dload_e2fsprogs_tarball == true ]]; then
         do_download "e2fsprogs" $e2fsprogs_pkg_url $e2fsprogs_pkg_loc
     fi
 fi
 
 petitboot_pkg_url=${petitboot_url_base}/${petitboot_tarball_rpo}
 petitboot_pkg_loc=${temp_dir}/downloads/${petitboot_tarball_loc}
-if [[ "$dload_petitboot_tarball" == true ]]; then
+if [[ $dload_petitboot_tarball == true ]]; then
     do_download "Petitboot" $petitboot_pkg_url $petitboot_pkg_loc
 fi
 
 eudev_pkg_url=${eudev_url_base}/${eudev_tarball_rpo}
 eudev_pkg_loc=${temp_dir}/downloads/${eudev_tarball_loc}
-if [[ "$dload_eudev_tarball" == true ]]; then
+if [[ $dload_eudev_tarball == true ]]; then
     do_download "eudev" $eudev_pkg_url $eudev_pkg_loc
 fi
 
 # ---------------------------------- Build ---------------------------------
 
 echo -e ${i_msg}" Building kexec-tools ..."
-cd  ${temp_dir}/${kexectools_loc_build_dir}    
+cd  ${temp_dir}/${kexectools_loc_build_dir}
 echo -e ${i_msg}" Applying kexec-tools patches ..."
 kt_patches_applied_ok=true
 case "$kexectools_ver" in
