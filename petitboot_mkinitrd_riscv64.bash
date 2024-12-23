@@ -64,7 +64,7 @@
 #     pb_no_autoboot={true,false} (default false). No autoboot if true.
 #     pb_nonet={true,false} (default false) Will create a netns jail for
 #       Petitboot if true so that only the loopback interface will be enabled.
-#     pb_delay={0,1,2,3...} (default 3) Will delay starting main UI x seconds.
+#     pb_delay={0,1,2,3...} (default 1) Will delay starting main UI x seconds.
 #     pb_displ={{M,m},d,{b,s}} (default db) Determines what is displayed in the
 #       header of Petitboot's main screen. The format descriptors are:
 #       M,m = manufacturer (long,short), d = product name, b = board info
@@ -88,10 +88,7 @@
 #   kill pb-discover before e.g. attempting to repair file systems from the
 #   Busybox shell.
 
-# ToDo (feel free to pitch in here):
-# - Figure out why the initial scan does not always detect all bootable devices
-#   in a reasonably short time. Will further fiddling with udevd or udevadm
-#   e.g. with delays fix it (e.g. in order to wait for USB devices)?
+# ToDo:
 # - There seems to be an option for Petitboot named petitboot.debug that can
 #   be passed via the kernel command line, what is it? Investigate...
 
@@ -346,7 +343,7 @@ init_script=$(cat << "EOF"
 # If pb_no_autoboot=true the autoboot function is disabled and if
 # pb_nonet=true then pb-discover is started in a netns network jail so that
 # only the loopback interface works. The variable pb_delay can be used to give
-# a non negative delay time in sec before the main UI comes up (default is 3s),
+# a (non negative) delay time in sec before the main UI comes up (default 1s),
 # see below.
 
 if [ "${pb_no_autoboot}" != "false"] && [ "${pb_no_autoboot}" != "true" ]; then
@@ -358,7 +355,7 @@ fi
 if [ ! -z "${pb_delay}" ]; then
     delay=$pb_delay
 else
-    delay=3
+    delay=1
 fi
 
 /bin/busybox --install -s
@@ -387,15 +384,6 @@ else
    pb_discover_cmd="/usr/sbin/pb-discover"
 fi
 
-if [ "${pb_nonet}" == "true" ] ; then
-    # Set up a network namespace to deny Petiboot access to external networks.
-    /bin/ip netns add mininet
-    /bin/ip netns exec mininet /bin/ip link set dev lo up
-    /bin/ip netns exec mininet $pb_discover_cmd 2>/dev/null &
-else
-    $pb_discover_cmd 2>/dev/null &
-fi
-
 # This hack with a delay + some writing to the tty seems to be needed for the
 # ncurses menu/UI to come up correctly (on some monitors/ttys). Also, some time
 # may be needed for pb-discover to detect all devices and partitions properly.
@@ -407,8 +395,13 @@ while [ "${delay}" -gt "0" ]; do
 done
 
 if [ "${pb_nonet}" == "true" ] ; then
+    # Set up a network namespace to deny Petiboot access to external networks.
+    /bin/ip netns add mininet
+    /bin/ip netns exec mininet /bin/ip link set dev lo up
+    /bin/ip netns exec mininet $pb_discover_cmd 2>/dev/null &
     /bin/ip netns exec mininet /usr/sbin/petitboot-nc
 else
+    $pb_discover_cmd 2>/dev/null &
     /usr/sbin/petitboot-nc
 fi
 
@@ -1125,19 +1118,21 @@ sudo chown -R $my_user:$my_user ${temp_dir}/initramfs
 
 # ---------------------------------- Cleanup ---------------------------------
 
-echo -n "Do you want to delete the build directories?   [n/Y] >"
+echo -e ${i_msg}" Cleanup of build area:"
+
+echo -n "Do you want to delete the build directories?    [n/Y] >"
 read do_del_pkgblddirs
 if [[ "$do_del_pkgblddirs" != "n" ]]; then
     rm -rf ${temp_dir}/{bootdisk,kexectools,busybox,iproute2,e2fsprogs,petitboot,eudev}
 fi
 
-echo -n "Do you want to delete the download directory?  [n/Y] >"
+echo -n "Do you want to delete the download directory?   [n/Y] >"
 read do_del_downloads
 if [[ "$do_del_pkgblddirs" != "n" ]]; then
     rm -rf ${temp_dir}/downloads
 fi
 
-echo -n "Do you want to delete the initramfs file tree? [n/Y] >"
+echo -n "Do you want to delete the initramfs build tree? [n/Y] >"
 read do_del_initramfsdir
 if [[ "$do_del_initramfsdir" != "n" ]]; then
     echo "Enter your password to delete the initramfs dir (owned by root):"
