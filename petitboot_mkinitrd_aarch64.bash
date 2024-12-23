@@ -89,7 +89,7 @@
 
 # --------------------------------- Parameters -------------------------------
 
-# If used, this tag  is inserted inside the header in the Petitboot main menu
+# If used, this tag is inserted inside the header in the Petitboot main menu
 # where it normally says e.g. Petitboot (v1.13) so that instead it will say
 # something like Petitboot (v1.13 (mytaglinehere))
 to_day=$(date +"%y%m%d")
@@ -163,6 +163,13 @@ eudev_udev_rules_list=("50-udev-default.rules" "60-autosuspend.rules"
                        "60-persistent-input.rules" "60-persistent-storage.rules"
                        "60-serial.rules" "64-btrfs.rules" "64-btrfs.rules.in"
                        "70-memory.rules" "70-mouse.rules" "75-probe_mtd.rules")
+
+# The terminal definition files listed here will be copied into the initramfs.
+# Petitboot uses the linux terminal per default (this is defined in
+# ${pb_build}/utils/pb-console as TERM=linux). The standard location for the
+# terminfo files is now /usr/share/terminfo but it can also be /lib/terminfo.
+terminfo_dir="/lib/terminfo"
+pb_term_list="ansi dumb linux"
 
 # Libraries used by these executables will be copied from the host.
 dyn_linked_exe_list_noe2fs=("/sbin/kexec"
@@ -584,12 +591,31 @@ chmod +x sysinfo
 ln -s sysinfo dmidecode
 echo " Done."
 
-echo -e -n ${i_msg}" Copying terminfo files and gpg to initramfs tree ..."
 # The terminal used by Petitboot is defined in ${pb_build}/utils/pb-console
-# as TERM=linux which is typically defined in /lib/terminfo/l/linux (but note
-# that we have sýmliked /lib to /usr/lib above).
-cp -R /lib/terminfo/* ${temp_dir}/initramfs/usr/lib/terminfo
-cp /usr/bin/gpg ${temp_dir}/initramfs/usr/bin
+# as TERM=linux which is often defined in /lib/terminfo/l/linux (but note
+# that we have sýmlinked /lib to /usr/lib above).
+echo -e -n ${i_msg}" Copying terminfo files from host to initramfs ..."
+for terminfo_file in $pb_term_list ; do
+    terminfo_dir_lett=${terminfo_file:0:1}
+    terminfo_file_path=${terminfo_dir}/${terminfo_dir_lett}/${terminfo_file}
+    if [[ -f "$terminfo_file_path" ]]; then # We do not resolve symlinks here.
+        # echo "Found terminfo file ${terminfo_file}, copying."
+        mkdir -p ${temp_dir}/initramfs/usr/lib/terminfo/${terminfo_dir_lett}
+        cp $terminfo_file_path \
+          ${temp_dir}/initramfs/usr/lib/terminfo/${terminfo_dir_lett}
+    else
+        echo -e ${e_msg}" Cannot find the terminfo file ${terminfo_file}, exiting."
+        exit 1
+    fi
+done
+echo " Done."
+
+echo -e -n ${i_msg}" Copying gpg to initramfs tree ..."
+if [[ -f "/usr/bin/gpg" ]]; then
+    cp /usr/bin/gpg ${temp_dir}/initramfs/usr/bin
+else
+    echo -e ${w_msg}" Could not find the gpg binary (so no gpg in initramfs)."
+fi
 echo " Done."
 
 # -------------------------------- Downloads --------------------------------
@@ -607,39 +633,39 @@ fi
 
 kexectools_pkg_url=${kexectools_url_base}/${kexectools_tarball_rpo}
 kexectools_pkg_loc=${temp_dir}/downloads/${kexectools_tarball_loc}
-if [[ "$dload_kexectools_tarball" == true ]]; then
+if [[ $dload_kexectools_tarball == true ]]; then
     do_download "kexectools" $kexectools_pkg_url $kexectools_pkg_loc
 fi
 
 busybox_pkg_url=${busybox_url_base}/${busybox_tarball_rpo}
 busybox_pkg_loc=${temp_dir}/downloads/${busybox_tarball_loc}
-if [[ "$dload_busybox_tarball" == true ]]; then
+if [[ $dload_busybox_tarball == true ]]; then
     do_download "Busybox" $busybox_pkg_url $busybox_pkg_loc
 fi
 
 iproute2_pkg_url=${iproute2_url_base}/${iproute2_tarball_rpo}
 iproute2_pkg_loc=${temp_dir}/downloads/${iproute2_tarball_loc}
-if [[ "$dload_iproute2_tarball" == true ]]; then
+if [[ $dload_iproute2_tarball == true ]]; then
     do_download "iproute2" $iproute2_pkg_url $iproute2_pkg_loc
 fi
 
 if [[ $no_e2fsprogs != true ]]; then
     e2fsprogs_pkg_url=${e2fsprogs_url_base}/${e2fsprogs_tarball_rpo}
     e2fsprogs_pkg_loc=${temp_dir}/downloads/${e2fsprogs_tarball_loc}
-    if [[ "$dload_e2fsprogs_tarball" == true ]]; then
+    if [[ $dload_e2fsprogs_tarball == true ]]; then
         do_download "e2fsprogs" $e2fsprogs_pkg_url $e2fsprogs_pkg_loc
     fi
 fi
 
 petitboot_pkg_url=${petitboot_url_base}/${petitboot_tarball_rpo}
 petitboot_pkg_loc=${temp_dir}/downloads/${petitboot_tarball_loc}
-if [[ "$dload_petitboot_tarball" == true ]]; then
+if [[ $dload_petitboot_tarball == true ]]; then
     do_download "Petitboot" $petitboot_pkg_url $petitboot_pkg_loc
 fi
 
 eudev_pkg_url=${eudev_url_base}/${eudev_tarball_rpo}
 eudev_pkg_loc=${temp_dir}/downloads/${eudev_tarball_loc}
-if [[ "$dload_eudev_tarball" == true ]]; then
+if [[ $dload_eudev_tarball == true ]]; then
     do_download "eudev" $eudev_pkg_url $eudev_pkg_loc
 fi
 
