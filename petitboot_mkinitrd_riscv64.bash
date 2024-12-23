@@ -187,12 +187,6 @@ pb_patch_dir="petitboot_patches" # Relative to $bootdisk_dir
 pb_1v13_add_grubcfg_path_patch_fname="pb_1v13_add_grubcfg_path.patch"
 pb_1v13_ui_and_bootcfg_patch_fname="pb_1v13_ui_and_bootcfg.patch"
 
-# The terminal definition files listed here will be copied into the initramfs.
-# Petitboot uses the linux terminal per default. (The standard location for the
-# terminfo files is now /usr/share/terminfo but it can also be /lib/terminfo.)
-terminfo_dir="/lib/terminfo"
-pb_term_list="ansi dumb linux"
-
 eudev_ver="3.2.14"
 eudev_url_base="https://github.com/eudev-project/eudev/releases/download"/v${eudev_ver}
 eudev_tarball_rpo=eudev-${eudev_ver}.tar.gz
@@ -204,6 +198,13 @@ eudev_udev_rules_list=("50-udev-default.rules" "60-autosuspend.rules"
                        "60-persistent-input.rules" "60-persistent-storage.rules"
                        "60-serial.rules" "64-btrfs.rules" "64-btrfs.rules.in"
                        "70-memory.rules" "70-mouse.rules" "75-probe_mtd.rules")
+
+# The terminal definition files listed here will be copied into the initramfs.
+# Petitboot uses the linux terminal per default (this is defined in
+# ${pb_build}/utils/pb-console as TERM=linux). The standard location for the
+# terminfo files is now /usr/share/terminfo but it can also be /lib/terminfo.
+terminfo_dir="/lib/terminfo"
+pb_term_list="ansi dumb linux"
 
 # Libraries used by these executables will be copied from the host.
 dyn_linked_exe_list_noe2fs=("/sbin/kexec_pb"
@@ -747,6 +748,9 @@ chmod +x sysinfo
 ln -s sysinfo dmidecode
 echo " Done."
 
+# The terminal used by Petitboot is defined in ${pb_build}/utils/pb-console
+# as TERM=linux which is often defined in /lib/terminfo/l/linux (but note
+# that we have sýmlinked /lib to /usr/lib above).
 echo -e -n ${i_msg}" Copying terminfo files from host to initramfs ..."
 for terminfo_file in $pb_term_list ; do
     terminfo_dir_lett=${terminfo_file:0:1}
