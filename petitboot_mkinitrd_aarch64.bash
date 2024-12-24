@@ -203,8 +203,9 @@ this_script=$(basename $0)
 
 no_comp_cores=$(nproc)
 if [[ $no_comp_cores -gt 1 ]]; then
+    # We leave one core for other work (typically no_comp_cores = 4 or more).
     no_comp_cores=$(($no_comp_cores -1))
-    else
+else
     no_comp_cores=1
 fi
 
@@ -893,6 +894,11 @@ if [[ $test_which_mkimage == 0 ]]; then
     echo "Result: ${uInitrd_pb_name}"
 fi
 
+# Typically the sudo cache timeout is 5m or so so this is not needed:
+# echo "Enter your password to change back ownership (you) of initramfs tree:"
+my_user=$(whoami)
+sudo chown -R $my_user:$my_user ${temp_dir}/initramfs
+
 cd $this_script_dir
 echo -e ${k_msg}" Finished building and packing the Petitboot initramfs."
 
@@ -903,16 +909,14 @@ compgen -v | while read line; do echo $line=${!line}; done \
     | gzip -c >${result_dir}/pb_build_vars.txt.gz
 echo " Done."
 
-echo -e -n ${k_msg}" Renaming result dir (name will be displayed below) ..."
+echo -e -n ${k_msg}" Renaming result dir ..."
 timestamp_iso=$(date +%y%m%dT%H%M)
 result_dir_tstamped=${result_dir}_${timestamp_iso}
 mv $result_dir $result_dir_tstamped
 echo " Done."
 
-# Typically the sudo cache timeout is 5m or so so this is not needed:
-# echo "Enter your password to change back ownership (you) of initramfs tree:"
-my_user=$(whoami)
-sudo chown -R $my_user:$my_user ${temp_dir}/initramfs
+echo -e ${i_msg}" The finished initramfs and other output files can be found in"
+echo -e "         "${result_dir_tstamped}
 
 # ---------------------------------- Cleanup ---------------------------------
 
@@ -945,4 +949,3 @@ if [[ -z "$test_empty_temp" ]]; then
 fi
 
 echo -e ${k_msg}" Finished executing ${this_script}"
-echo -e ${i_msg}" The output files can be found in ${result_dir_tstamped}"
