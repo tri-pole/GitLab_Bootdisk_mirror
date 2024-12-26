@@ -7,8 +7,9 @@ containing `Petitboot` or `u-root` (provided your default Linux kernel has
 
 __News:__ We have added material for RISCV64, such as build scripts for
 `Petitboot`, Linux images and kernels (all tested on VisionFive 2), and we
-have moved some material to the [attic](attic). The move reflects our change
-of focus going forward.
+have moved some material to the [attic](attic). `Petitboot` now runs as
+excpected on the VisionFive 2 (on serial console, and on HDMI if the kernel
+supports it).
 
 This repo contains, mostly, information about some
 [bootloaders](https://en.wikipedia.org/wiki/Bootloader) and
@@ -22,7 +23,7 @@ A good use case for SBCs/TV-boxes is to have a bootdisk installed on SD and
 have several Linux distros installed on USBs to choose from.
 The bootdisk functionality can also be set up on non-removable media such as
 eMMC to boot e.g. several different distros installed on different partitions
-on an nvme or SATA SSD, etc.
+on an nvme or SATA SSD.
 The term bootdisk should thus here be interpreted in a generalized sense to
 mean either a bootdisk in the traditional sense or simply a dedicated boot
 partition (used early in the boot chain) that holds one of these bootloaders
@@ -34,10 +35,10 @@ and [`u-root`](https://u-root.org/), both of which employ a
 [chainloading](https://en.wikipedia.org/wiki/Chain_loading) mechanism
 utilizing the Linux [`kexec`](https://en.wikipedia.org/wiki/Kexec)
 [system call](https://wiki.archlinux.org/title/Kexec).
-The `Petitboot` bootloader provides a somewhat nicer UI (cf. screenshots below)
-and can boot [grub](https://wiki.archlinux.org/title/GRUB) configurations
-defined in `grub.cfg` whereas the `u-root` bootloader can boot (simple) grub
-configurations as well as a subset of
+`Petitboot` provides a somewhat nicer UI (cf. screenshots below) and can boot
+[grub](https://wiki.archlinux.org/title/GRUB) configurations defined in
+`grub.cfg` whereas `u-root` can boot (simple) grub configurations as well as a
+subset of
 [syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
 configurations,
 [including](https://github.com/u-root/u-root/blob/main/pkg/boot/syslinux/syslinux.go)
@@ -65,8 +66,8 @@ as outlined in [`README_diy-bootdisk.md`](README_diy-bootdisk.md), or e.g.
 using the scripts
 [`petitboot_mkinird_riscv64.bash`](petitboot_mkinitrd_riscv64.bash) and
 [`petitboot_mkinird_aarch64.bash`](petitboot_mkinitrd_aarch64.bash).
-(The scripts can be executed natively on an RISCV64/ARM64 host or an
-RISCV64/ARM64 build host run in a QEMU emulator, see below.)
+These scripts can be executed natively on an RISCV64/ARM64 host or an
+RISCV64/ARM64 build host run in a QEMU emulator, see below.
 Initramfses with `Petitboot` built using these scripts can be found
 [here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw).
 

@@ -162,11 +162,12 @@ eudev_udev_rules_list=("50-udev-default.rules" "60-autosuspend.rules"
                        "70-memory.rules" "70-mouse.rules" "75-probe_mtd.rules")
 
 # The terminal definition files listed here will be copied into the initramfs.
-# Petitboot uses the linux terminal per default (this is defined in
-# ${pb_build}/utils/pb-console as TERM=linux). The standard location for the
-# terminfo files is now /usr/share/terminfo but it can also be /lib/terminfo.
+# Petitboot uses the linux terminal per default. (This is defined as TERM=linux
+# in the script ${pb_build}/utils/pb-console which is copied to the initramfs
+# at the location /usr/sbin/pb-console). The standard location for the terminfo
+# files is typically /usr/share/terminfo but it can also be /lib/terminfo.
 terminfo_dir="/lib/terminfo"
-pb_term_list="ansi dumb linux"
+pb_term_list="ansi dumb linux vt220"
 
 # Libraries used by these executables will be copied from the host.
 dyn_linked_exe_list_noe2fs=("/sbin/kexec"
