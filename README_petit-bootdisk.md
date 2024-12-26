@@ -68,15 +68,15 @@ The files needed to set up either a `petit-bootdisk` or a `u-root-bootdisk` are
 collected on a `multi-bootdisk` hosted outside of Gitlab
 [here](https://mega.nz/folder/fd0DxILD#msDXVG0mBLYvP1dyPqNzAw).
 
+Builds of the initramfs for `Petitboot` as well as a very small s922x only
+`petit-bootdisk` can be found
+[here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw).
+
 The `multi-bootdisk` is released as a tarball since no special disk is needed,
 only a single FAT partition large enough to hold all the files.
 The skeleton image `bootdisk_skel.img` (one single, empty, FAT partition)
 at the link above can be used as a basis when building a bootdisk from a
 tarball (just uncompress the tarball onto the skeleton image).
-
-Builds of the initramfs for `Petitboot` as well as a very small s922x only
-`petit-bootdisk` can be found
-[here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw).
 
 Caveats
 -------

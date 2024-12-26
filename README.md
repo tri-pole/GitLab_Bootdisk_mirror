@@ -8,7 +8,7 @@ containing `Petitboot` or `u-root` (provided your default Linux kernel has
 __News:__ We have added material for RISCV64, such as build scripts for
 `Petitboot`, Linux images and kernels (all tested on VisionFive 2), and we
 have moved some material to the [attic](attic). `Petitboot` now runs as
-excpected on the VisionFive 2 (on serial console, and on HDMI if the kernel
+expected on the VisionFive 2 (on serial console, and on HDMI if the kernel
 supports it).
 
 This repo contains, mostly, information about some
@@ -50,9 +50,8 @@ collectively as `u-root`.)
 Both `Petitboot` and `u-root` are implemented in the form of an initramfs.
 
 General info about the bootdisk concepts `petit-bootdisk` and `u-root-bootdisk`
-(incl. download links) can be found in the files
-[`README_petit-bootdisk.md`](README_petit-bootdisk.md) and
-[`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), respectively.
+can be found in the files [`README_petit-bootdisk.md`](README_petit-bootdisk.md)
+and [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), respectively.
 In [`README_working_distros.md`](README_working_distros.md) there is a an
 annotated list of Linux ARM64 distributions that can be installed and booted
 with the bootdisks.
