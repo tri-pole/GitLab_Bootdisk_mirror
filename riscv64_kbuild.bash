@@ -56,13 +56,13 @@
 # Note: Kernel version numbers here (in $kern_ver_num) must be in the format
 # x.y.z so for an x.y kernel (e.g. 6.8) you must here add (pad with) a zero to
 # make into x.y.z format (e.g. 6.8.0).
-kern_ver_num=6.12.3
+kern_ver_num=6.12.6
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
 # CONFIG_LOCALVERSION=""
 # # CONFIG_LOCALVERSION_AUTO is not set
-kern_tag_str="-riscv64-vf2-3pole"
+kern_tag_str="-riscv64-vf2-3p"
 kern_out_str=${kern_ver_num}${kern_tag_str}
 
 # Alternatively, a locally provided kernel source tarball can be used.
@@ -70,10 +70,10 @@ kern_out_str=${kern_ver_num}${kern_tag_str}
 # kernel.org and be placed in the dir pointed to by loc_kern_dir (a dir path
 # relative to the working dir, see $kern_loc_src_dir below).
 use_loc_kern_src=no # {yes,no}
-loc_kern_tarball_dir=dummy_dir
+#loc_kern_tarball_dir=VF2_kern
 
 # Path to local patch dir (see $patch_src_dir below).
-#loc_patch_dir=patches/tripole/riscv64/6.12
+#loc_patch_dir=patches/tripole/riscv64/6.6.20
 loc_patch_dir=dummy_dir
 
 # List of names for SoC vendor for which you want to create a dtb tarball.
@@ -126,9 +126,17 @@ esac
 
 targ_arch="riscv"
 
+# A few examples of working parameter settings (use one, comment out the other).
+
 # For an Ubuntu Jammy x86_64 host with GNU toolchain from Ubuntu stable repos
-# the following settings can be used (tested with kernel 5.15.y, 6.{1,2,4}.y):
+# the following settings can be used (tested with kernel 6.x.y):
 kern_make_opts=" ARCH=$targ_arch CROSS_COMPILE=riscv64-linux-gnu- LOCALVERSION=$kern_tag_str "
+
+# For an Ubuntu Jammy x86_64 host with Clang toolchain from Ubuntu stable repos
+# (clang clang-tools llvm lld) the following settings can be used
+# cc_str=/usr/bin/clang
+# ld_str=/usr/bin/ld.lld
+# kern_make_opts=" ARCH=$targ_arch CC=$cc_str LD=$ld_str LLVM=1 LLVM_IAS=1 LOCALVERSION=$kern_tag_str "
 
 # Number of threads for kernel compilation (set to 0 for automatic selection).
 compile_ncores=0
@@ -149,7 +157,7 @@ kern_src_dir=${work_dir}/kern_src
 kern_out_dir=${work_dir}/kern_out
 
 # Location of directory for locally provided kernel (optional) source tarball.k
-ern_loc_src_dir=${work_dir}/${loc_kern_tarball_dir}
+kern_loc_src_dir=${work_dir}/${loc_kern_tarball_dir}
 
 # Location of local patches to be applied
 patch_src_dir=${work_dir}/${loc_patch_dir}
