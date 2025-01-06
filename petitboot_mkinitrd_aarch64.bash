@@ -57,11 +57,11 @@
 #     pb_no_autoboot={true,false} (default fasle). No autoboot if true.
 #     pb_nonet={true,false} (default false) Will create a netns jail for
 #       Petitboot if true so that only the loopback interface will be enabled.
-#     pb_delay={0,1,2,3...} (default 1) Will delay starting main UI x seconds.
+#     pb_delay={0,1,2,3,...} (default 1) Will delay starting main UI x seconds.
 #     pb_displ={{M,m},d,b} (default db) Determines what is displayed in the
 #       header of Petitboot's main screen. The format descriptors are:
-#       M,m = manufacturer (long,short), d = product name, b = board info
-#       string. (See also code below.)
+#       M,m = manufacturer (long, short), d = product name,
+#       b = board info string. (See also code below.)
 
 # Things to note about Busybox and other utils:
 # - When entering the Busybox command line you will see an error message like
@@ -76,8 +76,10 @@
 #   Busybox shell.
 
 # ToDo:
+# - Perhaps add the option of having a user supplied file tree baked into the
+#   initramfs, e.g. with firmware files for the kernel running Petitboot.
 # - There seems to be an option for Petitboot named petitboot.debug that can
-#   be passed via the kernel command line, what is it? Investigate...
+#   be passed via the kernel command line, what is it?
 
 # Final note: I'm aware (now, D'oh!) that the name of the program is a bit of a
 # misnomer since the program creates an initramfs (file system), not an initrd
@@ -133,7 +135,7 @@ iproute2_tarball_rpo=v${iproute2_ver}.tar.gz
 iproute2_tarball_loc=iproute2-$iproute2_tarball_rpo
 dload_iproute2_tarball=true
 
-e2fsprogs_ver="1.47.1"
+e2fsprogs_ver="1.47.2"
 e2fsprogs_url_base="https://github.com/tytso/e2fsprogs/archive/refs/tags"
 e2fsprogs_tarball_rpo=v${e2fsprogs_ver}.tar.gz
 e2fsprogs_tarball_loc=e2fsprogs-$e2fsprogs_tarball_rpo
@@ -319,7 +321,7 @@ fi
 if [ "${pb_nonet}" != "false"] && [ "${pb_nonet}" != "true" ]; then
     pb_nonet=false
 fi
-if [ ! -z "${pb_delay}" ]; then
+if [ ! -z "${pb_delay##*[!0-9]*}" ]; then
     delay=$pb_delay
 else
     delay=1
@@ -354,12 +356,17 @@ fi
 # This hack with a delay + some writing to the tty seems to be needed for the
 # ncurses menu/UI to come up correctly (on some monitors/ttys). Also, some time
 # may be needed for pb-discover to detect all devices and partitions properly.
-echo -n "Starting Petitboot UI ..."
-while [ "${delay}" -gt "0" ]; do
-    echo -n "${delay}..."
+if [ "${delay}" -gt "1" ]; then
+    echo -n "Starting Petitboot UI in ..."
+    while [ "${delay}" -gt "0" ]; do
+        echo -n "${delay}..."
+        sleep 1s
+        delay=$((delay -1))
+    done
+else
+    echo "Starting Petitboot UI ..."
     sleep 1s
-    delay=$((delay -1))
-done
+fi
 
 if [ "${pb_nonet}" == "true" ] ; then
     # Set up a network namespace to deny Petiboot access to external networks.
