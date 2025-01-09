@@ -243,18 +243,10 @@ Sec. 3.8.1 (Updating SPL and U-Boot of Flash).
 
 ## Remarks
 
-* It seems that the 6.1.y kernels will not boot/run with newer mainline
-  `u-boot` on VF2, but these kernels work with StarFive's `u-boot` (with a code
-  base from 2021). We have built and tried all four combinations of `u-boot` and
-  `openSBI` as follows:
-
-  `u-boot`: mainline v2024.10 and StarFive's (branch JH7110_VisionFive2_devel, tag: JH7110_VF2_6.6_v5.13.1)
-
-  `openSBI`: mainline v1.6 and StarFive's (branch master, tag: VF2_v3.8.2)
-
-  The 6.1.y kernels will only boot with StarFive's fork of `u-boot`. (The
-  other three combinations of `u-boot` and `openSBI` can boot all tested kernels
-  from 6.6.y and 6.12.y.)
+* There was an issue booting older 6.1.y kernels with `u-boot` v2024.10 but
+  this issue seems to have vanished with `u-boot` v2025.10, provided cold
+  booting is done. (When warm (re)booting this issue seems to still show up
+  sometimes with 6.1.y kernels.)
 
 * To build using StarFive's fork of `u-boot`, use the name
 
