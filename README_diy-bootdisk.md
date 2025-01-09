@@ -5,7 +5,7 @@
   The bootdisk concept was developed to set up bootdisks for devices based on
   the Amlogic s922x SoC but there is nothing that is critically dependent on
   this SoC.
-  In order to facilitate do-it-yourself version of bootdisks, and to encourage
+  In order to facilitate do-it-yourself versions of bootdisks, and to encourage
   porting/adapting of the concept to other TV-boxes/SBCs, we give here a
   breakdown of the structure of a typical bootdisk and instructions for how to
   (re)produce such a disk.
@@ -72,8 +72,6 @@
   be able to recognize and read the block devices and file systems, including
   (perhaps) `btrfs` and `iso9660`, and to have the `kexec` functionality built
   in (of either of the two forms).
-  However, any combination of kernel, dtb (and chainloader) that works to boot
-  the box otherwise will also work for the bootdisk.
 
 - Skillz: A bit of command line experience, but not much beyond knowing how
   to burn/flash an image using the Linux `dd` command and using `fdisk` to
@@ -131,9 +129,8 @@
   The version of `u-boot.bin` that is suitable as `u-boot.ext` depends on the
   SoC but luckily there are many precompiled variants freely available.
   A good selection of candidates can be found on the images produced by
-  [Ophub](https://github.com/ophub/amlogic-s9xxx-armbian) and some of them
-  can also be found on the bootdisks (for Amlogic s922x SOC, see
-  also [here](https://mega.nz/folder/bIdjwI6B#mojtTtZPufsHD9v7gTkjdQ)).
+  [Ophub](https://github.com/ophub/amlogic-s9xxx-armbian) (for Amlogic s922x
+  SOC, see also [here](https://mega.nz/folder/bIdjwI6B#mojtTtZPufsHD9v7gTkjdQ)).
   (Ophub refers to the binaries used for chainloading as "overload"
   bootloaders, to distinguish them from the ones to be used as "hidden"
   bootloaders (see below) which he refers to simply as "bootloaders".
