@@ -52,18 +52,17 @@ Both `Petitboot` and `u-root` are implemented in the form of an initramfs.
 General info about the bootdisk concepts `petit-bootdisk` and `u-root-bootdisk`
 can be found in the files [`README_petit-bootdisk.md`](README_petit-bootdisk.md)
 and [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), respectively.
-In [`README_working_distros.md`](README_working_distros.md) there is a an
-annotated list of Linux ARM64 distributions that can be installed and booted
-with the bootdisks.
-Instructions for (manually) recreating or adapting the bootdisks can be found
-in the file [`README_diy-bootdisk.md`](README_diy-bootdisk.md).
+In the [attic](attic) area there is some older information, such as instructions
+in [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md) for (manually)
+recreating or adapting bootdisks and an annotated list in
+[`README_working_distros.md`](attic/README_working_distros.md) of Linux ARM64
+distributions that can be installed and booted with bootdisks.
 
 #### Building Petitboot and u-root
 
-An initramfs for `Petitboot` can be built from the C source either manually,
-as outlined in [`README_diy-bootdisk.md`](README_diy-bootdisk.md), or e.g.
-using the scripts
-[`petitboot_mkinird_riscv64.bash`](petitboot_mkinitrd_riscv64.bash) and
+An initramfs for `Petitboot` can be built from the C source either manually (see
+e.g. [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md)) or using the
+scripts [`petitboot_mkinird_riscv64.bash`](petitboot_mkinitrd_riscv64.bash) and
 [`petitboot_mkinird_aarch64.bash`](petitboot_mkinitrd_aarch64.bash).
 These scripts can be executed natively on an RISCV64/ARM64 host or an
 RISCV64/ARM64 build host run in a QEMU emulator, see below.
@@ -71,8 +70,8 @@ Initramfses with `Petitboot` built using these scripts can be found
 [here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw).
 
 An initramfs for `u-root` can be built from the `Go` source using a recent
-version of (the toolchain) `Go`, as outlined in
-[`README_diy-bootdisk.md`](README_diy-bootdisk.md).
+version of (the toolchain) `Go` (see e.g.
+[`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md)).
 Initramfses with `u-root` built like this can be found
 [here](https://mega.nz/folder/SMt1VLSY#VTR2-eZv4jC7PH4hASp0tg).
 
@@ -86,7 +85,7 @@ Images built with this script can be downloaded from
 ### ARM64 Linux images
 
 A collection of READMEs and scripts about creation of Linux images for ARM64
-can be found in the [`attic area`](attic/Creating_Linux_images_ARM64) but this
+can be found in the [`attic`](attic/Creating_Linux_images_ARM64) area but this
 information should be regarded as obsolete and will not be actively maintained.
 
 ### Image creation using QEMU
