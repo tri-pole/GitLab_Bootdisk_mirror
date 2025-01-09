@@ -2,9 +2,7 @@
 # Mainline u-boot and openSBI for VisionFive 2
 
 These notes describe how to build mainline `u-boot` and `openSBI` for the
-StarFive VisionFive 2 board and discusses some of the pros and cons of
-using the mainline versions of these software components versus the vendor
-versions.
+StarFive VisionFive 2 board.
 
 ## Introduction
 
