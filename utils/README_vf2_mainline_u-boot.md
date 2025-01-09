@@ -265,8 +265,11 @@ in [VisionFive 2 Quick Start Guide](https://doc-en.rvspace.org/VisionFive2/PDF/V
 The above procedure has been put together based (mostly) on the information in
 these sources
 
-https://doc-en.rvspace.org/VisionFive2/PDF/VisionFive2_SW_TRM.pdf
-https://docs.u-boot.org/en/latest/board/starfive/visionfive2.html
-https://github.com/riscv-software-src/opensbi/tree/v1.6
-https://github.com/u-boot/u-boot/tree/v2024.10
+[VisionFive 2 Software Technical Reference Manual](https://doc-en.rvspace.org/VisionFive2/PDF/VisionFive2_SW_TRM.pdf)
+
+[`u-boot` VisionFive 2](https://docs.u-boot.org/en/latest/board/starfive/visionfive2.html)
+
+[`openSBI` Github, v1.6](https://github.com/riscv-software-src/opensbi/tree/v1.6)
+
+[`u-boot` Github, v2024.10](https://github.com/u-boot/u-boot/tree/v2024.10)
 
