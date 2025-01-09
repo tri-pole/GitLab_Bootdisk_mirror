@@ -35,6 +35,9 @@ It will be handy to have your own custom version of the `u-boot` config file,
 for instance the one supplied by us (the version used in StarFive's fork of
 `u-boot` is called `starfive_visionfive2_defconfig`).
 
+The procedure here has been tested with `openSBI` v1.6 and `u-boot` v2024.10
+and v2025.01.
+
 ## Preliminaries
 
 ### (P1) Set up a build dir and cd into it.
@@ -133,13 +136,13 @@ $ cd ${uboot_path}
 and then copy over _your own_ version of `starfive_visionfive2_defconfig` to
 
 ```
-${uboot_path}/configs/${jh7110-starfive-visionfive-2}_defconfig
+${uboot_path}/configs/${vf2_cfg_name}_defconfig
 ```
 
 Then, do
 
 ```
-$ make ${jh7110-starfive-visionfive-2}_defconfig
+$ make ${vf2_cfg_name}_defconfig
 ```
 
 which will set up the file 
@@ -163,7 +166,7 @@ The output from this command is, among other things, the following files:
 ```
 ${uboot_path}/u-boot.bin
 ${uboot_path}/spl/u-boot-spl.bin
-${uboot_path}/arch/riscv/dts/${jh7110-starfive-visionfive-2}.dtb
+${uboot_path}/arch/riscv/dts/${vf2_cfg_name}.dtb
 ```
 
 ### (B3) Create the SPL using the previously generated `u-boot-spl.bin`
@@ -200,7 +203,7 @@ which will be used in the next step.
 
 ### (B5) Create `visionfive2_fw_payload.img`
 
-Go to the `uboot_its` dir and Copy over the `fw_payload.bin` file created
+Go to the `uboot_its` dir and copy over the `fw_payload.bin` file created
 previously.
 
 ```
@@ -208,7 +211,7 @@ $ cd ${sf_tools_path}/uboot_its
 $ cp ${opensbi_path}/build/platform/generic/firmware/fw_payload.bin .
 ```
 
-Use the template file `visionfive2-uboot-fit-image.its?? in the current dir to
+Use the template file `visionfive2-uboot-fit-image.its` in the current dir to
 create the `visionfive2_fw_payload.img` file from `fw_payload.bin`:
 
 ```
@@ -235,21 +238,21 @@ ${sf_tools_path}/uboot_its/visionfive2_fw_payload.img
 ```
 
 and these two files can be copied to flash or SD using the methods described
-in [VisionFive 2 Quick Start Guide](https://doc-en.rvspace.org/VisionFive2/PDF/VisionFive2_QSG.pdf), Sec. 3.8.1 (Updating SPL and U-Boot of Flash).
+in [VisionFive 2 Quick Start Guide](https://doc-en.rvspace.org/VisionFive2/PDF/VisionFive2_QSG.pdf),
+Sec. 3.8.1 (Updating SPL and U-Boot of Flash).
 
 ## Remarks
 
 * It seems that the 6.1.y kernels will not boot/run with newer mainline
-  `u-boot` on VF2, but these kernels work with StarFive's u-boot (with a code
-  base from 2021). We have built and tried all four combinations of u-boot and
-  openSBI;
+  `u-boot` on VF2, but these kernels work with StarFive's `u-boot` (with a code
+  base from 2021). We have built and tried all four combinations of `u-boot` and
+  `openSBI` as follows:
 
-  U-boot:  mainline v2024.10,
-           StarFive's (JH7110_VisionFive2_devel, tag: JH7110_VF2_6.6_v5.13.1)
-  openSBI: mainline v1.6,
-           StarFive's (master, tag: VF2_v3.8.2)
+  `u-boot`: mainline v2024.10 and StarFive's (branch JH7110_VisionFive2_devel, tag: JH7110_VF2_6.6_v5.13.1)
 
-  and the 6.1.y kernels will only boot with StarFive's fork of `u-boot`. (The
+  `openSBI`: mainline v1.6 and StarFive's (branch master, tag: VF2_v3.8.2)
+
+  The 6.1.y kernels will only boot with StarFive's fork of `u-boot`. (The
   other three combinations of `u-boot` and `openSBI` can boot all tested kernels
   from 6.6.y and 6.12.y.)
 
