@@ -13,7 +13,7 @@ need to be amended with some extra steps, it seems.
 It is the intention of this writeup to supply these steps, using essentially
 the procedure in
 [VisionFive2_Software Techical Reference Manual](https://doc-en.rvspace.org/VisionFive2/PDF/VisionFive2_SW_TRM.pdf), but amended with the extra steps.
-It is quite possible howevern that the procedure we describe can be simplified,
+It is quite possible however that the procedure we describe can be simplified,
 and perhaps even contains unnecessary steps.
 
 ### Prerequisites and scope
@@ -167,6 +167,8 @@ ${uboot_path}/spl/u-boot-spl.bin
 ${uboot_path}/arch/riscv/dts/${vf2_cfg_name}.dtb
 ```
 
+All three files will be used below.
+
 ### (B3) Create the SPL using the previously generated `u-boot-spl.bin`
 
 ```
@@ -198,8 +200,9 @@ ${opensbi_path}/build/platform/generic/firmware/fw_payload.bin
 ```
 
 which will be used in the next step.
+This file contains `openSBI`, `u-boot` and the dtb.
 
-### (B5) Create `visionfive2_fw_payload.img`
+### (B5) Create the fit image `visionfive2_fw_payload.img`
 
 Go to the `uboot_its` dir and copy over the `fw_payload.bin` file created
 previously.
@@ -209,8 +212,9 @@ $ cd ${sf_tools_path}/uboot_its
 $ cp ${opensbi_path}/build/platform/generic/firmware/fw_payload.bin .
 ```
 
-Use the template file `visionfive2-uboot-fit-image.its` in the current dir to
-create the `visionfive2_fw_payload.img` file from `fw_payload.bin`:
+Pack the file `fw_payload.bin` into a fit image using the template file
+`visionfive2-uboot-fit-image.its`.
+
 
 ```
 ${uboot_path}/tools/mkimage -f visionfive2-uboot-fit-image.its \
