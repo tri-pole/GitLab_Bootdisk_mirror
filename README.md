@@ -3,7 +3,7 @@
 __TL;DR:__ On an SBC or TV-box with working u-boot you can get a versatile
 boot manager+loader by replacing the default Linux initramfs with an initramfs
 containing `Petitboot` or `u-root` (provided your default Linux kernel has
-`kexec()`).
+`kexec`).
 
 __News:__ We have added material for RISCV64, such as build scripts for
 `Petitboot`, Linux images and kernels (all tested on VisionFive 2), and we
@@ -16,9 +16,9 @@ This repo contains, mostly, information about some
 [bootdisks](https://en.wikipedia.org/wiki/Boot_disk) for
 [SBCs](https://en.wikipedia.org/wiki/Single-board_computer) and
 [TV-boxes](https://en.wikipedia.org/wiki/Digital_media_player).
-With these bootloaders and bootdisks you can boot e.g. many ("generic") ARM64
-or RISCV64 Linux images from major distributions that have grub boot
-configurations, such as Fedora, Ubuntu, Debian and openSuse.
+With a bootdisk using one of these bootloaders you can e.g. boot many
+("generic") ARM64 or RISCV64 Linux images from major distributions that have
+grub boot configurations, such as Fedora, Ubuntu, Debian and openSuse.
 A good use case for SBCs/TV-boxes is to have a bootdisk installed on SD and
 have several Linux distros installed on USBs to choose from.
 The bootdisk functionality can also be set up on non-removable media such as
@@ -49,12 +49,21 @@ being `Linuxboot`, but for brevity we shall refer to these components
 collectively as `u-root`.)
 Both `Petitboot` and `u-root` are implemented in the form of an initramfs.
 
-General info about the bootdisk concepts `petit-bootdisk` and `u-root-bootdisk`
+The bootdisk concept discussed here was originally developed as an aid for
+booting on ARM64 SBCs/TV-boxes where an older resident/vendor `u-boot` was
+installed that typically did not support booting using `extlinux.conf` but
+needed various scripts for booting.
+In case a `u-boot` is used which is capable of using `extlinux.conf` it is
+very easy to set up a bootdisk since this essentially amounts to installing
+an appropriate kernel and dtb to work with the initramfs that holds either
+`Petitboot` or `u-root`.
+
+General info about the bootdisk concept in the script based setting for ARM64
 can be found in the files [`README_petit-bootdisk.md`](README_petit-bootdisk.md)
 and [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), respectively.
-In the [attic](attic) area there is some older information, such as instructions
-in [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md) for (manually)
-recreating or adapting bootdisks and an annotated list in
+In the [attic](attic) area there is some more older information, such as
+instructions in [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md) for
+(manually) recreating or adapting bootdisks and an annotated list in
 [`README_working_distros.md`](attic/README_working_distros.md) of Linux ARM64
 distributions that can be installed and booted with bootdisks.
 
