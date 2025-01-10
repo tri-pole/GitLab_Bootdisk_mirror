@@ -8,10 +8,11 @@
 # debootstrap. The script must be executed (as root) on an Ubuntu/Debian type
 # machine, either natively on RISCV64 or virtualized (with qemu-riscv64-static)
 # on x86_64/amd64. The generated image can be booted with board resident (e.g.
-# QSPI) openSBI+u-boot (using extlinux.conf on the image). (The partition
-# layout has two leading empty 2M+4M partitions for manual addition SPL and
-# openSPI+u-boot, if needed.) The images are tailored to VisionFive 2 but can
-# easily be adapted to other RISCV64 SBCs (by updating the dtb and uEnv.txt).
+# QSPI) openSBI+u-boot (using extlinux.conf on the image) or using Petitboot
+# for RISCV64 (using grub.cfg on the image). (The partition layout has two
+# leading empty 2M+4M partitions for manual addition SPL and openSPI+u-boot,
+# if needed.) The images are tailored to VisionFive 2 but can easily be
+# adapted to other RISCV64 SBCs (by updating the dtb and uEnv.txt).
 
 # Usage: ./debuntu_dbstrap_riscv64.bash distro
 #        where distro is one of: ubuntu, debian
@@ -31,10 +32,6 @@
 
 # This script is adapted after the script debuntu_dbstrap.bash at my Gitlab
 # bootdisk repo (and that script is in turn inspired by some others, etc.).
-
-# Note: My builds of Petitboot for RISCV64 seem to be functional but I have
-#    yet to produce a (standalone) kernel that can be used ro tun Petitboot.
-#    Thus, these images have to be booted via (QSPI) openSPI+u-boot for now.
 
 # Notes:
 # - The installed system is a bit bare-bones; e.g. no swap is set (only zram).
@@ -65,7 +62,7 @@
 #   confusion about naming re. uEnv.txt/vf2_uEnv.txt, see comments below).
 # - On Ubuntu a simple working desktop environment can be obtained by
 #   installing e.g. xubuntu-core, ubuntu-desktop-minimal or kubuntu-desktop.
-# - The Ubuntu snap system can cause trouble (so one can do;
+# - The Ubuntu snap system may be "undesirable" (so one can do;
 #   apt remove snapd && apt autoremove).
 # - The package linux-firmware is installed but firmware for e.g. a specific
 #   WiFi or Bluethooth chip might not be included and thus have to be sought
@@ -127,9 +124,9 @@ growpart_url="https://raw.githubusercontent.com/canonical/cloud-utils/main/bin/g
 kernel_cmdline_opts="quiet splash"
 
 # The dtb file name is used in extlinux.conf and the dtb must be one of those
-# existing in local /usr/lib/${kernel-version}/${dtb_mfg} on the image (i.e.
-# as it comes in the kernel package). (The manufacturer name can be looked up
-# in the kernel source tree at arch/riscv/boot/dts)
+# existing in local /usr/lib/*${kernel-version}*/${dtb_mfg} on the image
+# (i.e. as it comes in the kernel package). (The manufacturer name can be
+# looked up in the kernel source tree at arch/riscv/boot/dts)
 dtb_mfg=starfive
 dtbfile_name=jh7110-starfive-visionfive-2-v1.3b.dtb
 dtbfile_path=/boot/dtbs/${dtb_mfg}/${dtbfile_name} # Full path, starts w/ /boot
@@ -691,11 +688,10 @@ EOF
 
 README_kernels=$(cat <<"EOF"
 The scripts in /usr/local/bin can be used to assist in kernel handling.
-
-For booting via grub (e.g. via bootdisk) the script mkgrubcfg_simple.bash can
-be used to generate simple grub entries for vmlinu[x,z]- kernels and
-accompanying initramfs.img- files residing in /boot (see instrcutions inside
-the script generating this image).
+For booting via grub the script mkgrubcfg_simple.bash can be used to generate
+simple grub entries for kernels and accompanying initramfses in /boot (see
+instrcutions inside the script generating this image). (See also the kernel
+update hook scripts in /etc/kernel/{postinst,postrm}.d)
 EOF
 )
 
@@ -743,6 +739,7 @@ mkgrubcfg_simple_p1=$(cat <<EOF
 
 # First defined at script generation time. Edit to taste.
 kernel_cmdline_pars_="$kernel_cmdline_opts"
+
 EOF
 )
 
