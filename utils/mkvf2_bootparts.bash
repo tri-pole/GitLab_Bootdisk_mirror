@@ -6,9 +6,11 @@
 
 # Script to create a few partitions on storage media (e.g. SD, eMMC, nvme) to
 # be used as "bootdisk" (to hold Petitboot+kernel) for VisionFive 2. As an
-# option you can also install openSPI+SPL and u-boot. For this, the files
+# option you can also install SPL and openSBI+u-boot. For this, the files
 # u-boot-spl.bin.normal.out and visionfive2_fw_payload.img must exist in the
 # same dir as this script (you will be asked about this option near the end).
+# For info about u-boot-spl.bin.normal.out and openSBI+u-boot for the VF2,
+# see e.g. the VisionFive Quick Start Guide from the official StarFive docs.
 
 # Snippets sourced from petitboot_mkimage_riscv64.bash
 
