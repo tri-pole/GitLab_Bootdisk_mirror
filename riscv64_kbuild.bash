@@ -56,25 +56,27 @@
 # Note: Kernel version numbers here (in $kern_ver_num) must be in the format
 # x.y.z so for an x.y kernel (e.g. 6.8) you must here add (pad with) a zero to
 # make into x.y.z format (e.g. 6.8.0).
-kern_ver_num=6.12.6
+kern_ver_num=6.12.10
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
 # CONFIG_LOCALVERSION=""
 # # CONFIG_LOCALVERSION_AUTO is not set
-kern_tag_str="-riscv64-vf2-3p"
+kern_tag_str="-riscv64-vf2-3pole"
 kern_out_str=${kern_ver_num}${kern_tag_str}
 
 # Alternatively, a locally provided kernel source tarball can be used.
 # Such a tarball must have the same file name format as the tarballs from
-# kernel.org and be placed in the dir pointed to by loc_kern_dir (a dir path
-# relative to the working dir, see $kern_loc_src_dir below).
+# kernel.org and be placed in the dir pointed to by loc_kern_tarball_dir (a
+# dir path relative to the working dir, see $kern_loc_src_dir below).
 use_loc_kern_src=no # {yes,no}
-#loc_kern_tarball_dir=VF2_kern
+# loc_kern_tarball_dir=VF2_kern
 
 # Path to local patch dir (see $patch_src_dir below).
-#loc_patch_dir=patches/tripole/riscv64/6.6.20
 loc_patch_dir=dummy_dir
+# loc_patch_dir=patches/tripole/riscv64/6.12
+
+use_clang=no # {yes,no} See below.
 
 # List of names for SoC vendor for which you want to create a dtb tarball.
 # (All of these SoCs must be enabled in the kernel config.)
@@ -126,17 +128,17 @@ esac
 
 targ_arch="riscv"
 
-# A few examples of working parameter settings (use one, comment out the other).
-
-# For an Ubuntu Jammy x86_64 host with GNU toolchain from Ubuntu stable repos
-# the following settings can be used (tested with kernel 6.x.y):
-kern_make_opts=" ARCH=$targ_arch CROSS_COMPILE=riscv64-linux-gnu- LOCALVERSION=$kern_tag_str "
-
-# For an Ubuntu Jammy x86_64 host with Clang toolchain from Ubuntu stable repos
-# (clang clang-tools llvm lld) the following settings can be used
-# cc_str=/usr/bin/clang
-# ld_str=/usr/bin/ld.lld
-# kern_make_opts=" ARCH=$targ_arch CC=$cc_str LD=$ld_str LLVM=1 LLVM_IAS=1 LOCALVERSION=$kern_tag_str "
+if [[ "$use_clang" == "yes" ]]; then
+    # For an Ubuntu Jammy x86_64 host with Clang toolchain from Ubuntu stable
+    # repos (clang clang-tools llvm lld) the following settings can be used
+    cc_str=/usr/bin/clang
+    ld_str=/usr/bin/ld.lld
+    kern_make_opts=" ARCH=$targ_arch CC=$cc_str LD=$ld_str LLVM=1 LLVM_IAS=1 LOCALVERSION=$kern_tag_str "
+else
+    # For an Ubuntu Jammy x86_64 host with GNU toolchain from Ubuntu stable
+    # repos the following settings can be used (tested with kernel 6.x.y):
+    kern_make_opts=" ARCH=$targ_arch CROSS_COMPILE=riscv64-linux-gnu- LOCALVERSION=$kern_tag_str "
+fi
 
 # Number of threads for kernel compilation (set to 0 for automatic selection).
 compile_ncores=0
@@ -461,12 +463,15 @@ echo " Done."
 echo -e ${i_msg}" Extracting and packing packing dtbs..."
 for socdtbs_name in ${socdtbs_list[*]}; do
     cd ${kern_src_dir}/linux-${kern_ver_num}/arch/${targ_arch}/boot/dts/${socdtbs_name}
-    no_dtbs=$(find . -type f -name '*.dtb' | wc -l)
-    if [[ $no_dtbs -eq 0 ]] ; then
+    # In older kernels the file dtbs-list is not auto generated so we make one.
+    find . -type f -name '*.dtb' > ${socdtbs_name}_dtbs-list
+    no_dtbs=$(wc -l ${socdtbs_name}_dtbs-list | cut -d ' ' -f1)
+    if [[ "$?" != "0" ]] || [[ $no_dtbs -eq 0 ]]; then
         echo -e ${w_msg}" Unable to locate any dtbs for ${socdtbs_name} in kernel source tree, skipping."
     else
         echo -n -e ${i_msg}" Found $no_dtbs dtbs for ${socdtbs_name}, packing..."
-        tar -czf ${kern_out_dir}/${kern_out_str}/dtb-${socdtbs_name}-${kern_out_str}.tar.gz *.dtb
+        tar -czf ${kern_out_dir}/${kern_out_str}/dtb-${socdtbs_name}-${kern_out_str}.tar.gz \
+            -T ${socdtbs_name}_dtbs-list
         echo " Done."
     fi
 done

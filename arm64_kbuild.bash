@@ -60,30 +60,30 @@
 # Note: Kernel version numbers here (in $kern_ver_num) must be in the format
 # x.y.z so for an x.y kernel (e.g. 6.7) you must here add (pad with) a zero to
 # make into x.y.z format (e.g. 6.7.0).
-kern_ver_num=6.6.62
+kern_ver_num=6.6.72
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
 # CONFIG_LOCALVERSION=""
 # # CONFIG_LOCALVERSION_AUTO is not set
-kern_tag_str="-aarch64-koop-3pole"
+kern_tag_str="-koop-3pole"
 kern_out_str=${kern_ver_num}${kern_tag_str}
 
 # Alternatively, a locally provided kernel source tarball can be used.
 # Such a tarball must have the same file name format as the tarballs from
-# kernel.org and be placed in the dir pointed to by loc_kern_dir (a dir path
-# relative to the working dir, see $kern_loc_src_dir below).
+# kernel.org and be placed in the dir pointed to by loc_kern_tarball_dir (a
+# dir path relative to the working dir, see $kern_loc_src_dir below).
 use_loc_kern_src=no # {yes,no}
-loc_kern_tarball_dir=dummy_dir
+# loc_kern_tarball_dir=mainline_kern
 
 # Path to local patch dir (see $patch_src_dir below).
-loc_patch_dir=patches/tripole/6.6
-#loc_patch_dir=dummy_dir
+loc_patch_dir=dummy_dir
+# loc_patch_dir=patches/tripole/aarch64/6.6
 
 # List of names for SoC vendor for which you want to create a dtb package
 # (tarball). (All of these SoCs must be enabled in the kernel config.)
 socdtbs_list=("amlogic" "allwinner" "rockchip")
-#socdtbs_list=("amlogic")
+#socdtbs_list=("rockchip")
 
 # If you want legacy u-boot images of kernel and initramfs (uImage, uInitd) to
 # be made, say yes here (see also kernel load address and starting point below).
@@ -509,12 +509,15 @@ echo " Done."
 echo -e ${i_msg}" Extracting and packing packing dtbs..."
 for socdtbs_name in ${socdtbs_list[*]}; do
     cd ${kern_src_dir}/linux-${kern_ver_num}/arch/arm64/boot/dts/${socdtbs_name}
-    no_dtbs=$(find . -type f -name '*.dtb' | wc -l)
-    if [[ $no_dtbs -eq 0 ]] ; then
+    # In older kernels the file dtbs-list is not auto generated so we make one.
+    find . -type f -name '*.dtb' > ${socdtbs_name}_dtbs-list
+    no_dtbs=$(wc -l ${socdtbs_name}_dtbs-list | cut -d ' ' -f1)
+    if [[ "$?" != "0" ]] || [[ $no_dtbs -eq 0 ]]; then
         echo -e ${w_msg}" Unable to locate any dtbs for ${socdtbs_name} in kernel source tree, skipping."
     else
         echo -n -e ${i_msg}" Found $no_dtbs dtbs for ${socdtbs_name}, packing..."
-        tar -czf ${kern_out_dir}/${kern_out_str}/dtb-${socdtbs_name}-${kern_out_str}.tar.gz *.dtb
+        tar -czf ${kern_out_dir}/${kern_out_str}/dtb-${socdtbs_name}-${kern_out_str}.tar.gz \
+            -T ${socdtbs_name}_dtbs-list
         echo " Done."
     fi
 done
