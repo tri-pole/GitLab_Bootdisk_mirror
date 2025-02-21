@@ -57,6 +57,7 @@ In case a `u-boot` is used which is capable of using `extlinux.conf` it is
 very easy to set up a bootdisk since this essentially amounts to installing
 an appropriate kernel and dtb to work with the initramfs that holds either
 `Petitboot` or `u-root`.
+(This is typically all that is needed on a RISCV64 box.)
 
 General info about the bootdisk concept in the script based setting for ARM64
 can be found in the files [`README_petit-bootdisk.md`](README_petit-bootdisk.md)
@@ -75,8 +76,8 @@ scripts [`petitboot_mkinird_riscv64.bash`](petitboot_mkinitrd_riscv64.bash) and
 [`petitboot_mkinird_aarch64.bash`](petitboot_mkinitrd_aarch64.bash).
 These scripts can be executed natively on an RISCV64/ARM64 host or an
 RISCV64/ARM64 build host run in a QEMU emulator, see below.
-Initramfses with `Petitboot` built using these scripts can be found
-[here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw).
+Initramfses with `Petitboot` built using these scripts (and setup notes) can
+be found [here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw).
 
 An initramfs for `u-root` can be built from the `Go` source using a recent
 version of (the toolchain) `Go` (see e.g.
