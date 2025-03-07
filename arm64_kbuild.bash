@@ -116,7 +116,7 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # (3) Daily build of an LTS release (e.g. Focal, Jammy).
 case "$distro_release" in
     "noble")
-        distro_buildfile=ubuntu-base-24.04.1-base-arm64.tar.gz
+        distro_buildfile=ubuntu-base-24.04.2-base-arm64.tar.gz
         distro_urlbase=$distro_urlbase/releases
         distro_buildurl=${distro_urlbase}/noble/release/${distro_buildfile}
     ;;

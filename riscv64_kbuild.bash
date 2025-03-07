@@ -107,7 +107,7 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # Note: At cdimage.ubuntu.com, different formats for URLs seem to be used.
 case "$distro_release" in
     "noble")
-        distro_buildfile=ubuntu-base-24.04.1-base-riscv64.tar.gz
+        distro_buildfile=ubuntu-base-24.04.2-base-riscv64.tar.gz
         distro_urlbase=$distro_urlbase/releases
         distro_buildurl=${distro_urlbase}/noble/release/${distro_buildfile}
     ;;
