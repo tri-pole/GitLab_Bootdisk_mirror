@@ -56,7 +56,7 @@
 # Note: Kernel version numbers here (in $kern_ver_num) must be in the format
 # x.y.z so for an x.y kernel (e.g. 6.8) you must here add (pad with) a zero to
 # make into x.y.z format (e.g. 6.8.0).
-kern_ver_num=6.12.10
+kern_ver_num=6.12.19
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
@@ -73,10 +73,10 @@ use_loc_kern_src=no # {yes,no}
 # loc_kern_tarball_dir=VF2_kern
 
 # Path to local patch dir (see $patch_src_dir below).
-loc_patch_dir=dummy_dir
-# loc_patch_dir=patches/tripole/riscv64/6.12
+#loc_patch_dir=dummy_dir
+loc_patch_dir=patches/tripole/riscv64/6.12
 
-use_clang=no # {yes,no} See below.
+use_clang=yes # {yes,no} See below.
 
 # List of names for SoC vendor for which you want to create a dtb tarball.
 # (All of these SoCs must be enabled in the kernel config.)
@@ -519,6 +519,11 @@ fi
 echo -n -e ${i_msg}" Packing the files in boot/ (e.g. kernel and initramfs)..."
 cd ${rootfs_dir}/boot/
 tar -czf ${kern_out_dir}/${kern_out_str}/boot-${kern_out_str}.tar.gz *
+echo " Done."
+
+echo -n -e ${i_msg}" Packing the applied patch files..."
+cd $patch_src_dir
+tar -czf ${kern_out_dir}/${kern_out_str}/patches-${kern_out_str}.tar.gz *.patch
 echo " Done."
 
 echo -n -e ${i_msg}" Computing sha256sums for all the generated tarballs..."
