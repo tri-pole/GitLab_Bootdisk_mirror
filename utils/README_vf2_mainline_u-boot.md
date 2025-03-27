@@ -246,7 +246,7 @@ Sec. 3.8.1 (Updating SPL and U-Boot of Flash).
 ## Remarks
 
 * There was an issue booting older 6.1.y kernels with `u-boot` v2024.10 but
-  this issue seems to have vanished with `u-boot` v2025.10, provided cold
+  this issue seems to have vanished with `u-boot` v2025.01, provided cold
   booting is done. (When warm (re)booting this issue seems to still show up
   sometimes with 6.1.y kernels.)
 
