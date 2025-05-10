@@ -176,7 +176,7 @@ reqd_cmdlist=("blkid" "dd" "debootstrap" "losetup" "mkfs.fat" "mkimage"
 )
 
 # List of packages to be added to (the minimally needed for) the install.
-debian_extra_packages="aptitude firmware-linux-free openssh-server" 
+debian_extra_packages="aptitude firmware-linux-free zram-tools openssh-server"
 ubuntu_extra_packages="nano aptitude zram-tools sudo openssh-server"
 
 # For running in QEMU the user mode emulation binary qemu-static-<arch> is reqd.
