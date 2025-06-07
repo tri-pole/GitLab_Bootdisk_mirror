@@ -56,7 +56,7 @@
 # Note: Kernel version numbers here (in $kern_ver_num) must be in the format
 # x.y.z so for an x.y kernel (e.g. 6.8) you must here add (pad with) a zero to
 # make into x.y.z format (e.g. 6.8.0).
-kern_ver_num=6.12.19
+kern_ver_num=6.14.9
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
@@ -70,7 +70,7 @@ kern_out_str=${kern_ver_num}${kern_tag_str}
 # kernel.org and be placed in the dir pointed to by loc_kern_tarball_dir (a
 # dir path relative to the working dir, see $kern_loc_src_dir below).
 use_loc_kern_src=no # {yes,no}
-# loc_kern_tarball_dir=VF2_kern
+#loc_kern_tarball_dir=VF2_kern
 
 # Path to local patch dir (see $patch_src_dir below).
 #loc_patch_dir=dummy_dir
@@ -259,13 +259,18 @@ if [[ $# -eq 1 ]] ; then
     fi
 fi
 
-patch_src_dir_full=$(readlink -f $patch_src_dir)
-if [[ -d $patch_src_dir_full ]]; then
-    if [[ -z $(ls -A $patch_src_dir_full) ]]; then
-        echo "Patches directory (empty): $patch_src_dir_full"
+patch_src_dir_fpath=$(readlink -f $patch_src_dir)
+patch_src_dir_exists=true
+patch_src_dir_empty=false
+if [[ -d $patch_src_dir_fpath ]]; then
+    if [[ -z $(ls -A $patch_src_dir_fpath) ]]; then
+        echo "Patches directory (empty): $patch_src_dir_fpath"
+        patch_src_dir_empty=true
     else
-        echo "Patches directory: $patch_src_dir_full"
+        echo "Patches directory: $patch_src_dir_fpath"
     fi
+else
+    patch_src_dir_exists=false
 fi
 
 echo -e "\nMake sure that you have enough space: up to ~${required_MiB} MB +some.\n"
@@ -347,9 +352,9 @@ echo " Done."
 
 cd ${kern_src_dir}/linux-${kern_ver_num}
 
-if [[ ! -z "$(ls -A $patch_src_dir)" ]]; then
+if [[ "$patch_src_dir_exists" = true && "$patch_src_dir_empty" = false ]]; then
     echo -e ${i_msg}" Applying patches..."
-        for my_patch_file in $(ls -A ${patch_src_dir}/*.patch) ; do
+        for my_patch_file in $(ls -A ${patch_src_dir_fpath}/*.patch) ; do
             echo -e ${i_msg}" Processing patch file "${my_patch_file##*/}
             patch -N -p1 < $my_patch_file
             if [[ $? -ne 0 ]]; then
@@ -521,10 +526,12 @@ cd ${rootfs_dir}/boot/
 tar -czf ${kern_out_dir}/${kern_out_str}/boot-${kern_out_str}.tar.gz *
 echo " Done."
 
-echo -n -e ${i_msg}" Packing the applied patch files..."
-cd $patch_src_dir
-tar -czf ${kern_out_dir}/${kern_out_str}/patches-${kern_out_str}.tar.gz *.patch
+if [[ "$patch_src_dir_exists" = true && "$patch_src_dir_empty" = false ]]; then
+    echo -n -e ${i_msg}" Packing the applied patch files..."
+    cd $patch_src_dir
+    tar -czf ${kern_out_dir}/${kern_out_str}/patches-${kern_out_str}.tar.gz *.patch
 echo " Done."
+fi
 
 echo -n -e ${i_msg}" Computing sha256sums for all the generated tarballs..."
 cd ${kern_out_dir}/${kern_out_str}
