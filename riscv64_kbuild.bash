@@ -56,7 +56,7 @@
 # Note: Kernel version numbers here (in $kern_ver_num) must be in the format
 # x.y.z so for an x.y kernel (e.g. 6.8) you must here add (pad with) a zero to
 # make into x.y.z format (e.g. 6.8.0).
-kern_ver_num=6.14.9
+kern_ver_num=6.15.3
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
@@ -352,6 +352,8 @@ echo " Done."
 
 cd ${kern_src_dir}/linux-${kern_ver_num}
 
+failed_patches_list=()
+failed_patches_exist=false
 if [[ "$patch_src_dir_exists" = true && "$patch_src_dir_empty" = false ]]; then
     echo -e ${i_msg}" Applying patches..."
         for my_patch_file in $(ls -A ${patch_src_dir_fpath}/*.patch) ; do
@@ -359,9 +361,28 @@ if [[ "$patch_src_dir_exists" = true && "$patch_src_dir_empty" = false ]]; then
             patch -N -p1 < $my_patch_file
             if [[ $? -ne 0 ]]; then
                 echo -e ${w_msg}" Patch was not applied cleanly!"
+                failed_patches_exist=true
+                echo "Adding file $my_patch_file to list of failed patches."
+                failed_patches_list=("$failed_patches_list" "$my_patch_file")
+                sleep 1
             fi
         done
     echo " Done."
+fi
+
+if [[ "$failed_patches_exist" = true ]]; then
+    echo -n -e ${i_msg}" Summary of failed patch files:"
+    for failed_patch in ${failed_patches_list[*]}; do
+        echo -e "${failed_patch} \n"
+    done
+    echo -n -e "Do you want to continue? [N,y] "
+    read cont_despite_falied_patches
+    if [[ "$cont_despite_failed_patches" == "y" ]] ; then
+        echo "OK, as you wish, continuing."
+    else
+        echo "OK, exiting."
+        exit 1
+    fi
 fi
 
 echo -e ${i_msg}" Preparing for config setup ..."
