@@ -116,10 +116,9 @@ host.
 The script produces simple gzipped tarballs with boot files (kernel image,
 initramfs etc.), the module tree, header files and dtbs, for the board
 manufacturers selected.
-These kernels have `kexec()` enabled and can be used to run `Petitboot`.
-At present, the script is mostly intended to produce (slimmed) kernels for
-the VisionFive 2.
-Downloads of such tarballs can be found
+It can be used to produce the `vf2-3pole` line of kernels (for VisionFive 2)
+which have `kexec()` enabled and can be used to run `Petitboot`.
+Downloads of tarballs of `vf2-3pole` kernels can be found
 [here](https://mega.nz/folder/jJdTCSQQ#he0JD-96HmJIQDow-QC-VQ).
 
 ### ARM64 Linux kernel
