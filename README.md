@@ -1,3 +1,4 @@
+
 # bootdisk
 
 __TL;DR:__ On an SBC or TV-box with working u-boot you can get a versatile
@@ -76,7 +77,7 @@ scripts [`petitboot_mkinird_riscv64.bash`](petitboot_mkinitrd_riscv64.bash) and
 [`petitboot_mkinird_aarch64.bash`](petitboot_mkinitrd_aarch64.bash).
 These scripts can be executed natively on an RISCV64/ARM64 host or an
 RISCV64/ARM64 build host run in a QEMU emulator, see below.
-Initramfses with `Petitboot` built using these scripts can be found
+Initramfses with `Petitboot` built using these scripts can be downloaded from
 [here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw) (along with setup notes).
 
 An initramfs for `u-root` can be built from the `Go` source using a recent
