@@ -239,9 +239,12 @@ ${uboot_path}/spl/u-boot-spl.bin.normal.out
 ${sf_tools_path}/uboot_its/visionfive2_fw_payload.img
 ```
 
-and these two files can be copied to flash or SD using the methods described
-in [VisionFive 2 Quick Start Guide](https://doc-en.rvspace.org/VisionFive2/PDF/VisionFive2_QSG.pdf),
+and these two files can be copied to flash or SD using the methods described in
+[VisionFive 2 Quick Start Guide](https://doc-en.rvspace.org/VisionFive2/PDF/VisionFive2_QSG.pdf),
 Sec. 3.8.1 (Updating SPL and U-Boot of Flash).
+
+Note: It seems that the flash memory will only be detected and visible (under
+'/proc/mtd') if the OS is booted from SD (check with e.g. 'dmesg | grep spi').
 
 ## Remarks
 
