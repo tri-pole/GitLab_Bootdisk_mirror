@@ -4,7 +4,7 @@
 __TL;DR:__ On an SBC or TV-box with working u-boot you can get a versatile
 boot manager+loader by replacing the default Linux initramfs with an initramfs
 containing `Petitboot` or `u-root` (provided your default Linux kernel has
-`kexec`).
+`kexec`). (For download links, see below.)
 
 __News:__ We have added material for RISCV64, such as build scripts for
 `Petitboot`, Linux images and kernels (all tested on VisionFive 2), and we
