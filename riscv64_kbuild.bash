@@ -56,7 +56,7 @@
 # Note: Kernel version numbers here (in $kern_ver_num) must be in the format
 # x.y.z so for an x.y kernel (e.g. 6.8) you must here add (pad with) a zero to
 # make into x.y.z format (e.g. 6.8.0).
-kern_ver_num=6.15.3
+kern_ver_num=6.15.9
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
@@ -107,7 +107,7 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # Note: At cdimage.ubuntu.com, different formats for URLs seem to be used.
 case "$distro_release" in
     "noble")
-        distro_buildfile=ubuntu-base-24.04.2-base-riscv64.tar.gz
+        distro_buildfile=ubuntu-base-24.04.3-base-riscv64.tar.gz
         distro_urlbase=$distro_urlbase/releases
         distro_buildurl=${distro_urlbase}/noble/release/${distro_buildfile}
     ;;
