@@ -132,10 +132,11 @@ uboot_list=(
     "u-boot-e900v22c.bin" "u-boot-gtking.bin" "u-boot-gtkingpro-rev-a.bin"
     "u-boot-gtkingpro.bin" "u-boot-n1.bin" "u-boot-odroid-n2.bin"
     "u-boot-p201.bin" "u-boot-p212.bin" "u-boot-r3300l.bin" "u-boot-s905.bin"
-    "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin" "u-boot-sei510.bin"
-    "u-boot-sei610.bin" "u-boot-skyworth-lb2004.bin" "u-boot-tx3-bz.bin"
-    "u-boot-tx3-qz.bin" "u-boot-u200.bin" "u-boot-ugoos-x3.bin"
-    "u-boot-x96max.bin" "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
+    "u-boot-s905x-s905lb.bin" "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin"
+    "u-boot-s905x3.bin" "u-boot-sei510.bin" "u-boot-sei610.bin"
+    "u-boot-skyworth-lb2004.bin" "u-boot-tx3-bz.bin" "u-boot-tx3-qz.bin"
+    "u-boot-u200.bin" "u-boot-ugoos-x3.bin" "u-boot-x96max.bin"
+    "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
 )
 
 # If the file $uboot_ext_local exists in $imgfile_dir (see below) then it will
@@ -183,7 +184,7 @@ rootfs_label=DEVU_ROOT
 # Do we want to clean up all temporary files and directories afterwards?
 docleanup_after=yes # {yes,no}
 
-# Not used by Ubuntu.
+# Basic network settings.
 name_server_1=192.168.0.1 # Set to your router's IP address.
 name_server_2=8.8.8.8     # Set to your backup DNS (8.8.8.8 is dns.google).
 
