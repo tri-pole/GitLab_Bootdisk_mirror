@@ -5,51 +5,54 @@
 # 25-11-29: v0.14
 # Author: Tripole
 
-# This is a script to create Debian or Ubuntu Linux ARM64 (CLI, "server")
-# images for Amlogic TV-boxes/SBCs. The base system is obtained by using the
-# debootstrap mechanism of either the Debian or Ubuntu repositories. The
-# script must be executed (as root) on an Ubuntu/Debian type machine, either
-# natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static) on
-# x86_64/amd64. The generated image can be booted with resident/vendor u-boot
-# (using the boot scripts on the fat partition) or via bootdisk employing e.g.
-# Petitboot or u-root (using the grub.cfg file on the rootfs partition).
-# Another alternative is chainloading with u-boot.ext (see below).
+# This is a script to create small Debian or Ubuntu Linux ARM64 (CLI, "server")
+# images for ARM64 based SCBs, in particular TV-boxes/SBCs with Amlogic SoC.
+# The base system is created with the debootstrap mechanism using the official
+# repositories of Debian or Ubuntu. The script must be executed (as root) on an
+# Debian/Ubuntu type machine, either natively on aarch64/ARM64 or virtualized
+# (using qemu-aarch64-static) on x86_64/amd64. The images can be booted with
+# resident/vendor (on eMMMC) u-boot (using boot scripts and/or extlinux.conf)
+# or with e.g. Petitboot or u-root (using grub.cfg). On TV-boxes the last
+# u-boot stage is typically a chainloader u-boot.ext (included on the image).
 
-# Usage: ./debuntu_dbstrap distro
+# Usage: ./debuntu_dbstrap <distro>
 #        where distro is one of: ubuntu, debian
 
-# Tested on: Ugoos AM6 plus (s922x, for booting and running) and on QEMU
-# (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
+# Tested on: Ugoos AM6 plus (s922x), for booting and running, and on QEMU
+# (qemu-system-x86_64 and qemu-system-aarch64) for developing/executing.
 # Recommended build host: Ubuntu Noble (with Debian keys installed, see below).
 
 # Requires: Standard basic functionality incl. blkid, dd, losetup, mkfs, xz,
-# wget and the package systemd-container (for systemd-nspawn). ArchLinux wiki:
-# "systemd-nspawn is like the chroot command, but it is a chroot on steroids."
-# Most of the requirements are checked at runtime below. For "cross-scripting"
-# (i.e. use on another architecture than aarch64) you need to install the
+# wget and the package systemd-container (for systemd-nspawn). Most of the
+# requirements are checked at runtime below. For "cross-scripting" (i.e.
+# build on another architecture than aarch64/ARM64) you need to install the
 # package qemu-user-static (which recommends the package binfmt-support); this
-# provides the required binary qemu-aarch64-static
+# provides the required binary qemu-aarch64-static.
 
 # Typical usage: Edit the parameters below and run the script from a temp dir.
-# (the image as well as all temporary files will be created in this dir.).
+# (the image as well as all temporary files will be created in this dir).
 # (If the file specified by $uboot_ext_local exists in this dir, it will be
 # used as u-boot.ext but there are also several versions of u-boot.bin from
 # Ophub installed that may serve as u-boot.ext when booting via chainloading.)
 
 # Notes:
 # - The installed system is "bare-bones"; e.g. no swap is set (only zram).
-# - During installation, on some terminals the keyboard and console font
-#   configuration will be deferred and you will see a message about this.
-#   (You can always later manually do dpkg-reconfigure keyboard-configuration)
-# - The image can always be booted via grub (e.g. using bootdisk) and most
-#   often via (a recent) chainloader (uboot.ext, using extlinux/extlinux.conf
-#   on the vfat bootfs). However, it may not boot via resident/vendor u-boot
-#   (loading uImage and uInitrd via boot scripts), unless the vendor u-boot is
-#   recent. (One reason for this is that the standard initramfs compression
-#   method (in /etc/initramfs-tools/initramfs.conf) is zstd, but older u-boot
-#   (pre 2020) can only do gzip. A second reason is that some (old) u-boot
-#   don't (even) support gzip compressed kernels (which is a little bit more
-#   cumbersome to fix).
+# - The image can always be booted via grub (e.g. using bootdisk with Petitboot
+#   or u-root). In general it can also be booted via resident/vendor u-boot
+#   (on eMMC) and boot scripts, either by relying on the resident scripts or
+#   by installing the ones from the image (using the "reset/toothpick" method).
+#   It is assumed that either the resident bootscripts are similar/identical
+#   the ones on the image, or that the resident u-boot can boot using the file
+#   extlinux.conf on the image (i.e. "sysboot/standard boot" in u-boot docs).
+#   If the resident u-boot cannot handle extlinux.conf then chainloading with
+#   a binary u-boot.ext can be done (cf. e.g. s905_autoscript.txt). (Such a
+#   u-boot.ext acts as a last stage of a extlinux.conf-capable u-boot.) Many
+#   candidates for u-boot.ext are included on the image in the u-boot-* dirs.
+#   Chainloading may also be used in cases where the resident u-boot is not
+#   capable of handling the newer compression methods of kernel and intramfs.
+#   Finally, if the resident u-boot is not functional, the image can still be
+#   booted after flashing an appropriate u-boot directly to SD (which will be
+#   detected by SoC ROM code; SD is typically the first searched for u-boot).
 # - The kernel and initramfs files on the bootfs are not automatically updated
 #   when the kernel is upgraded or the initramfs is rebuilt on the rootfs.
 #   Therefore, if you are booting using u-boot and bootfs (e.g. w/ u-boot.ext),
@@ -83,7 +86,7 @@
 # - Pro tip: Generate the image cheaply, say 6G rootfs (so that burn to SD/USB
 #   goes quickly). Then, enlarge the rootfs partition on the SD/USB. This can
 #   be done on first boot by using growpart tool (see below). Alternatively,
-#   (and possibly preferrably) it can be done before first boot by using either
+#   (and possibly preferably) it can be done before first boot by using either
 #   gparted or with the combo of parted, resizepart and resize2fs like so:
 #   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
 # - The disk (resized or not) is valid as an MBR partitoned disk but it can
@@ -100,7 +103,7 @@
 # A note on variable/parameter checks: In the parameters section below we do
 # some rudimentary checks of parameters regarding (only) format and scope.
 # In the following preparations/checks section we also check if the parameters
-# are appropriate/admisssible for the platform/installation we are running on.
+# are appropriate/admissible for the platform/installation we are running on.
 
 # ------------------------------- parameters ---------------------------------
 
@@ -113,7 +116,7 @@ debian_edition=Trixie   # Tested with Bullseye, Bookworm, Trixie
 host_name=debu
 
 # Compression (xz) takes some extra time.
-compressed_img=yes # {yes,no}
+compressed_img=no # {yes,no}
 
 # Of course, mirrors can also be used.
 ubuntu_repourl="http://ports.ubuntu.com/ubuntu-ports"
