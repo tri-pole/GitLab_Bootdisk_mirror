@@ -94,16 +94,16 @@
 #   # systemctl disable spice-vdagent.service --now
 #   # apt remove snapd && apt autoremove
 # - Pro tip: Generate the image cheaply, say 6G rootfs (so that burn to SD/USB
-#   goes quickly). Then, enlarge the rootfs partition on the SD/USB either by
-#   using the growpart tool (see below) on first boot or (e.g. before first 
-#   boot) using parted, resizepart and resize2fs like so (tweak the percentage):
+#   goes quickly). Then, enlarge the rootfs partition on the SD/USB. This can
+#   be done on first boot by using growpart tool (see below). Alternatively,
+#   (and possibly preferrably) it can be done before first boot by using either
+#   gparted or with the combo of parted, resizepart and resize2fs like so:
 #   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
-#   Finally, to make sure that the resized partition will be recognized also as
-#   a valid GPT partition, repair it with gdisk as follows. First, start gdisk;
-#   gdisk /dev/sdX
-#   and gdisk may tell you that it has found a valid MBR and a corrupt GPT,
-#   and it will then ask you which one to use. You should chose to use the MBR.
-#   At the gdisk prompt then enter the command "r" and you will be taken to the
+# - The disk (resized or not) is valid as an MBR partitoned disk but it can
+#   easily be converted to GPT as follows. First, start gdisk; gdisk /dev/sdX,
+#   and gdisk will tell you that it has found a valid MBR and a missing (or
+#   corrupt GPT), and it will ask you which one to use. Choose the MBR.
+#   At the gdisk prompt then enter the command "r" which will take you to the
 #   recovery and transformation options. There, enter the command "f" to load
 #   the MBR and build a fresh GPT from it. At last, exit gdisk with "w" (write).
 
@@ -128,7 +128,7 @@ compressed_img=yes # {yes,no}
 
 # Name and tag for resulting disk image (uncomment and edit to taste).
 # Example for koop-3pole kernel:
-krnver_str="6.15.3-koma-3pole" # Kernel name/release str., plain text.
+krnver_str="6.12.59-koop-3pole" # Kernel name/release str., plain text.
 
 # The selected zram compression method here must match what the kernel supports
 # (if unsure, set to zstd). See /etc/default/zramswap
@@ -161,10 +161,11 @@ uboot_list=(
     "u-boot-e900v22c.bin" "u-boot-gtking.bin" "u-boot-gtkingpro-rev-a.bin"
     "u-boot-gtkingpro.bin" "u-boot-n1.bin" "u-boot-odroid-n2.bin"
     "u-boot-p201.bin" "u-boot-p212.bin" "u-boot-r3300l.bin" "u-boot-s905.bin"
-    "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin" "u-boot-sei510.bin"
-    "u-boot-sei610.bin" "u-boot-skyworth-lb2004.bin" "u-boot-tx3-bz.bin"
-    "u-boot-tx3-qz.bin" "u-boot-u200.bin" "u-boot-ugoos-x3.bin"
-    "u-boot-x96max.bin" "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
+    "u-boot-s905x-s905lb.bin" "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin"
+    "u-boot-s905x3.bin" "u-boot-sei510.bin" "u-boot-sei610.bin"
+    "u-boot-skyworth-lb2004.bin" "u-boot-tx3-bz.bin" "u-boot-tx3-qz.bin"
+    "u-boot-u200.bin" "u-boot-ugoos-x3.bin" "u-boot-x96max.bin"
+    "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
 )
 
 # Official Ubuntu rootfs tarball.
@@ -176,7 +177,7 @@ distro_urlbase="https://cdimage.ubuntu.com/ubuntu-base"
 # (3) Daily build of an LTS release (e.g. Focal, Jammy).
 case "$distro_release" in
     "noble")
-        distro_buildfile=ubuntu-base-24.04.2-base-arm64.tar.gz
+        distro_buildfile=ubuntu-base-24.04.3-base-arm64.tar.gz
     ;;
     "jammy")
         distro_buildfile=ubuntu-base-22.04.5-base-arm64.tar.gz

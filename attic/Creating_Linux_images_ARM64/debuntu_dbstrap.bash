@@ -2,6 +2,7 @@
 
 # debuntu_dbstrap.bash
 # 23-06-12: v0.13
+# 25-11-29: v0.14
 # Author: Tripole
 
 # This is a script to create Debian or Ubuntu Linux ARM64 (CLI, "server")
@@ -10,15 +11,16 @@
 # script must be executed (as root) on an Ubuntu/Debian type machine, either
 # natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static) on
 # x86_64/amd64. The generated image can be booted with resident/vendor u-boot
-# (using the boot scripts on the fat partition) or via bootdisk (using the
-# grub.cfg file on the rootfs partition). Another alternative is chainloading
-# with u-boot.ext (see below).
+# (using the boot scripts on the fat partition) or via bootdisk employing e.g.
+# Petitboot or u-root (using the grub.cfg file on the rootfs partition).
+# Another alternative is chainloading with u-boot.ext (see below).
 
 # Usage: ./debuntu_dbstrap distro
 #        where distro is one of: ubuntu, debian
 
 # Tested on: Ugoos AM6 plus (s922x, for booting and running) and on QEMU
 # (qemu-system-x86_64 and qemu-system-aarch64, for developing/executing).
+# Recommended build host: Ubuntu Noble (with Debian keys installed, see below).
 
 # Requires: Standard basic functionality incl. blkid, dd, losetup, mkfs, xz,
 # wget and the package systemd-container (for systemd-nspawn). ArchLinux wiki:
@@ -30,12 +32,9 @@
 
 # Typical usage: Edit the parameters below and run the script from a temp dir.
 # (the image as well as all temporary files will be created in this dir.).
-# (If the file specified by $uboot_ext_local is in this dir, it will be used as
-# u-boot.ext but there are also several u-boot.bins from Ophub installed that
-# may be used if booting is done via chainloading u-boot.ext)
-
-# This script is heavily inspired by the script ubuntu_mkimg.bash at my Gitlab
-# bootdisk repo (and that script is in turn inspired by some others).
+# (If the file specified by $uboot_ext_local exists in this dir, it will be
+# used as u-boot.ext but there are also several versions of u-boot.bin from
+# Ophub installed that may serve as u-boot.ext when booting via chainloading.)
 
 # Notes:
 # - The installed system is "bare-bones"; e.g. no swap is set (only zram).
@@ -64,7 +63,7 @@
 #   the script mkgrubcfg_simple.bash can be run post-install to include a dtb
 #   specification in grub.cfg. However, bootloaders based on kexec, such as
 #   Petitboot/u-root, typically let the booted Linux image inherit the dtb used
-#   by the bootloader, cf. the README at Gitlab files about Petitboot/u-root.
+#   by the bootloader, cf. the README files at Gitlab about Petitboot/u-root.
 # - A simple working desktop can be obtained by installing e.g. xubuntu-core
 #   (with e.g. lightdm, chosen at install time) or ubuntu-desktop-minimal (gdm).
 #   Another alternative is kubuntu-desktop.
@@ -77,25 +76,26 @@
 # - Run time for this script, for Debian, is about 25m (incl. compression, on
 #   a modern computer with good network connectivity). For Ubuntu, it can take
 #   almost three times that. To check do: time ./debuntu_dbstrap.bash debian
-# - You will be asked to configure three things at runtime (near the end):
-#   time zone, keyboard and root password.
+# - You will be asked to configure four things at runtime (near the end):
+#   time zone, locale, keyboard and root password.
 # - Basic configuration: You might want to configure zram (and optionally set
 #   up swap), see e.g. /etc/default/zramswap and https://wiki.debian.org/ZRam
 # - Pro tip: Generate the image cheaply, say 6G rootfs (so that burn to SD/USB
-#   goes quickly). Then, enlarge the rootfs partition on the SD/USB either by
-#   using the growpart tool (see below) on first boot or (e.g. before first
-#   boot) using parted, resizepart and resize2fs like so (tweak the percentage):
+#   goes quickly). Then, enlarge the rootfs partition on the SD/USB. This can
+#   be done on first boot by using growpart tool (see below). Alternatively,
+#   (and possibly preferrably) it can be done before first boot by using either
+#   gparted or with the combo of parted, resizepart and resize2fs like so:
 #   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
-#   Finally, to make sure that the resized partition will be recognized also as
-#   a valid GPT partition, repair it with gdisk as follows. First, start gdisk;
-#   gdisk /dev/sdX
-#   and gdisk may tell you that it has found a valid MBR and a corrupt GPT,
-#   and it will then ask you which one to use. You should chose to use the MBR.
-#   At the gdisk prompt then enter the command "r" and you will be taken to the
+# - The disk (resized or not) is valid as an MBR partitoned disk but it can
+#   easily be converted to GPT as follows. First, start gdisk; gdisk /dev/sdX,
+#   and gdisk will tell you that it has found a valid MBR and a missing (or
+#   corrupt GPT), and it will ask you which one to use. Choose the MBR.
+#   At the gdisk prompt then enter the command "r" which will take you to the
 #   recovery and transformation options. There, enter the command "f" to load
 #   the MBR and build a fresh GPT from it. At last, exit gdisk with "w" (write).
 #   - Domain name resolution is now handled (also on Debian) by systemd, see
 #   e.g. sec 2.1 in https://wiki.archlinux.org/title/Systemd-resolved
+#   - A recent version of debian-archive-keyring is required on the host.
 
 # A note on variable/parameter checks: In the parameters section below we do
 # some rudimentary checks of parameters regarding (only) format and scope.
@@ -105,9 +105,9 @@
 # ------------------------------- parameters ---------------------------------
 
 ubuntu_name=Ubuntu      # Used for the image name and in grub.cfg
-ubuntu_edition=Noble    # Tested with Focal, Jammy, Kinetic, Lunar, Mantic, Noble
+ubuntu_edition=Noble    # Tested with Focal, Jammy, Noble
 debian_name=Debian      # Used for the image name and in grub.cfg
-debian_edition=Bookworm # Tested with Bullseye, Bookworm, Trixie
+debian_edition=Trixie   # Tested with Bullseye, Bookworm, Trixie
 
 # Host name for image.
 host_name=debu
@@ -135,10 +135,11 @@ uboot_list=(
     "u-boot-e900v22c.bin" "u-boot-gtking.bin" "u-boot-gtkingpro-rev-a.bin"
     "u-boot-gtkingpro.bin" "u-boot-n1.bin" "u-boot-odroid-n2.bin"
     "u-boot-p201.bin" "u-boot-p212.bin" "u-boot-r3300l.bin" "u-boot-s905.bin"
-    "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin" "u-boot-sei510.bin"
-    "u-boot-sei610.bin" "u-boot-skyworth-lb2004.bin" "u-boot-tx3-bz.bin"
-    "u-boot-tx3-qz.bin" "u-boot-u200.bin" "u-boot-ugoos-x3.bin"
-    "u-boot-x96max.bin" "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
+    "u-boot-s905x-s905lb.bin" "u-boot-s905x-s912.bin" "u-boot-s905x2-s922.bin"
+    "u-boot-s905x3.bin" "u-boot-sei510.bin" "u-boot-sei610.bin"
+    "u-boot-skyworth-lb2004.bin" "u-boot-tx3-bz.bin" "u-boot-tx3-qz.bin"
+    "u-boot-u200.bin" "u-boot-ugoos-x3.bin" "u-boot-x96max.bin"
+    "u-boot-x96maxplus.bin" "u-boot-zyxq.bin"
 )
 
 # If the file $uboot_ext_local exists in $imgfile_dir (see below) then it will
@@ -235,6 +236,11 @@ case $1 in
     else
         nonfree_list="non-free non-free-firmware"
         iface_name="end0"
+    fi
+    if [[ "$debian_edition" == "Trixie" ]] ; then
+        time_pkg=systemd-timesyncd
+    else
+        time_pkg=ntp
     fi
     ;;
 *)
@@ -418,6 +424,7 @@ DEBIAN_FRONTEND=noninteractive apt-get -y install linux-image-generic
 DEBIAN_FRONTEND=noninteractive apt-get -y install man-db network-manager ssh dialog u-boot-tools
 DEBIAN_FRONTEND=noninteractive $ubuntu_custom_extra
 dpkg-reconfigure tzdata
+dpkg-reconfigure locales
 dpkg-reconfigure keyboard-configuration
 
 echo "Set password for \033[91mroot:\033[0m"
@@ -436,6 +443,21 @@ deb http://security.debian.org/debian-security/ ${debian_release}-security main 
 EOF
 )
 
+debian_repo_list_deb822=$(cat <<EOF
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: $debian_release ${debian_release}-updates
+Components: main non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: https://security.debian.org/debian-security
+Suites: ${debian_release}-security
+Components: main non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+EOF
+)
+
 debian_custom_extra=$(cat <<"EOF"
 apt-get -y install aptitude usbutils zram-tools
 EOF
@@ -446,9 +468,10 @@ debian_custom_inst=$(cat <<EOF
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt -y install linux-image-arm64
 # DEBIAN_FRONTEND=noninteractive apt -y install linux-headers-arm64
-DEBIAN_FRONTEND=noninteractive apt -y install locales ntp sudo u-boot-tools
+DEBIAN_FRONTEND=noninteractive apt -y install locales $time_pkg sudo u-boot-tools
 DEBIAN_FRONTEND=noninteractive $debian_custom_extra
 dpkg-reconfigure tzdata
+dpkg-reconfigure locales
 apt -y install console-setup
 
 echo "Set password for \033[91mroot:\033[0m"
@@ -722,7 +745,7 @@ imgfile_loc=${imgfile_dir}/${imgfile_name}
 imgfile_MiB=$((gap_MiB +boot_MiB +root_MiB))
 desired_MiB=$((14*${imgfile_MiB}/10)) # Approx. space for imgfile +imgfile.xz
 
-echo -e "\n\033[92m -- Making image for $distro_name ($distro_edition) -- \033[0m\n"
+echo -e "\n\033[92m -- Making image for $distro_name ($distro_edition, arm64) -- \033[0m\n"
 
 echo -e "The image container file will be at:"
 echo $imgfile_loc
@@ -827,6 +850,7 @@ echo " Done."
 
 # To enable sound on some boxes, edit and run this script as local user.
 echo -e ${i_msg}" Installing script at /usr/local/bin/g12_sound.sh ..."
+
 wget -P $tmpfile_dir -nv $g12_sound_url
 if [[ $? -ne 0 ]]; then
     echo -e ${w_msg}" Unable to download the script g12_sound.sh"
@@ -955,9 +979,15 @@ case $1 in
     echo -e "$debian_interfaces_file" >${rootfs_mnt}/etc/network/interfaces
     echo " Done."
 
-    echo -n -e ${i_msg}" Setting up /etc/apt/sources.list ..."
-    rm -f ${rootfs_mnt}/etc/apt/sources.list
-    echo -e "$debian_repo_list" >${rootfs_mnt}/etc/apt/sources.list
+    if [[ "$debian_edition" == "Trixie" ]]; then
+        echo -n -e ${i_msg}" Setting up /etc/apt/sources.list.d/debian.sources ..."
+        rm -f ${rootfs_mnt}/etc/apt/sources.list.d/debian.sources
+        echo -e "$debian_repo_list_deb822" > ${rootfs_mnt}/etc/apt/sources.list.d/debian.sources
+    else
+        echo -n -e ${i_msg}" Setting up /etc/apt/sources.list ..."
+        rm -f ${rootfs_mnt}/etc/apt/sources.list
+        echo -e "$debian_repo_list" >${rootfs_mnt}/etc/apt/sources.list
+    fi
     echo " Done."
 
     echo -n -e ${i_msg}" Preparing for chroot jail..."

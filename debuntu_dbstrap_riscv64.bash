@@ -47,10 +47,10 @@
 #   (In other words, we are still lacking a script in /etc/kernel/postinst.d)
 #   Therefore, when upgrading the kernel or rebuilding the initramfs these
 #   components have to be copied manually over to the bootfs (typically mounted
-#   under /boot/bootfs on the rootfs) if you are using u-boot +extlinux.conf
+#   under /boot/bootfs on the rootfs) if you are using u-boot + extlinux.conf
 #   If you are booting via grub.cfg on rootfs (e.g. using Petitboot) you only
 #   need to update grub.cfg and this can can be done by using grub-mkimage or
-#   via scripts in /usr/local/bin e.g. the script mkgrubcfg_simple.bash
+#   via scripts in /usr/local/bin, e.g. the script mkgrubcfg_simple.bash
 # - The dtb file is not specified in the grub.cfg file upon installation but
 #   the script mkgrubcfg_simple.bash can be run post-install to include a dtb
 #   specification in grub.cfg. However, bootloaders based on kexec, such as
@@ -72,19 +72,24 @@
 # - Run time for this script is about 20m for Debian (incl. compression) on
 #   a modern computer with good network connectivity. For Ubuntu, it can take
 #   almost double that time. (Check with: time ./debuntu_dbstrap.bash debian)
-# - You will be asked to configure three things at runtime (near the end):
-#   time zone, keyboard and root password (this can be later adjusted with
-#   dpkg-reconfigure tzdata or dpkg-reconfigure keyboard-configuration).
+# - You will be asked to configure four things at runtime (near the end):
+#   time zone, locales, keyboard (this can be later adjusted
+#   with dpkg-reconfigure tzdata, etc.) and root password.
 # - You might want to (re)configure zram (and optionally set up swap), see e.g.
 #   /etc/default/zramswap and https://wiki.debian.org/ZRam
-# - Tip: Generate a small image, say 6G rootfs (so that burning of the image
-#   goes quickly). Then, enlarge the rootfs partition on the image either by
-#   using the growpart tool (see below) on first boot or (e.g. before first
-#   boot) using gparted. Alternatively, one can use parted, resizepart and
-#   resize2fs like so (tweak the percentage to taste): parted /dev/mydev \
-#   resizepart 4 50% ; e2fsck -f /dev/mydev ; resize2fs /dev/mydev
-#   To ensure that the resized partition will be recognized as a valid GPT
-#   partition the backup GPT table may have to be recreated (using e.g. gdisk).
+# - Tip: Generate the image cheaply, say 6G rootfs (so that burn to SD/USB
+#   goes quickly). Then, enlarge the rootfs partition on the SD/USB. This can
+#   be done on first boot by using growpart tool (see below). Alternatively,
+#   (and possibly preferrably) it can be done before first boot by using either
+#   gparted or with the combo of parted, resizepart and resize2fs like so:
+#   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
+# - The disk (resized or not) is valid as an MBR partitoned disk but it can
+#   easily be converted to GPT as follows. First, start gdisk; gdisk /dev/sdX,
+#   and gdisk will tell you that it has found a valid MBR and a missing (or
+#   corrupt GPT), and it will ask you which one to use. Choose the MBR.
+#   At the gdisk prompt then enter the command "r" which will take you to the
+#   recovery and transformation options. There, enter the command "f" to load
+#   the MBR and build a fresh GPT from it. At last, exit gdisk with "w" (write).
 # - Apart from booting considerations, this image is portable and can be
 #   transferred by e.g. rsync to other media. The hardcoded paths that need to
 #   be changed are those related to UUIDs (find them by; grep -lR UUID /etc/*).
@@ -271,13 +276,8 @@ case $1 in
         bootfs_label=DEBN_BOOT
         rootfs_label=DEBN_ROOT
         kernel_img_name_short=vmlinux
-        if [[ "$debian_edition" == "Bullseye" ]] ; then
-            nonfree_list="non-free"
-            iface_name=eth0
-        else
-            nonfree_list="non-free non-free-firmware"
-            iface_name=end0
-        fi
+        nonfree_list="non-free non-free-firmware"
+        iface_name=end0
     ;;
     *)
         calling_cmd=$0
@@ -458,6 +458,7 @@ sed -i "s/.*FSTYPE=.*/FSTYPE=${rootfs_type}/g" /etc/initramfs-tools/initramfs.co
 DEBIAN_FRONTEND=noninteractive apt -y install man-db network-manager dialog usbutils u-boot-tools
 DEBIAN_FRONTEND=noninteractive apt -y install $ubuntu_extra_packages
 dpkg-reconfigure tzdata
+dpkg-reconfigure locales
 dpkg-reconfigure keyboard-configuration
 
 echo "Set password for \033[91mroot:\033[0m"
@@ -483,7 +484,7 @@ apt-get update
 DEBIAN_FRONTEND=noninteractive apt -y install linux-image-riscv64 # linux-headers-riscv64
 echo "Setting FSTYPE to $rootfs_type in /etc/initramfs-tools/initramfs.conf"
 sed -i "s/.*FSTYPE=.*/FSTYPE=${rootfs_type}/g" /etc/initramfs-tools/initramfs.conf
-DEBIAN_FRONTEND=noninteractive apt -y install locales ntp sudo man-db u-boot-tools usbutils zram-tools
+DEBIAN_FRONTEND=noninteractive apt -y install locales systemd-timesyncd sudo man-db u-boot-tools usbutils zram-tools
 DEBIAN_FRONTEND=noninteractive apt -y install $debian_extra_packages
 dpkg-reconfigure tzdata
 apt -y install console-setup
@@ -979,7 +980,7 @@ setup_dtb_file () {
 
 # ---------------------------------- main ------------------------------------
 
-echo -e "\n\033[92m -- Making image for $distro_name ($distro_edition) -- \033[0m\n"
+echo -e "\n\033[92m -- Making image for $distro_name ($distro_edition, riscv64) -- \033[0m\n"
 
 imgfile_MiB=$(($imgfile_num_sectors *512/1024/1024)) # Not precise.
 desired_MiB=$((14*${imgfile_MiB}/10)) # Approx. space for imgfile +imgfile.xz

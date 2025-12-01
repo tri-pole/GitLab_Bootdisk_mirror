@@ -7,6 +7,11 @@ It covers all tools/codes for building Linux images and and the script
 
 # debuntu_dbstrap.bash:
 
+## [v0.14] 25-12-01
+
+### Changed
+ - Adaptions for Debian Trixie
+
 ## [v0.13] 23-06-12
 
 ### Changed
