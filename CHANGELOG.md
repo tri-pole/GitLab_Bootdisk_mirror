@@ -9,6 +9,11 @@ For changelogs of older material, see the `attic` area of the repo.
 
 # debuntu_dbstrap_riscv64.bash
 
+## [v0.15] 25-12-12
+
+### Changed
+ - Refactoring, rewrite, many small fixes and improvements.
+
 ## [v0.13] 24-12-10
 
 ### Changed

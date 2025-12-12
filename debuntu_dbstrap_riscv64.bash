@@ -2,144 +2,131 @@
 
 # debuntu_dbstrap_riscv64.bash
 # 24-12-10: v0.13
+# 25-12-12: v0.15
 # Author: Tripole
 
-# Script to create a (small, CLI) Debian or Ubuntu Linux RISCV64 image using
-# debootstrap. The script must be executed (as root) on an Ubuntu/Debian type
-# machine, either natively on RISCV64 or virtualized (with qemu-riscv64-static)
-# on x86_64/amd64. The generated image can be booted with board resident (e.g.
-# QSPI) openSBI+u-boot (using extlinux.conf on the image) or using Petitboot
-# for RISCV64 (using grub.cfg on the image). (The partition layout has two
-# leading empty 2M+4M partitions for manual addition SPL and openSPI+u-boot,
-# if needed.) The images are tailored to VisionFive 2 but can easily be
-# adapted to other RISCV64 SBCs (by updating the dtb and uEnv.txt).
-
-# Usage: ./debuntu_dbstrap_riscv64.bash distro
+# Usage: ./debuntu_dbstrap_riscv64.bash <distro>
 #        where distro is one of: ubuntu, debian
 
-# Requires: Standard basic functionality incl. blkid, dd, losetup, mkfs, xz,
-# wget and the package systemd-container (for systemd-nspawn). (The ArchLinux
-# wiki describes it like this: "systemd-nspawn is like the chroot command, but
-# it is a chroot on steroids.") Most of the requirements are checked at runtime
-# below. For "cross-scripting" (i.e. for use on another arch than RISCV64) you
-# need to install the package qemu-user-static (which recommends the package
-# binfmt-support); this provides the required binary qemu-riscv64-static
-
-# Handling: Edit the parameters below and run the script from a temp directory
-# (the image an all temporary files will be created in the temp directory).
-
-# Image tested on: VisionFive 2, v1.3b.
-
-# This script is adapted after the script debuntu_dbstrap.bash at my Gitlab
-# bootdisk repo (and that script is in turn inspired by some others, etc.).
+# * This is a script to create a (small, CLI) Debian or Ubuntu Linux RISCV64
+#   image using debootstrap. Compared to pristine Debian/Ubuntu it has only a
+#   small number of additions; some scripts under /etc/kernel/post{inst,rm} to
+#   update extlinuc.conf on the bootfs partition and some utility scripts in
+#   /usr/local/bin to update grub.cfg. (Optionally, it also has a directory on
+#   e.g. the bootfs partition to set up e.g. Petitboot.)
+# * The script is designed to be run (as root) on an Ubuntu build host, either
+#   natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static) on
+#   x86_64/amd64. The build host must have Debian keys installed (see below).
+#   (It is quite possible it runs on a Debian host too, but this is not tested.)
+# * Booting: The generated images can be booted with board resident (e.g. QSPI)
+#   openSBI+u-boot using extlinux.conf on the image or by using Petitboot for
+#   RISCV64 (using grub.cfg on the image). (Petitboot can be installed on the
+#   image or on e.g. eMMC.) (The partition layout has two leading empty 2M+4M
+#   partitions for manual addition SPL and openSPI+u-boot, if needed.)
+# * Target SoC/board: The generated images are tailored to VisionFive 2 but can
+#   easily be adapted to other RISCV64 SBCs (by updating the dtb and uEnv.txt).
+# * Requirements: The script requires basic functionality incl. blkid, dd,
+#   losetup, mkfs, xz, wget and the pkg. systemd-container (for systemd-nspawn).
+#   (Most requirements are checked at runtime below.) For "cross-scripting"
+#   (i.e. for use on another arch than RISCV64) you need to install the package
+#   qemu-user-static (for qemu-riscv64-static).
+# * Typical usage: Edit the parameters below and run the script from a temporary
+#   directory (the image and all temporary files will be created in this dir.).
+# * Image tested on: VisionFive 2, v1.3b (8GB).
 
 # Notes:
 # - The installed system is a bit bare-bones; e.g. no swap is set (only zram).
+#   Info about (re)configuring zram (and optionally set up swap) can be found
+#   e.g. in /etc/default/zramswap and https://wiki.debian.org/ZRam
+# - During execution of the script (near the end) you will be asked to configure
+#   (dpkg-reconfigure) some items: time zone, locale, keyboard and set root pw.
+#   (The localizations can later be adjusted with dpkg-reconfigure.)
+# - The image can always be booted via (board resident) u-boot (extlinux.conf)
+#   but also using e.g. Petitboot (w/ e.g. grub.cfg, as set up on the image).
+# - If you are booting via grub.cfg on rootfs (e.g. using Petitboot) you only
+#   need to update grub.cfg and this can can be done by using grub-mkimage or
+#   via scripts in /usr/local/bin, e.g. the script mkgrubcfg_simple.bash
 # - The dtb files on the image are located at
 #   /usr/lib/linux-image-<kernel version>-riscv64 (Debian)
 #   /usr/lib/firmware/<kernel version>-generic/device-tree (Ubuntu)
 #   A link to the default dtb must exist as /etc/default/dtb (as set up by this
 #   script) in order for the kernel postinst extlinux.conf update hook to work.
-# - The image can always be booted via (board resident) u-boot (extlinux.conf)
-#   but also using e.g. Petitboot (w/ e.g. grub.cfg, as set up on the image).
-# - The kernel and initramfs files on the bootfs are not automatically updated
-#   when the kernel is upgraded or the initramfs is rebuilt on the rootfs.
-#   (In other words, we are still lacking a script in /etc/kernel/postinst.d)
-#   Therefore, when upgrading the kernel or rebuilding the initramfs these
-#   components have to be copied manually over to the bootfs (typically mounted
-#   under /boot/bootfs on the rootfs) if you are using u-boot + extlinux.conf
-#   If you are booting via grub.cfg on rootfs (e.g. using Petitboot) you only
-#   need to update grub.cfg and this can can be done by using grub-mkimage or
-#   via scripts in /usr/local/bin, e.g. the script mkgrubcfg_simple.bash
 # - The dtb file is not specified in the grub.cfg file upon installation but
 #   the script mkgrubcfg_simple.bash can be run post-install to include a dtb
 #   specification in grub.cfg. However, bootloaders based on kexec, such as
 #   Petitboot, typically let the booted Linux image inherit the dtb used by
 #   the bootloader, cf. the README files at Gitlab about Petitboot/u-root.
 # - On VisionFive 2 the graphics support is not yet in mainline kernel so the
-#   the next remark about desktop environments is not (yet) relevant (and you
+#   the remark below about desktop environments is not (yet) relevant (and you
 #   have to use serial console or ssh, for now). (On VF2 there is also some
 #   confusion about naming re. uEnv.txt/vf2_uEnv.txt, see comments below).
-# - On Ubuntu a simple working desktop environment can be obtained by
-#   installing e.g. xubuntu-core, ubuntu-desktop-minimal or kubuntu-desktop.
-# - The Ubuntu snap system may be "undesirable" (so one can do;
-#   apt remove snapd && apt autoremove).
+# - The automatic copying of vmlinuz,initrd.img to the bootfs partition after
+#   kernel upgrade or initramfs rebuild always copies the newest kernel,initrd
+#   (the one with the highest version number), as determined by the sort -V
+#   command (cf. scripts in /etc/{kernel/postinst.d,initramfs/postupdate.d}).
+# - The snap system on Ubuntu can cause trouble so it might be worth purging it.
 # - The package linux-firmware is installed but firmware for e.g. a specific
 #   WiFi or Bluethooth chip might not be included and thus have to be sought
 #   elsewhere.
-# - Networking is handled by NetworkManager on Ubuntu and ifupdown on Debian.
-# - The numbering of eth interfaces may vary, so try both RJ45 connectors.
-# - Run time for this script is about 20m for Debian (incl. compression) on
-#   a modern computer with good network connectivity. For Ubuntu, it can take
-#   almost double that time. (Check with: time ./debuntu_dbstrap.bash debian)
-# - You will be asked to configure four things at runtime (near the end):
-#   time zone, locales, keyboard (this can be later adjusted
-#   with dpkg-reconfigure tzdata, etc.) and root password.
-# - You might want to (re)configure zram (and optionally set up swap), see e.g.
-#   /etc/default/zramswap and https://wiki.debian.org/ZRam
+# - Networking is handled by NetworkManager on Ubuntu and systemd's networking
+#   service on Debian. If you don't want NetworkManager installed on Ubuntu, and
+#   thus fall back to netplan, you can remove the string "network-manager" from
+#   the commands inside the here-doc below named ubuntu_custom_inst and comment
+#   out the relevant sections of the function setup_distro_specifics below.
+# - The numbering of the eth interfaces may vary, so try all RJ45 connectors.
+# - Run time for this script is about 10m for Debian (excl. compression) on a
+#   modern computer with good network connectivity. For Ubloatu, it can take
+#   almost twice that time. (Check with: time ./debuntu_dbstrap.bash debian)
 # - Tip: Generate the image cheaply, say 6G rootfs (so that burn to SD/USB
 #   goes quickly). Then, enlarge the rootfs partition on the SD/USB. This can
 #   be done on first boot by using growpart tool (see below). Alternatively,
-#   (and possibly preferrably) it can be done before first boot by using either
-#   gparted or with the combo of parted, resizepart and resize2fs like so:
-#   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX2 ; resize2fs /dev/sdX2
-# - The disk (resized or not) is valid as an MBR partitoned disk but it can
-#   easily be converted to GPT as follows. First, start gdisk; gdisk /dev/sdX,
-#   and gdisk will tell you that it has found a valid MBR and a missing (or
-#   corrupt GPT), and it will ask you which one to use. Choose the MBR.
-#   At the gdisk prompt then enter the command "r" which will take you to the
-#   recovery and transformation options. There, enter the command "f" to load
-#   the MBR and build a fresh GPT from it. At last, exit gdisk with "w" (write).
+#   it can be done before first boot by using either gparted or with the combo
+#   of parted, e2fsck and resize2fs like so:
+#   parted /dev/sdX resizepart 2 50% ; e2fsck -f /dev/sdX4 ; resize2fs /dev/sdX4
+# - The image has a GPT partition table. This means that after copying to e.g.
+#   SD, and possibly expanding partition 4 as above, the secondary GPT header
+#   may not be at the end of the disk (as it should). The simplest way to fix
+#   this is probably to run sfdisk --relocate gpt-bak-std /dev/sdX
 # - Apart from booting considerations, this image is portable and can be
-#   transferred by e.g. rsync to other media. The hardcoded paths that need to
-#   be changed are those related to UUIDs (find them by; grep -lR UUID /etc/*).
+#   transferred by e.g. rsync to other media (the only thing that needs to be
+#   updated then is the PARTUUID of the root partitionin listed in /etc/fstab).
 # - Domain name resolution is now handled (also on Debian) by systemd, see
 #   e.g. sec 2.1 in https://wiki.archlinux.org/title/Systemd-resolved
 
 # ------------------------------- parameters ---------------------------------
 
-# A note on variable/parameter checks: In the parameters section below we do
-# some rudimentary checks of parameters regarding (only) format and scope.
-# In the following preparations/checks section we also check if the parameters
-# are appropriate/admisssible for the platform/installation we are running on.
+# Top level directory in several of the file hierarchies used below and also
+# the location of the disk image container during build (for size, see below).
+# (Typically img_file_dir is the directory in which this script is located.)
+imgfile_dir=$PWD
 
 ubuntu_name=Ubuntu     # Used for the image name and in grub.cfg
 ubuntu_edition=Noble   # Tested with Jammy and Noble.
 debian_name=Debian     # Used for the image name and in grub.cfg
-debian_edition=Trixie  # Works only w/ Trixie currently (caveat with riscv64).
+debian_edition=Trixie  # Works only w/ Trixie currently (caveat with RISCV64).
+
+# The image tag will be added to img. name after distro name and kernel version.
+img_tag=3pole-$(date +"%y%m%d")
 
 # Host name for image.
 host_name=debu
 
-# Compression (xz) takes some extra time.
-compressed_img=no # {yes,no}
-
-# Of course, mirrors can also be used.
-ubuntu_repourl="http://ports.ubuntu.com/ubuntu-ports"
-debian_repourl="http://ftp.debian.org/debian"
-
-# Edit the image tag to your liking.
-img_tag=3pole-$(date +"%y%m%d")
-
-# Link to growpart for resizing second partition (rootfs) to desired size.
-growpart_url="https://raw.githubusercontent.com/canonical/cloud-utils/main/bin/growpart"
-
-# The kernel command line actually used (to make extlinux.conf and grub.cfg)
-# below will be prepended by the string "root=PARTUUID=${rootfs_PARTUUID}"
-kernel_cmdline_opts="quiet splash"
-
 # The dtb file name is used in extlinux.conf and the dtb must be one of those
-# existing in local /usr/lib/*${kernel-version}*/${dtb_mfg} on the image
-# (i.e. as it comes in the kernel package). (The manufacturer name can be
-# looked up in the kernel source tree at arch/riscv/boot/dts)
+# existing in local /usr/lib/*${kernel-version}*/${dtb_mfg} on the image, i.e.
+# as it comes in the kernel package. (The manufacturer name can be looked up
+# in the kernel source tree at arch/riscv/boot/dts)
 dtb_mfg=starfive
 dtbfile_name=jh7110-starfive-visionfive-2-v1.3b.dtb
 dtbfile_path=/boot/dtbs/${dtb_mfg}/${dtbfile_name} # Full path, starts w/ /boot
 
-# The selected zram compression method here must match what the kernel supports
-# (if unsure, set to zstd). See /etc/default/zramswap
-zram_compression=lzo-rle # {zstd,lzo,lzo-rle,...}
-zram_percent=35 # Amount of RAM to be used for zram.
+# If the file $root_sshkey_loc exists in $imgfile_dir then it will be installed
+# on the image as /root/.ssh/authorized_keys (for passwordless ssh root login).
+root_sshkey_loc="mysshkey.pub"
+
+# If the directory $add_loc_dir exists in $imgfile_dir then this dir and its
+# contents will be copied to $add_dir_img on the image (rel. to its root lvl.).
+add_dir_loc=petitboot
+add_dir_img=boot # No leading forward slash here.
 
 # The generated Linux image has a GPT disk label and is partitioned as
 # [ part1 (not used), part2 (not used), bootfs, rootfs ]. Details about
@@ -153,36 +140,53 @@ bootfs_MiB=500   # In general, use at least 300 MiB, 500 MiB recommended.
 rootfs_MiB=6000  # In general, use at least 5000 MiB.
 rootfs_type=ext4 # Must be ext4 currently.
 
-# Location (dir) of disk image container during install (for size, see below).
-imgfile_dir=$PWD
+# Compression (xz) of the finsiehd image takes some extra time.
+compressed_img=no # {yes,no}
+
+# Do we want to clean up all temporary files and directories afterwards?
+docleanup_after=yes # {yes,no}
+
+# Of course, it is often better to use a mirror for the repo downloads, see e.g.
+# https://www.debian.org/mirror/list and http://mirrors.ubuntu.com
+ubuntu_repourl="http://ports.ubuntu.com/ubuntu-ports"
+debian_repourl="http://ftp.debian.org/debian"
+
+# Link to growpart for resizing second partition (rootfs) to desired size.
+growpart_url="https://raw.githubusercontent.com/canonical/cloud-utils/main/bin/growpart"
+
+# The kernel command line actually used (to make extlinux.conf and grub.cfg)
+# below will be prepended by the string "root=PARTUUID=${rootfs_PARTUUID}"
+kernel_cmdline_opts="quiet splash"
+
+# The selected zram compression method here must match what the kernel supports
+# (if unsure, set to zstd). See /etc/default/zramswap
+zram_compression=lzo-rle # {zstd,lzo,lzo-rle,...}
+zram_percent=35 # Amount of RAM to be used for zram.
+
+# Holds downloads etc.
 tmpfile_dir=${imgfile_dir}/temp_files
 
-# Mount point for the debootstrap process.
-# Temporary mount points (dirs) used during image creation. (The same structure
-# is used on the image where the bootfs is mounted under /boot).
+# Temporary mount points (dirs) used during image creation.
+# (The same structure is used on the image with the bootfs mounted under /boot).
 rootfs_mnt=${imgfile_dir}/rootfs_tmp
-bootfs_dir=/boot # Incl. leading slash.
+bootfs_dir=/boot # Must have leading forward slash.
 bootfs_mnt="${rootfs_mnt}""${bootfs_dir}"
 
 # Mount options used in the fstab file on the image.
 rootfs_mnt_opts="errors=remount-ro"
 bootfs_mnt_opts="dmask=0027,errors=remount-ro"
 
-# Do we want to clean up all temporary files and directories afterwards?
-docleanup_after=yes # {yes,no}
-
-# Only used by Debian with manual setup of /etc/resolv.conf
-# name_server_1=192.168.0.1 # Set to your router's IP address.
-# name_server_2=8.8.8.8     # Set to your backup DNS (8.8.8.8 is dns.google).
+# Nowadays this should be end0 for both Debian and Ubuntu.
+iface_name=end0
 
 # Some (but not all) commands used below to create the image.
 reqd_cmdlist=("blkid" "dd" "debootstrap" "losetup" "mkfs.fat" "mkimage"
               "systemd-nspawn" "tar" "wget" "xz"
 )
 
-# List of packages to be added to (the minimally needed for) the install.
-debian_extra_packages="aptitude firmware-linux-free zram-tools openssh-server"
-ubuntu_extra_packages="nano aptitude zram-tools sudo openssh-server"
+# List of packages to be added to (the ones minimally needed for) the install.
+debian_extra_packages="aptitude man-db firmware-linux-free zram-tools sudo openssh-server"
+ubuntu_extra_packages="nano aptitude man-db zram-tools sudo openssh-server"
 
 # For running in QEMU the user mode emulation binary qemu-static-<arch> is reqd.
 reqd_cmdlist_virt=("qemu-riscv64-static")
@@ -241,7 +245,7 @@ fi
 
 if [[ "$rootfs_type" == "ext4" ]]; then
     reqd_cmdlist=("${reqd_cmdlist[@]}" "mkfs.ext4")
-elif [[ "$rootfs_type" == "btrfs" ]]; then
+elif [[ "$rootfs_type" == "btrfs" ]]; then # Only a placeholder for now.
     reqd_cmdlist=("${reqd_cmdlist[@]}" "mkfs.btrfs")
 else
     echo -e "The fstype for the rootfs must be one of ext4 or btrfs, exiting."
@@ -266,7 +270,6 @@ case $1 in
         bootfs_label=UBNT_BOOT
         rootfs_label=UBNT_ROOT
         kernel_img_name_short=vmlinuz
-        iface_name=eth0
         ;;
     "debian")
         distro_name=$debian_name
@@ -277,12 +280,11 @@ case $1 in
         rootfs_label=DEBN_ROOT
         kernel_img_name_short=vmlinux
         nonfree_list="non-free non-free-firmware"
-        iface_name=end0
     ;;
     *)
         calling_cmd=$0
         calling_cmd_tail=${calling_cmd##*/}
-        echo "Usage: $calling_cmd_tail distro"
+        echo "Usage: $calling_cmd_tail <distro>"
         echo "       where distro is one of: ubuntu,debian"
         echo "       For more customizable parameters, see inside the script."
         exit 0
@@ -440,6 +442,21 @@ deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-security multiverse
 EOF
 )
 
+ubuntu_repo_list_deb822=$(cat <<EOF
+Types: deb
+URIs: http://ports.ubuntu.com/ubuntu-ports
+Suites: noble noble-updates noble-backports
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+Types: deb
+URIs: http://ports.ubuntu.com/ubuntu-ports
+Suites: noble-security
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+EOF
+)
+
 flashk_block_file=$(cat <<"EOF"
 Package: flash-kernel
 Pin: release *
@@ -455,7 +472,7 @@ apt-get update
 DEBIAN_FRONTEND=noninteractive apt -y install linux-image-generic # linux-headers-generic
 echo "Setting FSTYPE to $rootfs_type in /etc/initramfs-tools/initramfs.conf"
 sed -i "s/.*FSTYPE=.*/FSTYPE=${rootfs_type}/g" /etc/initramfs-tools/initramfs.conf
-DEBIAN_FRONTEND=noninteractive apt -y install man-db network-manager dialog usbutils u-boot-tools
+DEBIAN_FRONTEND=noninteractive apt -y install dialog network-manager usbutils
 DEBIAN_FRONTEND=noninteractive apt -y install $ubuntu_extra_packages
 dpkg-reconfigure tzdata
 dpkg-reconfigure locales
@@ -466,13 +483,18 @@ until passwd; do echo "Try again."; done
 EOF
 )
 
-# For Debian, this is not necessary since a basic list comes with the rootfs.
-# Also, for now, only Trixie (testing) is available for Debian (i.e no real release).
-debian_repo_list=$(cat <<EOF
-deb http://deb.debian.org/debian $debian_release main contrib $nonfree_list
-deb http://deb.debian.org/debian ${debian_release}-updates main contrib $nonfree_list
-# deb http://deb.debian.org/debian ${debian_release}-backports main contrib $nonfree_list
-deb http://security.debian.org/debian-security/ ${debian_release}-security main contrib $nonfree_list
+debian_repo_list_deb822=$(cat <<EOF
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: $debian_release ${debian_release}-updates
+Components: main non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: https://security.debian.org/debian-security
+Suites: ${debian_release}-security
+Components: main non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 EOF
 )
 
@@ -484,10 +506,12 @@ apt-get update
 DEBIAN_FRONTEND=noninteractive apt -y install linux-image-riscv64 # linux-headers-riscv64
 echo "Setting FSTYPE to $rootfs_type in /etc/initramfs-tools/initramfs.conf"
 sed -i "s/.*FSTYPE=.*/FSTYPE=${rootfs_type}/g" /etc/initramfs-tools/initramfs.conf
-DEBIAN_FRONTEND=noninteractive apt -y install locales systemd-timesyncd sudo man-db u-boot-tools usbutils zram-tools
+DEBIAN_FRONTEND=noninteractive apt -y install locales systemd-timesyncd usbutils
 DEBIAN_FRONTEND=noninteractive apt -y install $debian_extra_packages
 dpkg-reconfigure tzdata
+dpkg-reconfigure locales
 apt -y install console-setup
+# dpkg-reconfigure keyboard-configuration
 
 echo "Set password for \033[91mroot:\033[0m"
 until passwd; do echo "Try again."; done
@@ -606,8 +630,7 @@ fi
 
 item_counter=0
 default_label=""
-# The sort command in the $(ls ...) statement below is mostly a placeholder.
-for kernel_name in $(ls | grep -E "vmlinu[x,z]-" | sort -d) ; do
+for kernel_name in $(ls | grep -E "vmlinu[x,z]-" | sort -V) ; do
     item_counter=$((item_counter +1))
 
     kernel_vers=$(cut -d '-' -f 2- <<< $kernel_name)
@@ -644,18 +667,12 @@ EOF1
 
 mkextlinux_conf="${mkextlinux_conf_p1}""${mkextlinux_conf_p2}"
 
-# This will go into a script in /etc/kernel/postinst.d
-extlinux_update_hook_p1=$(cat <<EOF
+# This will go into a script in /etc/kernel/post{inst,rm}.d
+extlinux_update_hook=$(cat <<"EOF"
 #!/bin/bash
-echo "Running kernel postinst hook for extlinux.conf ..."
+echo "Running kernel post{inst,rm} hook for extlinux.conf ..."
 
-rootfs_PARTUUID_="$rootfs_PARTUUID"
 dtbfile_link=/etc/default/dtb
-EOF
-)
-
-extlinux_update_hook_p2=$(cat <<"EOF"
-
 dtbpath_full=$(realpath -e $dtbfile_link)
 if [[ ! -f $dtbpath_full ]]; then
     echo "The dtb file ($d{tbpath_full}) is missing, exiting."
@@ -665,8 +682,6 @@ fi
 rootfsPARTUUID=$rootfs_PARTUUID_ dtb_path=$dtbpath_full bash -c '/usr/local/bin/mkextlinux_conf.bash'
 EOF
 )
-
-extlinux_update_hook="$extlinux_update_hook_p1""$extlinux_update_hook_p2"
 
 # Template uEnv.txt but using values for VF2.
 uEnv_txt=$(cat <<EOF
@@ -818,8 +833,7 @@ if [[ -f grub/grub.cfg ]]; then
     mv grub/grub.cfg grub/grub.cfg.bak
 fi
 
-# The sort command in the $(ls ...) statement below is mostly a placeholder.
-for kernel_name in $(ls | grep -E "$kernel_name_template" | sort -d) ; do
+for kernel_name in $(ls | grep -E "$kernel_name_template" | sort -V) ; do
     kernel_vers=$(cut -d '-' -f 2- <<< $kernel_name)
     initrd_name=${initrd_name_template}-${kernel_vers}
 
@@ -844,18 +858,12 @@ EOF1
 
 mkgrubcfg_simple="${mkgrubcfg_simple_p1}""${mkgrubcfg_simple_p2}"
 
-# This will go into a script in /etc/kernel/postinst.d
-grubcfg_update_hook_p1=$(cat <<EOF
+# This will go into a script in /etc/kernel/post{inst,rm}.d
+grubcfg_update_hook=$(cat <<"EOF"
 #!/bin/bash
-echo "Running kernel postinst hook (simple version) for grub.cfg ..."
+echo "Running kernel post{inst,rm} hook (simple version) for grub.cfg ..."
 
-rootfs_PARTUUID_="$rootfs_PARTUUID"
 dtbfile_link=/etc/default/dtb
-EOF
-)
-
-grubcfg_update_hook_p2=$(cat <<"EOF"
-
 # Here we insist on a dtb file path (even though mkgrubcfg_simple.bash
 # works without it).
 dtbpath_full=$(realpath -e $dtbfile_link)
@@ -870,11 +878,9 @@ rootfsPARTUUID=$rootfs_PARTUUID_ dtb_path=$dtbfile_path bash -c '/usr/local/bin/
 EOF
 )
 
-grubcfg_update_hook="$grubcfg_update_hook_p1""$grubcfg_update_hook_p2"
-
-# It is for fw_printenv,fw_setenv from libubootenv-tool. To read the env you
-# must first have executed a setenv at the u-boot prompt (otherwise u-boot
-# uses the built-in env). The settings here are for VisionFive 2, cf. e.g.
+# This is for fw_printenv,fw_setenv from libubootenv-tool. To read the env you
+# must first have executed a setenv at the u-boot prompt (otherwise u-boot uses
+# the built-in env). The settings here are for VisionFive 2, cf. e.g.
 # https://doc-en.rvspace.org/VisionFive2/Boot_UG/JH7110_SDK/boot_address_allocation.html
 fw_env_config=$(cat <<"EOF"
 # MTD device name	Device offset	Env. size	Flash sector size	Number of sectors
@@ -930,31 +936,42 @@ prepare_for_chroot_jail () {
     echo " Done."
 }
 
-setup_apt_sources_list () {
-    echo -n -e ${i_msg}" Setting up /etc/apt/sources.list ..."
-    rm -f ${rootfs_mnt}/etc/apt/sources.list
+setup_apt_sources () {
     case $1 in
         "ubuntu")
-            echo -e "$ubuntu_repo_list" >${rootfs_mnt}/etc/apt/sources.list
+	    if [[ "$ubuntu_edition" == "Jammy" ]]; then
+		echo -n -e ${i_msg}" Setting up /etc/apt/sources.list ..."
+		rm -f ${rootfs_mnt}/etc/apt/sources.list
+                echo -e "$ubuntu_repo_list" >${rootfs_mnt}/etc/apt/sources.list
+
+	    else
+		echo -n -e ${i_msg}" Setting up /etc/apt/sources.list.d/ubuntu.sources ..."
+		rm -f ${rootfs_mnt}/etc/apt/sources.list
+		rm -f ${rootfs_mnt}/etc/apt/sources.list.d/ubuntu.sources
+		echo -e "$ubuntu_repo_list_deb822" > ${rootfs_mnt}/etc/apt/sources.list.d/ubuntu.sources
+	    fi
         ;;
         "debian")
-            echo -e "$debian_repo_list" >${rootfs_mnt}/etc/apt/sources.list
+	    echo -n -e ${i_msg}" Setting up /etc/apt/sources.list.d/debian.sources ..."
+	    rm -f ${rootfs_mnt}/etc/apt/sources.list
+	    rm -f ${rootfs_mnt}/etc/apt/sources.list.d/debian.sources
+            echo -e "$debian_repo_list_deb822" > ${rootfs_mnt}/etc/apt/sources.list.d/debian.sources
         ;;
     esac
     echo " Done."
 }
 
 do_chroot_jail_tasks () {
-    echo -e ${i_msg}" Entering chroot jail. Installing some pkgs., running some scripts ..."
+    echo -e ${i_msg}" Entering \033[94mchroot jail\033[0m. Installing some pkgs., running some scripts ..."
     systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
         /root/"${1}_custom_inst.bash"
    rm ${rootfs_mnt}/root/"${1}_custom_inst.bash"
     sleep 2 # Just to be able to read some of the messages.
-    echo "Done."
+    echo -e "Done. Exited \033[94mchroot jail\033[0m."
 }
 
 setup_dtb_file () {
-    echo -n -e ${i_msg}" Copying the selected dtb file to bootfs ..."
+    echo -n -e ${i_msg}" Copying the \033[94m${dtbfile_name}\033[0m file to bootfs..."
     kern_name=$(ls ${rootfs_mnt}/boot | grep "${kernel_img_name_short}-")
     kern_vers=$(cut -d '-' -f 2- <<< $kern_name)
     case $1 in
@@ -972,10 +989,65 @@ setup_dtb_file () {
         cp $dtbfile_loc ${bootfs_mnt}/dtbs/${dtb_mfg}
         echo " Done."
     else
-        echo -e ${e_msg}"\nCould not find $dtbfile_name"
+	echo -e " Fail!"
+        echo -e ${w_msg}"\nCould not find $dtbfile_name"
         echo " in $dtbfile_dir"
-        exit 1
+        echo -e ${w_msg}" Device tree file must be set up manually on the image."
     fi
+}
+
+setup_distro_specifics () {
+    case $1 in
+        "ubuntu")
+            echo -n -e ${i_msg}" Installing Network Manager configuration files for $iface_name ..."
+
+            nm_conf_dir=${rootfs_mnt}/etc/NetworkManager
+            nm_syscon_dir=${nm_conf_dir}/system-connections
+            mkdir -p $nm_syscon_dir
+            eth0_nmconf_loc=${nm_syscon_dir}/Wired_connection_1.nmconnection
+            echo -e "$eth0_nmconf_file"> $eth0_nmconf_loc
+            chmod 0600 $eth0_nmconf_loc
+
+            # Perhaps not really needed, who knows...
+            alloweth_nmconf_dir=${nm_conf_dir}/conf.d
+            mkdir -p $alloweth_nmconf_dir
+            alloweth_nmconf_loc=${alloweth_nmconf_dir}/allow-ethernet.conf
+            echo -e "$alloweth_nmconf_file" >$alloweth_nmconf_loc
+            chmod 0644 $alloweth_nmconf_loc
+
+            echo " Done."
+
+            echo -n -e ${i_msg}" Setting up local host mappings in /etc/hosts ..."
+            echo -e "$ubuntu_hosts_file" >${rootfs_mnt}/etc/hosts
+            echo " Done."
+
+            # From debootstrap there will be an interfering resolv.conf file
+            # which we remove. After leaving the chroot jail below there will
+            # also be a leftover resolv.conf but it will be fixed automagically
+            # by systemd-resolved.service
+            if [[ -f ${rootfs_mnt}/etc/resolv.conf ]]; then
+                echo -n -e ${i_msg}" Removing (interfering) pre installed /etc/resolv.conf ..."
+                rm ${rootfs_mnt}/etc/resolv.conf
+                echo " Done."
+            fi
+
+            # The flash-kernel package can cause problems on systems without
+            # flash storage or non EFI systems. (At least this was the case on
+            # ARM64.)
+            echo -n -e ${i_msg}" Preventing apt from installing package flash-kernel ..."
+            echo -e "$flashk_block_file" >\
+                ${rootfs_mnt}/etc/apt/preferences.d/no-flash-kernel
+            echo " Done."
+        ;;
+        "debian")
+            echo -n -e ${i_msg}" Setting up /etc/network/interfaces ..."
+            mkdir -p ${rootfs_mnt}/etc/network
+            echo -e "$debian_interfaces_file" >\
+                ${rootfs_mnt}/etc/network/interfaces
+            echo " Done."
+    ;;
+esac
+
 }
 
 # ---------------------------------- main ------------------------------------
@@ -988,7 +1060,7 @@ desired_MiB=$((14*${imgfile_MiB}/10)) # Approx. space for imgfile +imgfile.xz
 cd $imgfile_dir
 imgfile_loc=${imgfile_dir}/${imgfile_name}
 
-echo -e "The image container file will be at:"
+echo -e "Image container file path (during build):"
 echo $imgfile_loc
 
 if [[ "$compressed_img" == "no" ]]; then
@@ -1014,6 +1086,8 @@ else
 fi
 
 echo -e "\n\033[92m -- Starting the installation -- \033[0m\n"
+
+umask 022
 
 echo -n -e ${i_msg}" Making a directory for temporary files ..."
 mkdir -p $tmpfile_dir
@@ -1041,10 +1115,12 @@ echo "Done."
 
 echo -n -e ${i_msg}" Formatting the container file partitions ..."
 mkfs.fat -F32 -n $bootfs_label ${loop_dev}p3 >/dev/null 2>&1
-if [[ $rootfs_type == "btrfs" ]]; then
+if [[ $rootfs_type == "ext4" ]]; then
+    mkfs.ext4 -F -q -U $rootfs_UUID -L $rootfs_label -b 4k -m 0 ${loop_dev}p4 >/dev/null 2>&1
+elif [[ $rootfs_type == "btrfs" ]]; then # Only a placeholder for now.
     mkfs.btrfs -f -U $rootfs_UUID -L $rootfs_label -m single ${loop_dev}p4 >/dev/null 2>&1
 else
-    mkfs.ext4 -F -q -U $rootfs_UUID -L $rootfs_label -b 4k -m 0 ${loop_dev}p4 >/dev/null 2>&1
+  echo "Oops. Not implemented formatting option for rootfs."
 fi
 echo " Done."
 
@@ -1129,10 +1205,6 @@ echo -n -e ${i_msg}" Setting up /etc/fw_env.config ..."
 echo -e "$fw_env_config" >${rootfs_mnt}/etc/fw_env.config
 echo " Done."
 
-echo -n -e ${i_msg}" Writing info about grub.cfg and alternate kernels ..."
-echo -e "$README_kernels" >${rootfs_mnt}/boot/README_kernels.txt
-echo " Done."
-
 echo -n -e ${i_msg}" Installing utility scripts in /usr/local/bin ..."
 # This script uses grub-mkconfig but it doesn't work inside a loop device.
 # (It is installed for later use, to produce fancier grub menus.)
@@ -1153,75 +1225,15 @@ echo " Done."
 touch ${rootfs_mnt}/etc/kernel-img.conf
 echo "do_symlinks = no" >>${rootfs_mnt}/etc/kernel-img.conf
 
-# A small sales pitch for Petitboot.
-echo -n -e ${i_msg}" Writing instructions for installing Petitboot ..."
-echo -e "$README_auxbootldr" >${bootfs_mnt}/README_auxbootldr.txt
-echo " Done."
+setup_distro_specifics $1
 
-case $1 in
-    "ubuntu")
-        echo -n -e ${i_msg}" Installing Network Manager configuration files for $iface_name ..."
+setup_apt_sources $1
 
-        nm_conf_dir=${rootfs_mnt}/etc/NetworkManager
-        nm_syscon_dir=${nm_conf_dir}/system-connections
-        mkdir -p $nm_syscon_dir
-        eth0_nmconf_loc=${nm_syscon_dir}/Wired_connection_1.nmconnection
-        echo -e "$eth0_nmconf_file"> $eth0_nmconf_loc
-        chmod 0600 $eth0_nmconf_loc
+prepare_for_chroot_jail $1
 
-        # Perhaps not really needed, who knows...
-        alloweth_nmconf_dir=${nm_conf_dir}/conf.d
-        mkdir -p $alloweth_nmconf_dir
-        alloweth_nmconf_loc=${alloweth_nmconf_dir}/allow-ethernet.conf
-        echo -e "$alloweth_nmconf_file" >$alloweth_nmconf_loc
-        chmod 0644 $alloweth_nmconf_loc
+install_riscv64_qemu_binary
 
-        echo " Done."
-
-        echo -n -e ${i_msg}" Setting up local host mappings in /etc/hosts ..."
-        echo -e "$ubuntu_hosts_file" >${rootfs_mnt}/etc/hosts
-        echo " Done."
-
-        # From debootstrap there will be an interfering resolv.conf file which we
-        # remove. After leaving the chroot jail below there will also be a leftover
-        # resolv.conf but it will be fixed automagically by systemd-resolved.service
-        if [[ -f ${rootfs_mnt}/etc/resolv.conf ]]; then
-            echo -n -e ${i_msg}" Removing (interfering) pre installed /etc/resolv.conf ..."
-            rm ${rootfs_mnt}/etc/resolv.conf
-            echo " Done."
-        fi
-
-        # The flash-kernel package can cause problems on systems without flash
-        # storage or non EFI systems. (At least this was the case on ARM64.)
-        echo -n -e ${i_msg}" Preventing apt from installing package flash-kernel ..."
-        echo -e "$flashk_block_file" >\
-            ${rootfs_mnt}/etc/apt/preferences.d/no-flash-kernel
-        echo " Done."
-
-        setup_apt_sources_list ubuntu
-
-        prepare_for_chroot_jail ubuntu
-
-        install_riscv64_qemu_binary
-
-        do_chroot_jail_tasks ubuntu	
-    ;;
-    "debian")
-        echo -n -e ${i_msg}" Setting up /etc/network/interfaces ..."
-        mkdir -p ${rootfs_mnt}/etc/network
-        echo -e "$debian_interfaces_file" >${rootfs_mnt}/etc/network/interfaces
-        echo " Done."
-
-        # For Debian, this is only needed if you want custom settings.
-        # setup_apt_sources_list debian
-
-        prepare_for_chroot_jail debian
-
-        install_riscv64_qemu_binary
-
-        do_chroot_jail_tasks debian
-    ;;
-esac
+do_chroot_jail_tasks $1
 
 setup_dtb_file $1
 
@@ -1237,11 +1249,10 @@ chmod 0755 ${rootfs_mnt}/etc/kernel/postrm.d/update-extlinux-conf
 echo " Done."
 
 echo -e ${i_msg}" Creating /boot/extlinux/extlinux.conf ..."
-# Recall that rootfsPARTUUID and dtb_path are hard coded in update-extlinux-conf
-chroot ${rootfs_mnt} bash -c '/etc/kernel/postinst.d/update-extlinux-conf'
+chroot ${rootfs_mnt} bash -c "rootfs_PARTUUID_=$rootfs_PARTUUID /etc/kernel/postinst.d/update-extlinux-conf"
 echo "Done."
 
-echo -n -e ${i_msg}" Creating (simple) grub.cfg update hook after kernel install/removal ..."
+echo -n -e ${i_msg}" Creating grub.cfg (simple version) update hook after kernel install/removal ..."
 echo -e "$grubcfg_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/update-grub-cfg-simple
 echo -e "$grubcfg_update_hook" > /${rootfs_mnt}/etc/kernel/postrm.d/update-grub-cfg-simple
 chmod 0755 ${rootfs_mnt}/etc/kernel/postinst.d/update-grub-cfg-simple
@@ -1249,8 +1260,7 @@ chmod 0755 ${rootfs_mnt}/etc/kernel/postrm.d/update-grub-cfg-simple
 echo " Done."
 
 echo -e ${i_msg}" Creating /boot/grub/grub.cfg (simple version) ..."
-# Recall that rootfsPARTUUID and dtb_path are hard coded in update-grub-cfg-simple
-chroot ${rootfs_mnt} bash -c '/etc/kernel/postinst.d/update-grub-cfg-simple'
+chroot ${rootfs_mnt} bash -c "rootfs_PARTUUID_=$rootfs_PARTUUID /etc/kernel/postinst.d/update-grub-cfg-simple"
 echo "Done."
 
 echo -n -e ${i_msg}" Setting up /etc/default/zramswap ..."
@@ -1263,11 +1273,48 @@ kernel_version=$(ls ${bootfs_mnt} | grep -E "vmlinu[x,z]-" | cut -d '-' -f 2-)
 
 cd $imgfile_dir
 
-echo -n -e ${i_msg}" Unmounting the container file..."
+if [[ -f $root_sshkey_loc ]]; then
+    echo -e -n ${i_msg}" Installing key in file \033[94m${root_sshkey_loc}\033[0m as ssh key for root..."
+    mkdir -p ${rootfs_mnt}/root/.ssh
+    chmod 0700 ${rootfs_mnt}/root/.ssh
+    cp $root_sshkey_loc ${rootfs_mnt}/root/.ssh/authorized_keys
+    chmod 0600 ${rootfs_mnt}/root/.ssh/authorized_keys
+    # Typically, the defaults in sshd_config are;
+    # "PermitRootLogin prohibit-password"
+    # "PubkeyAuthentication yes"
+    # so the only thing we need to do change the line with
+    # "PasswordAuthentication".
+    sed -i '/.*PasswordAuthentication.*/c\PasswordAuthentication no' \
+        ${rootfs_mnt}/etc/ssh/sshd_config
+    echo " Done."
+fi
+
+if [[ -d $add_dir_loc ]]; then
+    echo -e ${i_msg}" Installing the contents of the local directory \033[94m${add_dir_loc}\033[0m to"
+    echo -e "         directory \033[94m${add_dir_img}\033[0m on the image..."
+    mkdir -p ${rootfs_mnt}/${add_dir_img}
+    cp -vR ${add_dir_loc##*/} ${rootfs_mnt}/${add_dir_img}
+    echo " Done."
+fi
+
+echo -n -e ${i_msg}" Writing info about grub.cfg and alternate kernels ..."
+echo -e "$README_kernels" >${rootfs_mnt}/boot/README_kernels.txt
+echo " Done."
+
+echo -n -e ${i_msg}" Writing instructions for installing Petitboot ..."
+echo -e "$README_auxbootldr" >${bootfs_mnt}/README_auxbootldr.txt
+echo " Done."
+
+echo -e ${i_msg}" Unmounting the container file (and file system check)..."
+sync
 umount -f ${loop_dev}p3
-sync && sleep 2
+sleep 2
+fsck.fat -a ${loop_dev}p3
 umount -f ${loop_dev}p4
-sync && sleep 2
+sleep 2
+if [[ $rootfs_type == "ext4" ]]; then
+    e2fsck -p ${loop_dev}p4
+fi
 echo " Done."
 
 echo -n -e ${i_msg}" Disconnecting and removing the loop devices ..."
@@ -1275,17 +1322,12 @@ losetup -d $loop_dev 2>/dev/null
 echo " Done."
 
 imgfile_name_full=${distro_name}_${distro_edition}_${kernel_version}_${img_tag}.img
-echo -n -e ${i_msg}" Renaming image file to $imgfile_name_full ..."
+echo -n -e ${i_msg}" Adding kernel version to image name..."
 imgfile_loc_full=${imgfile_dir}/${imgfile_name_full}
 mv $imgfile_loc $imgfile_loc_full
 echo " Done."
 
-if [[ "$compressed_img" == "yes" ]]; then
-    echo -e ${i_msg}" Compressing the image using xz compression ..."
-    xz -v $imgfile_loc_full
-    sleep 1
-    echo "Done."
-fi
+echo -e ${i_msg}" Output file: \033[94m${imgfile_name_full}\033[0m"
 
 if [[ "$docleanup_after" == "yes" ]]; then
     echo -n -e ${i_msg}" Doing final cleanup of build area ..."
@@ -1294,4 +1336,11 @@ if [[ "$docleanup_after" == "yes" ]]; then
     echo " Done."
 fi
 
-echo -e "\n\033[92m -- Finished -- \033[0m\n"
+if [[ "$compressed_img" == "yes" ]]; then
+    echo -e ${i_msg}" Compressing the image using xz compression ..."
+    xz -v $imgfile_loc_full
+    sleep 1
+    echo "Done."
+fi
+
+echo -e "\n\033[92m -- $0 finished -- \033[0m\n"
