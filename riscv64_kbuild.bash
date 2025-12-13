@@ -24,14 +24,15 @@
 # be installed (see below). Apart from the toolchain, a normal build
 # environment is required along with a few standard Linux commands (see below).
 # (A basic build environment is provided with the package build-essential but
-# it is also required to have tools such as flex, bison, libncurses-dev (for
-# menuconfig) and, if applicable, cross compiling tools such as
-# gcc-riscv64-linux-gnu. The Linux kernel also requires (depending on config)
-# things as libssl-dev.) The script moreover assumes that at least some
-# modules are created (so not all built in.)
+# it is also required to have tools such as flex, bison, libncurses-dev, for
+# menuconfig, and, if applicable, cross compiling tools such as
+# gcc-riscv64-linux-gnu. Depending on choice of compiler below, it might also
+# be required to have clang, lld and llvm. The Linux kernel may also require,
+# depending on config, things as libssl-dev.) The script moreover assumes that
+# at least some modules are created (so not all built in.)
 
-# The script has been tested on an x86_64 VM (running in qemu-system-x86_64)
-# with Ubuntu 22.04.5 and "natively" on a RISCV64 VM (in qemu-system-riscv64)
+# The script has been tested on an x86_64 VM (running in qemu-system-x86_64) w/
+# Ubuntu 22.04.5, 24.04.3 and "natively" on RISCV64 VM (in qemu-system-riscv64)
 # with Ubuntu 22.04.5. This script should be considered as a template or
 # proof-of-concept, nothing more (so please fork it, adapt it, improve it).
 
@@ -56,7 +57,7 @@
 # Note: Kernel version numbers here (in $kern_ver_num) must be in the format
 # x.y.z so for an x.y kernel (e.g. 6.8) you must here add (pad with) a zero to
 # make into x.y.z format (e.g. 6.8.0).
-kern_ver_num=6.15.9
+kern_ver_num=6.17.12
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings

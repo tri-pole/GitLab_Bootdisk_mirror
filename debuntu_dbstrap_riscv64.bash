@@ -10,23 +10,25 @@
 
 # * This is a script to create a (small, CLI) Debian or Ubuntu Linux RISCV64
 #   image using debootstrap. Compared to pristine Debian/Ubuntu it has only a
-#   small number of additions; some scripts under /etc/kernel/post{inst,rm} to
-#   update extlinuc.conf on the bootfs partition and some utility scripts in
-#   /usr/local/bin to update grub.cfg. (Optionally, it also has a directory on
-#   e.g. the bootfs partition to set up e.g. Petitboot.)
+#   small number of additions; a bootfs partition with a copy of kernel,
+#   initramfs, dtb and (u-boot) boot scripts, some scripts on rootfs under
+#   /etc/kernel/post{inst,rm} to update extlinux.conf on the bootfs partition
+#   and some utility scripts in /usr/local/bin to update grub.cfg. (Optionally,
+#   it also has a directory with supplementary files, such as a petitboot
+#   directory on the bootfs for setup of the Petitboot boot loader/manager.)
 # * The script is designed to be run (as root) on an Ubuntu build host, either
 #   natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static) on
 #   x86_64/amd64. The build host must have Debian keys installed (see below).
 #   (It is quite possible it runs on a Debian host too, but this is not tested.)
 # * Booting: The generated images can be booted with board resident (e.g. QSPI)
 #   openSBI+u-boot using extlinux.conf on the image or by using Petitboot for
-#   RISCV64 (using grub.cfg on the image). (Petitboot can be installed on the
-#   image or on e.g. eMMC.) (The partition layout has two leading empty 2M+4M
-#   partitions for manual addition SPL and openSPI+u-boot, if needed.)
+#   RISCV64 (using grub.cfg on the image). (Petitboot can be installed/set up
+#   on the image or on e.g. eMMC.) The partition layout has two leading empty
+#   2M+4M partitions for manual addition SPL and openSPI+u-boot, if needed.
 # * Target SoC/board: The generated images are tailored to VisionFive 2 but can
 #   easily be adapted to other RISCV64 SBCs (by updating the dtb and uEnv.txt).
 # * Requirements: The script requires basic functionality incl. blkid, dd,
-#   losetup, mkfs, xz, wget and the pkg. systemd-container (for systemd-nspawn).
+#   losetup, mkfs, wget, xz and the pkg. systemd-container (for systemd-nspawn).
 #   (Most requirements are checked at runtime below.) For "cross-scripting"
 #   (i.e. for use on another arch than RISCV64) you need to install the package
 #   qemu-user-static (for qemu-riscv64-static).
@@ -51,29 +53,28 @@
 #   /usr/lib/firmware/<kernel version>-generic/device-tree (Ubuntu)
 #   A link to the default dtb must exist as /etc/default/dtb (as set up by this
 #   script) in order for the kernel postinst extlinux.conf update hook to work.
-# - The dtb file is not specified in the grub.cfg file upon installation but
-#   the script mkgrubcfg_simple.bash can be run post-install to include a dtb
-#   specification in grub.cfg. However, bootloaders based on kexec, such as
-#   Petitboot, typically let the booted Linux image inherit the dtb used by
-#   the bootloader, cf. the README files at Gitlab about Petitboot/u-root.
-# - On VisionFive 2 the graphics support is not yet in mainline kernel so the
-#   the remark below about desktop environments is not (yet) relevant (and you
-#   have to use serial console or ssh, for now). (On VF2 there is also some
-#   confusion about naming re. uEnv.txt/vf2_uEnv.txt, see comments below).
+# - The dtb file is specified in the devicetree entry in the grub.cfg file
+#   (cf. mkgrubcfg_simple.bash). However, bootloaders based on kexec, such as
+#   Petitboot, typically allow/let the booted Linux kernel inherit the dtb used
+#   by kernel running the bootloader if the devicetree entry is not
+#   valid/present in the grub.cfg for the kernel to be booted. (This holds for
+#   the version of Petitboot for RISCV64 provided at Gitlab/Tripole.)
 # - The automatic copying of vmlinuz,initrd.img to the bootfs partition after
-#   kernel upgrade or initramfs rebuild always copies the newest kernel,initrd
+#   kernel upgrade or initramfs rebuild always copies the newest kernel, initrd
 #   (the one with the highest version number), as determined by the sort -V
 #   command (cf. scripts in /etc/{kernel/postinst.d,initramfs/postupdate.d}).
-# - The snap system on Ubuntu can cause trouble so it might be worth purging it.
-# - The package linux-firmware is installed but firmware for e.g. a specific
-#   WiFi or Bluethooth chip might not be included and thus have to be sought
-#   elsewhere.
 # - Networking is handled by NetworkManager on Ubuntu and systemd's networking
 #   service on Debian. If you don't want NetworkManager installed on Ubuntu, and
 #   thus fall back to netplan, you can remove the string "network-manager" from
 #   the commands inside the here-doc below named ubuntu_custom_inst and comment
 #   out the relevant sections of the function setup_distro_specifics below.
 # - The numbering of the eth interfaces may vary, so try all RJ45 connectors.
+# - Domain name resolution is now handled (also on Debian) by systemd, see
+#   e.g. sec 2.1 in https://wiki.archlinux.org/title/Systemd-resolved
+# - The package linux-firmware is installed but firmware for e.g. a specific
+#   WiFi or Bluethooth chip might not be included and thus have to be sought
+#   elsewhere.
+# - The snap system on Ubuntu can cause trouble so it might be worth purging it.
 # - Run time for this script is about 10m for Debian (excl. compression) on a
 #   modern computer with good network connectivity. For Ubloatu, it can take
 #   almost twice that time. (Check with: time ./debuntu_dbstrap.bash debian)
@@ -88,10 +89,22 @@
 #   may not be at the end of the disk (as it should). The simplest way to fix
 #   this is probably to run sfdisk --relocate gpt-bak-std /dev/sdX
 # - Apart from booting considerations, this image is portable and can be
-#   transferred by e.g. rsync to other media (the only thing that needs to be
-#   updated then is the PARTUUID of the root partitionin listed in /etc/fstab).
-# - Domain name resolution is now handled (also on Debian) by systemd, see
-#   e.g. sec 2.1 in https://wiki.archlinux.org/title/Systemd-resolved
+#   transferred by e.g. cp -a to other media (the only thing that needs to be
+#   updated then is the PARTUUID of the root partition listed in /etc/fstab
+#   on the rootfs and in /extlinux/extlinux.conf on the bootfs).
+# - VisionFive 2 specifics:
+#   * There is an issue with the dtb files in that the correct memory size will
+#      not be identified when booting with kexec unless the dtb has the correct
+#      memory size explicitly specified. (For the default VF2 dtb the mem size
+#      is not hard coded, but determined via some "magic" during boot, so after
+#      booting with kexec on an 8GB box the memory will often show up as 4GB.)
+#      The issue is further explained in the README_petitboot-MEGA at
+#      https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw
+#      where also workarounds are offered (not all Linux distros are affected).
+#   *  The graphics support is not yet in mainline kernel so in general you
+#      have to use serial console or ssh to run the image.
+#   *  There is some confusion (stemming from Starfive) about naming regarding
+#      uEnv.txt/vf2_uEnv.txt so you might see warnings about it during boot.
 
 # ------------------------------- parameters ---------------------------------
 
