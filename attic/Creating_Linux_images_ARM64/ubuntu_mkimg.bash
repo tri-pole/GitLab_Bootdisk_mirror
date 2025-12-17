@@ -154,7 +154,8 @@ dtbname_in_grubcfg=no # {"yes","no"} Only useful if bootloader can use it.
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
 ophub_repo_url="https://github.com/ophub"
-ophub_uboot_url=${ophub_repo_url}"/u-boot/blob/main/u-boot/amlogic/overload"
+ophub_raw_path="/u-boot/raw/refs/heads/main/u-boot/amlogic/overload"
+ophub_uboot_url=${ophub_repo_url}${ophub_raw_path}
 
 # u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
 uboot_list=(

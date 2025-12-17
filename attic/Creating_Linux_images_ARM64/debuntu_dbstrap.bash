@@ -19,7 +19,7 @@
 #   (2) Some optional utility scripts under /usr/local/bin (for grub.cfg etc).
 # * The images can be put on e.g. SD or USB and be booted with two methods:
 #   (1) Booting with resident/vendor (on eMMMC) u-boot using boot scripts and/or
-#       extlinux.conf. This method is based on chainloading with u-boot.ext.
+#       extlinux.conf. This method defaults to chainloading with u-boot.ext.
 #   (2) Booting can also be done with e.g. Petitboot/u-root (placed on the same
 #       or separate medium) since the images have a valid grub.cfg.
 # * This build script is designed to be run (as root) on an Ubuntu build host,
@@ -171,7 +171,8 @@ debian_repourl="http://ftp.debian.org/debian"
 
 # Ophub repo (dir.) with u-boot.bin files for use as chainloader u-boot.ext.
 ophub_repo_url="https://github.com/ophub"
-ophub_uboot_url=${ophub_repo_url}"/u-boot/blob/main/u-boot/amlogic/overload"
+ophub_raw_path="/u-boot/raw/refs/heads/main/u-boot/amlogic/overload"
+ophub_uboot_url=${ophub_repo_url}${ophub_raw_path}
 
 # Note: Some of these may not be able to boot newer Ubuntu kernels or initramfs
 # since they do not have support for decompression is zstd compressed files.
@@ -847,7 +848,7 @@ if [[ "$is_space_enough" == "y" ]] ; then
     echo "OK, good, continuing."
 else
     echo "OK, exiting."
-    exit 1
+    exit 0
 fi
 
 echo -e "\n\033[92m -- Starting the installation -- \033[0m\n"
@@ -1029,6 +1030,7 @@ case $1 in
 
         if [[ "$debian_edition" == "Trixie" ]]; then
             echo -n -e ${i_msg}" Setting up /etc/apt/sources.list.d/debian.sources ..."
+	    rm -f ${rootfs_mnt}/etc/apt/sources.list
             rm -f ${rootfs_mnt}/etc/apt/sources.list.d/debian.sources
             echo -e "$debian_repo_list_deb822" > ${rootfs_mnt}/etc/apt/sources.list.d/debian.sources
         else
@@ -1057,7 +1059,7 @@ systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
                /root/custom_inst.bash
 rm ${rootfs_mnt}/root/custom_inst.bash
 sleep 2 # Just to be able to read some of the messages.
-echo "Done. Exited jail."
+echo "Done. Exited \033[94mchroot jail\033[0m."
 
 if [[ $arch_str != "aarch64" ]]; then
     echo -n -e ${i_msg}" Removing local qemu-aarch64-static binary..."
@@ -1115,7 +1117,7 @@ if [[ -f $dtbfile_dist ]]; then
     cp $dtbfile_dist $bootfs_mnt
     echo " Done."
 else
-    echo -e " Fail!\n"
+    echo -e " Fail!"
     echo -e ${w_msg}" Could not find the device tree file $dtbfile_name in"
     echo " $dtbfile_dir"
     echo -e ${w_msg}" Device tree file must be set up manually on the image."

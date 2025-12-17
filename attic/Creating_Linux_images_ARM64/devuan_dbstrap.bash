@@ -121,7 +121,8 @@ img_tag=3pole-$(date +"%y%m%d")
 
 # Ophub repo (dir.) with u-boot.bin files (for use as chainloader u-boot.ext).
 ophub_repo_url="https://github.com/ophub"
-ophub_uboot_url=${ophub_repo_url}"/u-boot/blob/main/u-boot/amlogic/overload"
+ophub_raw_path="/u-boot/raw/refs/heads/main/u-boot/amlogic/overload"
+ophub_uboot_url=${ophub_repo_url}${ophub_raw_path}
 
 # u-boot.bins from Ophub's repo for use as chainloader (u-boot.ext).
 # Note: Some of these may not be able to boot newer Ubuntu kernels or initramfs
