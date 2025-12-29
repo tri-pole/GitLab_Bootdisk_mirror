@@ -1,0 +1,48 @@
+--- ./extract-vmlinux	2025-12-29 12:56:04.421380426 +0100
++++ ./extract-vmlinux-pb	2025-12-29 12:34:23.782513247 +0100
+@@ -14,8 +14,7 @@
+ 
+ check_vmlinux()
+ {
+-	if file "$1" | grep -q 'Linux kernel.*boot executable' ||
+-		readelf -h "$1" > /dev/null 2>&1
++	if file "$1" | grep -q 'Linux kernel.*boot executable' > /dev/null 2>&1
+ 	then
+ 		cat "$1"
+ 		echo "$me: Extracted vmlinux using '$2' from offset $3" >&2
+@@ -28,6 +27,7 @@
+ 	# The obscure use of the "tr" filter is to work around older versions of
+ 	# "grep" that report the byte offset of the line instead of the pattern.
+ 
++        echo "Trying $3 ..." >&2
+ 	# Try to find the header ($1) and decompress from here
+ 	for	pos in `tr "$1\n$2" "\n$2=" < "$img" | grep -abo "^$2"`
+ 	do
+@@ -46,20 +46,21 @@
+ fi
+ 
+ # Prepare temp files:
+-tmp=$(mktemp /tmp/vmlinux-XXX)
++tmp=$(mktemp /tmp/vmlinux-XXXXXX)
+ trap "rm -f $tmp" 0
+ 
++# First check for uncompressed images or objects:
++echo "Trying decompressor 'none' ..." >&2
++check_vmlinux "$img" cat 0
++
+ # That didn't work, so retry after decompression.
+ try_decompress '\037\213\010' xy    gunzip
+ try_decompress '\3757zXZ\000' abcde unxz
+ try_decompress 'BZh'          xy    bunzip2
+ try_decompress '\135\0\0\0'   xxx   unlzma
+-try_decompress '\211\114\132' xy    'lzop -d'
+-try_decompress '\002!L\030'   xxx   'lz4 -d'
++# try_decompress '\211\114\132' xy    'lzop -d'
++# try_decompress '\002!L\030'   xxx   'lz4 -d'
+ try_decompress '(\265/\375'   xxx   unzstd
+ 
+-# Finally check for uncompressed images or objects:
+-check_vmlinux "$img" cat 0
+-
+ # Bail out:
+ echo "$me: Cannot find vmlinux." >&2
