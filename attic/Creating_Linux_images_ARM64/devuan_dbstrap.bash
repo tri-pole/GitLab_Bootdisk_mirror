@@ -38,7 +38,8 @@
 
 # Notes:
 # - Requires the latest Devuan keyring to be installed on the host machine.
-#   https://pkgmaster.devuan.org/devuan/pool/main/d/devuan-keyring/
+#   https://www.devuan.org/os/keyring
+#   https://pkgmaster.devuan.org/devuan/pool/main/d/devuan-keyring
 # - The installed system is "bare-bones"; e.g. no swap is set (only zram).
 # - During installation, on some terminals the keyboard and console font
 #   configuration will be deferred and you will see a message about this.
@@ -99,8 +100,8 @@
 
 # ------------------------------- parameters ---------------------------------
 
-distro_name=Devuan      # Used for the image name and in grub.cfg
-distro_edition=Daedalus # Tested with Chimaera (Bullseye), Daedalus (Bookworm)
+distro_name=Devuan       # Used for the image name and in grub.cfg
+distro_edition=Excalibur # Tested with Daedalus (Bookworm), Excalibur (Trixie)
 
 # Host name for image.
 host_name=devu
@@ -111,7 +112,8 @@ compressed_img=yes # {yes,no}
 # Location Devuan specific debootstrap scripts.
 devuan_dbscripts_url="https://pkgmaster.devuan.org/devuan/pool/main/d/debootstrap"
 # Current Devuan tarball with debootstrap scripts.
-devuan_dbscripts_tgz="debootstrap_1.0.123+devuan5.tar.gz"
+# devuan_dbscripts_tgz="debootstrap_1.0.123+devuan5.tar.gz"
+devuan_dbscripts_tgz="debootstrap_1.0.142devuan1.tar.gz"
 
 # debootstrap repo for packages. (A mirror can also be used.)
 distro_repourl="http://deb.devuan.org/merged"
@@ -327,7 +329,7 @@ devuan_custom_inst=$(cat <<EOF
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt -y install linux-image-arm64
 # DEBIAN_FRONTEND=noninteractive apt -y install linux-headers-arm64
-DEBIAN_FRONTEND=noninteractive apt -y install locales ntp sudo u-boot-tools
+DEBIAN_FRONTEND=noninteractive apt -y install locales ntpsec sudo u-boot-tools
 DEBIAN_FRONTEND=noninteractive $devuan_custom_extra
 dpkg-reconfigure tzdata
 apt -y install console-setup
