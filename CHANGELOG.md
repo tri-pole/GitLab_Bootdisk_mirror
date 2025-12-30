@@ -43,6 +43,11 @@ For changelogs of older material, see the `attic` area of the repo.
 
 # petitboot_mkinitrd_aarch64.bash (renamed, was petitboot_mkinitrd.bash):
 
+## [v0.15] 25-12-30
+
+### Added
+ - Handling of compressed kernels.
+
 ## [v0.14] 24-12-18
 
 ### Removed
