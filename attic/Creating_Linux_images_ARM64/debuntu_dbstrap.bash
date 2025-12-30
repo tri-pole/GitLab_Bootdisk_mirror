@@ -1059,7 +1059,7 @@ systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
                /root/custom_inst.bash
 rm ${rootfs_mnt}/root/custom_inst.bash
 sleep 2 # Just to be able to read some of the messages.
-echo "Done. Exited \033[94mchroot jail\033[0m."
+echo -e "Done. Exited \033[94mchroot jail\033[0m."
 
 if [[ $arch_str != "aarch64" ]]; then
     echo -n -e ${i_msg}" Removing local qemu-aarch64-static binary..."

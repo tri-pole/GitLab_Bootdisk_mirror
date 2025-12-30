@@ -94,17 +94,17 @@
 #   on the rootfs and in /extlinux/extlinux.conf on the bootfs).
 # - VisionFive 2 specifics:
 #   * There is an issue with the dtb files in that the correct memory size will
-#      not be identified when booting with kexec unless the dtb has the correct
-#      memory size explicitly specified. (For the default VF2 dtb the mem size
-#      is not hard coded, but determined via some "magic" during boot, so after
-#      booting with kexec on an 8GB box the memory will often show up as 4GB.)
-#      The issue is further explained in the README_petitboot-MEGA at
-#      https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw
-#      where also workarounds are offered (not all Linux distros are affected).
-#   *  The graphics support is not yet in mainline kernel so in general you
-#      have to use serial console or ssh to run the image.
-#   *  There is some confusion (stemming from Starfive) about naming regarding
-#      uEnv.txt/vf2_uEnv.txt so you might see warnings about it during boot.
+#     not be identified when booting with kexec unless the dtb has the correct
+#     memory size explicitly specified. (For the default VF2 dtb the mem size
+#     is not hard coded, but determined via some "magic" during boot, so after
+#     booting with kexec on an 8GB box the memory will often show up as 4GB.)
+#     The issue is further explained in the README_petitboot-MEGA at
+#     https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw
+#     where also workarounds are offered (not all Linux distros are affected).
+#  *  The graphics support is not yet in mainline kernel so in general you
+#     have to use serial console or ssh to run the image.
+#  *  There is some confusion (stemming from Starfive) about naming regarding
+#     uEnv.txt/vf2_uEnv.txt so you might see warnings about it during boot.
 
 # ------------------------------- parameters ---------------------------------
 
@@ -194,7 +194,7 @@ iface_name=end0
 
 # Some (but not all) commands used below to create the image.
 reqd_cmdlist=("blkid" "dd" "debootstrap" "losetup" "mkfs.fat" "mkimage"
-              "systemd-nspawn" "tar" "wget" "xz"
+              "fdisk" "systemd-nspawn" "tar" "wget" "xz"
 )
 
 # List of packages to be added to (the ones minimally needed for) the install.
@@ -204,11 +204,8 @@ ubuntu_extra_packages="nano aptitude man-db zram-tools sudo openssh-server"
 # For running in QEMU the user mode emulation binary qemu-static-<arch> is reqd.
 reqd_cmdlist_virt=("qemu-riscv64-static")
 
-# Bling? Yes, we like.
-i_msg="[\033[94m Info \033[0m]"
-w_msg="[\033[93m Warning \033[0m]"
-e_msg="[\033[91m Error \033[0m]"
-k_msg="[\033[92m OK \033[0m]"
+# Bling (color in stdout)? Yes, we like.
+enable_color_msg=yes # {yes,no}
 
 # --------------------------- preparations/checks ----------------------------
 
@@ -238,12 +235,12 @@ fi
 for chk_cmd in ${chk_cmdlist[*]}; do
     cmd_loc=$(which $chk_cmd)
     if [[ -z $cmd_loc ]]; then
-        echo -e "The required command $chk_cmd is \033[91mmissing \033[0m"
+        echo "The required command $chk_cmd is "$(y_msg "missing")"."
         have_all_cmds=no
     fi
 done
 if [[ "$have_all_cmds" == "no" ]]; then
-    echo -e ${e_msg}" Some required commands are missing, exiting."
+    echo ${e_msg}" Some required commands are missing, exiting."
     exit 1
 fi
 
@@ -261,7 +258,7 @@ if [[ "$rootfs_type" == "ext4" ]]; then
 elif [[ "$rootfs_type" == "btrfs" ]]; then # Only a placeholder for now.
     reqd_cmdlist=("${reqd_cmdlist[@]}" "mkfs.btrfs")
 else
-    echo -e "The fstype for the rootfs must be one of ext4 or btrfs, exiting."
+    echo "The fstype for the rootfs must be one of ext4 or btrfs, exiting."
     exit 1
 fi
 
@@ -491,7 +488,7 @@ dpkg-reconfigure tzdata
 dpkg-reconfigure locales
 dpkg-reconfigure keyboard-configuration
 
-echo "Set password for \033[91mroot:\033[0m"
+echo "--- Set password for root. ---"
 until passwd; do echo "Try again."; done
 EOF
 )
@@ -526,7 +523,7 @@ dpkg-reconfigure locales
 apt -y install console-setup
 # dpkg-reconfigure keyboard-configuration
 
-echo "Set password for \033[91mroot:\033[0m"
+echo "--- Set password for root. ---"
 until passwd; do echo "Try again."; done
 EOF
 )
@@ -537,15 +534,17 @@ mkextlinux_conf_p1=$(cat <<EOF
 
 # Scans for vmlinu[x,z]-* in /boot and sets up an extlinux.conf file in
 # /boot/extlinux
+#
 # Usage: /usr/local/bin/mkextlinux_conf.bash /boot/path/t/odtb/file where
 # /boot/path/to/dtb/file is the full path under /boot to the dtb file.
-# The path can alternatively be given in the env. variable dtb_path (command
-# line has precedence). The dtb path can be a symlink; the full dtb path
-# will be inserted into extlinux.conf Normally, the script is run from a
-# mounted rootfs and then the PARTUUID of the rootfs is discovered using the
-# blkid comand (see below). However, for use e.g. inside a chroot jail the
-# rootfs PARTUUID can also be given as an environment variable prepended on
-# the command line, e.g. like so (note the single quotes):
+#
+# The dtb path can be a symlink and it can also be given in the environment
+# variable dtb_path (command line has precedence). The full dtb path will be
+# inserted into extlinux.conf. The script is normally run from a mounted rootfs
+# and then the PARTUUID of the rootfs is discovered using the blkid comand (see
+# below). However, for use inside a chroot jail the rootfs PARTUUID can also be
+# given as an environment variable rootfsPARTUUID on the command line, like so
+# (note the single quotes):
 # chroot . /bin/bash -c 'rootfsPARTUUID=f3cab04c-...-faec36aace3f /usr/local/bin/mkextlinux_conf.bash /boot/path/to/dtb/file'
 
 # The kernel command line parameters here may need tweaking.
@@ -561,7 +560,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     echo "  where /boot/path/to/dtb/file is the full path (under /boot) to the dtb file."
     echo "  The path can alternatively be given in the environment variable dtb_path"
     echo "  (command line has precedence). More info inside the script."
-    exit 1
+    exit 0
 fi
 
 if [[ $# == 0 && -z $dtb_path ]]; then
@@ -584,14 +583,20 @@ else
     exit 1
 fi
 
+# To use this script on a machine where the kernel image or initrd has some
+# other naming convention, change the settings below.
+kernel_name_template="vmlinu[x,z]"
+initrd_name_template="initrd.img"
+
 distro_name_lc=$(cat /etc/os-release | grep -E "^ID=" | cut -d "=" -f2)
-distro_edition_lc=$(cat /etc/os-release | grep VERSION_CODENAME | cut -d "=" -f2)
+distro_edition_lc=$(cat /etc/os-release | grep -E "^VERSION_CODENAME" | cut -d "=" -f2)
+distro_num=$(cat /etc/os-release | grep -E "^VERSION_ID" | cut -d "=" -f2 | tr -d '"')
 
 # First letter to uppercase.
 distro_name="$(tr '[:lower:]' '[:upper:]' <<< ${distro_name_lc:0:1})""${distro_name_lc:1}"
 distro_edition="$(tr '[:lower:]' '[:upper:]' <<< ${distro_edition_lc:0:1})""${distro_edition_lc:1}"
 
-menu_title="--- $distro_name (${distro_edition}) ---"
+menu_title="--- $distro_name $distro_num (${distro_edition}) ---"
 
 if [[ -z "$rootfsPARTUUID" ]]; then
     rootfs_partuuid=$(blkid -s PARTUUID $(mount | grep -E "/ " | cut -d " " -f 1) | cut -d "\"" -f2)
@@ -637,17 +642,17 @@ fi
 	DEFAULT DEBNT_DEFAULT
 	
 	# When several entries are present; waiting time in units of 0.1s.
-	# (When only one entry is present only that will show, without title.)
+	# (When only one entry is present, only that one will show, without title.)
 	TIMEOUT 20
 	EOF
 
 item_counter=0
 default_label=""
-for kernel_name in $(ls | grep -E "vmlinu[x,z]-" | sort -V) ; do
+for kernel_name in $(ls | grep -E "${kernel_name_template}-" | sort -V) ; do
     item_counter=$((item_counter +1))
 
     kernel_vers=$(cut -d '-' -f 2- <<< $kernel_name)
-    initrd_name=initrd.img-${kernel_vers}
+    initrd_name=${initrd_name_template}-${kernel_vers}
 
     kernel_path=/boot/$kernel_name
     initrd_path=/boot/$initrd_name
@@ -659,7 +664,6 @@ for kernel_name in $(ls | grep -E "vmlinu[x,z]-" | sort -V) ; do
         default_label=$label
         add_msg="$add_msg"" (default)"
     fi
-    echo $add_msg
 
     # Note: The leading tabs in the here-document below are important.
 	cat <<-EOF >> extlinux/extlinux.conf
@@ -671,6 +675,8 @@ for kernel_name in $(ls | grep -E "vmlinu[x,z]-" | sort -V) ; do
 	  APPEND $kernel_cmdline
 	
 	EOF
+
+    echo $add_msg
 done
 
 sed -i "s/DEBNT_DEFAULT/$default_label/g" /boot/extlinux/extlinux.conf
@@ -752,18 +758,17 @@ mkgrubcfg_simple_p1=$(cat <<EOF
 # Usage: /usr/local/bin/mkgrubcfg_simple.bash /boot/path/to/dtb/file
 #   where /boot/path/to/dtb/file is the full path under /boot to the dtb file.
 #
-# The full path is the path as it appears on a booted system. The full path
-# can alternatively be given in the environment variable dtb_path (command
-# line has precedence) and it can also be a symlink (e.g. /etc/default/dtb).
-# The full dtb path will be inserted into grub.cfg in the form it appears on
-# a non booted system (i.e. without the leading /boot part of the path if a
-# separate boot partition is used; this is controlled by a parameter setting
-# in the code). If no dtb path is given, a grub.cfg is created with only a
-# placeholder for the path. Normally, this script is run from a mounted rootfs
-# and then the PARTUUID of the rootfs is discovered using the blkid command
-# (see below). However, for use e.g. inside a chroot jail the rootfs PARTUUID
-# can also be given as an environment variable prepended on the command line,
-# e.g. like so (note the single quotes):
+# The full dtb path is the path as it appears on a running system. The path can
+# be a symlink (e.g. /etc/default/dtb) and it can alternatively be given in the
+# environment variable dtb_path (command line has precedence). The full dtb path
+# will be inserted into grub.cfg in the form it appears on a non running system
+# (i.e. without the leading /boot part of the path if a separate boot partition
+# is used; this is controlled by a parameter below). If no dtb path is given, a
+# grub.cfg is created with only a placeholder for the path. This script is
+# normally run from a mounted rootfs and then the PARTUUID of the rootfs is
+# discovered using the blkid command (see below). However, for use inside a
+# chroot jail the rootfs PARTUUID can also be given as an environment variable
+# rootfsPARTUUID on the command line, like so:
 # chroot . /bin/bash -c 'rootfsPARTUUID=f3cab04c-...-faec36aace3f /usr/local/bin/mkgrubcfg_simple.bash /boot/path/to/dtb/file'
 
 # First defined at script generation time. Edit to taste.
@@ -813,13 +818,14 @@ if [[ -f $dtbpath_full ]]; then
     devicetree_msg="Devicetree:  $dtbpath_full"
 fi
 
-# To use this script on a machine where the kernel image or inird has some
+# To use this script on a machine where the kernel image or initrd has some
 # other naming convention, change the settings below.
-kernel_name_template="vmlinu[x,z]-"
+kernel_name_template="vmlinu[x,z]"
 initrd_name_template="initrd.img"
 
 distro_name_lc=$(cat /etc/os-release | grep -E "^ID=" | cut -d "=" -f2)
 distro_edition_lc=$(cat /etc/os-release | grep VERSION_CODENAME | cut -d "=" -f2)
+distro_num=$(cat /etc/os-release | grep -E "^VERSION_ID" | cut -d "=" -f2 | tr -d '"')
 
 # First letter to uppercase.
 distro_name="$(tr '[:lower:]' '[:upper:]' <<< ${distro_name_lc:0:1})""${distro_name_lc:1}"
@@ -846,17 +852,18 @@ if [[ -f grub/grub.cfg ]]; then
     mv grub/grub.cfg grub/grub.cfg.bak
 fi
 
-for kernel_name in $(ls | grep -E "$kernel_name_template" | sort -V) ; do
+for kernel_name in $(ls | grep -E "${kernel_name_template}-" | sort -V) ; do
     kernel_vers=$(cut -d '-' -f 2- <<< $kernel_name)
     initrd_name=${initrd_name_template}-${kernel_vers}
 
     kernel_path_in_grubcfg=${kernel_path_prefix}/${kernel_name}
     initrd_path_in_grubcfg=${initrd_path_prefix}/${initrd_name}
-    echo "Added grub.cfg menu entry: $distro_name $distro_edition (kernel $kernel_vers)"
+
+    menuentry_str="$distro_name $distro_num ($distro_edition) (kernel $kernel_vers)"
 
     # Note: The leading tabs in the here-document below are important.
 	cat <<-EOF >> grub/grub.cfg
-	menuentry "$distro_name $distro_edition (kernel $kernel_vers)" {
+	menuentry "$menuentry_str" {
 	
 	linux  $kernel_path_in_grubcfg $kernel_cmdline
 	initrd $initrd_path_in_grubcfg
@@ -865,6 +872,8 @@ for kernel_name in $(ls | grep -E "$kernel_name_template" | sort -V) ; do
 	}
 	
 	EOF
+
+    echo "Added grub.cfg menu entry: $menuentry_str"
 done
 EOF1
 )
@@ -916,11 +925,44 @@ EOF
 )
 
 # -------------------------------- functions ---------------------------------
-# (There is really no reason why this particular code is made into functions.)
+
+r_msg () {
+    if [[ "$enable_color_msg" == "yes" ]]; then
+        echo -ne "\033[91m${1}\033[0m" # red
+    else
+        echo -ne $1
+    fi
+}
+g_msg () {
+    if [[ "$enable_color_msg" == "yes" ]]; then
+        echo -ne "\033[92m${1}\033[0m" # green
+    else
+        echo -ne $1
+    fi
+}
+b_msg () {
+    if [[ "$enable_color_msg" == "yes" ]]; then
+        echo -ne "\033[94m${1}\033[0m" # blue
+    else
+        echo -ne $1
+    fi
+}
+y_msg () {
+    if [[ "$enable_color_msg" == "yes" ]]; then
+        echo -ne "\033[93m${1}\033[0m" # yellow
+    else
+        echo -ne $1
+    fi
+}
+
+i_msg="[ $(b_msg "Info") ]"
+w_msg="[ $(y_msg "Warning") ]"
+e_msg="[ $(r_msg "Error") ]"
+k_msg="[ $(g_msg "OK") ]"
 
 install_riscv64_qemu_binary () {
     if [[ $arch_str != "riscv64" ]]; then
-        echo -n -e ${i_msg}" Installing local qemu-riscv64-static binary ..."
+        echo -n ${i_msg}" Installing local qemu-riscv64-static binary ..."
         qemu_binary_loc=$(which qemu-riscv64-static)
         cp $qemu_binary_loc ${rootfs_mnt}/usr/bin
         echo " Done."
@@ -929,14 +971,14 @@ install_riscv64_qemu_binary () {
 
 remove_riscv64_qemu_binary () {
     if [[ $arch_str != "riscv64" ]]; then
-        echo -n -e ${i_msg}" Removing local qemu-riscv64-static binary ..."
+        echo -n ${i_msg}" Removing local qemu-riscv64-static binary ..."
         rm ${rootfs_mnt}/usr/bin/qemu-riscv64-static
         echo " Done."
     fi
 }
 
 prepare_for_chroot_jail () {
-    echo -n -e ${i_msg}" Preparing for chroot jail ..."
+    echo -n ${i_msg}" Preparing for chroot jail ..."
     case $1 in
         "ubuntu")
             echo -e "$ubuntu_custom_inst" >${rootfs_mnt}/root/"ubuntu_custom_inst.bash"
@@ -953,19 +995,19 @@ setup_apt_sources () {
     case $1 in
         "ubuntu")
 	    if [[ "$ubuntu_edition" == "Jammy" ]]; then
-		echo -n -e ${i_msg}" Setting up /etc/apt/sources.list ..."
+		echo -n ${i_msg}" Setting up /etc/apt/sources.list ..."
 		rm -f ${rootfs_mnt}/etc/apt/sources.list
                 echo -e "$ubuntu_repo_list" >${rootfs_mnt}/etc/apt/sources.list
 
 	    else
-		echo -n -e ${i_msg}" Setting up /etc/apt/sources.list.d/ubuntu.sources ..."
+		echo -n ${i_msg}" Setting up /etc/apt/sources.list.d/ubuntu.sources ..."
 		rm -f ${rootfs_mnt}/etc/apt/sources.list
 		rm -f ${rootfs_mnt}/etc/apt/sources.list.d/ubuntu.sources
 		echo -e "$ubuntu_repo_list_deb822" > ${rootfs_mnt}/etc/apt/sources.list.d/ubuntu.sources
 	    fi
         ;;
         "debian")
-	    echo -n -e ${i_msg}" Setting up /etc/apt/sources.list.d/debian.sources ..."
+	    echo -n ${i_msg}" Setting up /etc/apt/sources.list.d/debian.sources ..."
 	    rm -f ${rootfs_mnt}/etc/apt/sources.list
 	    rm -f ${rootfs_mnt}/etc/apt/sources.list.d/debian.sources
             echo -e "$debian_repo_list_deb822" > ${rootfs_mnt}/etc/apt/sources.list.d/debian.sources
@@ -975,16 +1017,16 @@ setup_apt_sources () {
 }
 
 do_chroot_jail_tasks () {
-    echo -e ${i_msg}" Entering \033[94mchroot jail\033[0m. Installing some pkgs., running some scripts ..."
+    echo ${i_msg}" Entering "$(b_msg "chroot jail")". Installing some pkgs., running some scripts ..."
     systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
         /root/"${1}_custom_inst.bash"
    rm ${rootfs_mnt}/root/"${1}_custom_inst.bash"
     sleep 2 # Just to be able to read some of the messages.
-    echo -e "Done. Exited \033[94mchroot jail\033[0m."
+    echo "Done. Exited "$(b_msg "chroot jail")"."
 }
 
 setup_dtb_file () {
-    echo -n -e ${i_msg}" Copying the \033[94m${dtbfile_name}\033[0m file to bootfs..."
+    echo -n ${i_msg}" Copying the "$(b_msg "$dtbfile_name")" file to bootfs..."
     kern_name=$(ls ${rootfs_mnt}/boot | grep "${kernel_img_name_short}-")
     kern_vers=$(cut -d '-' -f 2- <<< $kern_name)
     case $1 in
@@ -1002,17 +1044,17 @@ setup_dtb_file () {
         cp $dtbfile_loc ${bootfs_mnt}/dtbs/${dtb_mfg}
         echo " Done."
     else
-	echo -e " Fail!"
-        echo -e ${w_msg}"\nCould not find $dtbfile_name"
+	echo " Fail!"
+        echo ${w_msg}"\nCould not find $dtbfile_name"
         echo " in $dtbfile_dir"
-        echo -e ${w_msg}" Device tree file must be set up manually on the image."
+        echo ${w_msg}" Device tree file must be set up manually on the image."
     fi
 }
 
 setup_distro_specifics () {
     case $1 in
         "ubuntu")
-            echo -n -e ${i_msg}" Installing Network Manager configuration files for $iface_name ..."
+            echo -n ${i_msg}" Installing Network Manager configuration files for $iface_name ..."
 
             nm_conf_dir=${rootfs_mnt}/etc/NetworkManager
             nm_syscon_dir=${nm_conf_dir}/system-connections
@@ -1030,7 +1072,7 @@ setup_distro_specifics () {
 
             echo " Done."
 
-            echo -n -e ${i_msg}" Setting up local host mappings in /etc/hosts ..."
+            echo -n ${i_msg}" Setting up local host mappings in /etc/hosts ..."
             echo -e "$ubuntu_hosts_file" >${rootfs_mnt}/etc/hosts
             echo " Done."
 
@@ -1039,7 +1081,7 @@ setup_distro_specifics () {
             # also be a leftover resolv.conf but it will be fixed automagically
             # by systemd-resolved.service
             if [[ -f ${rootfs_mnt}/etc/resolv.conf ]]; then
-                echo -n -e ${i_msg}" Removing (interfering) pre installed /etc/resolv.conf ..."
+                echo -n ${i_msg}" Removing (interfering) pre installed /etc/resolv.conf ..."
                 rm ${rootfs_mnt}/etc/resolv.conf
                 echo " Done."
             fi
@@ -1047,13 +1089,13 @@ setup_distro_specifics () {
             # The flash-kernel package can cause problems on systems without
             # flash storage or non EFI systems. (At least this was the case on
             # ARM64.)
-            echo -n -e ${i_msg}" Preventing apt from installing package flash-kernel ..."
+            echo -n ${i_msg}" Preventing apt from installing package flash-kernel ..."
             echo -e "$flashk_block_file" >\
                 ${rootfs_mnt}/etc/apt/preferences.d/no-flash-kernel
             echo " Done."
         ;;
         "debian")
-            echo -n -e ${i_msg}" Setting up /etc/network/interfaces ..."
+            echo -n ${i_msg}" Setting up /etc/network/interfaces ..."
             mkdir -p ${rootfs_mnt}/etc/network
             echo -e "$debian_interfaces_file" >\
                 ${rootfs_mnt}/etc/network/interfaces
@@ -1065,7 +1107,7 @@ esac
 
 # ---------------------------------- main ------------------------------------
 
-echo -e "\n\033[92m -- Making image for $distro_name ($distro_edition, riscv64) -- \033[0m\n"
+echo -e "\n"$(g_msg "-- Making image for $distro_name ($distro_edition, riscv64) -- ")"\n"
 
 imgfile_MiB=$(($imgfile_num_sectors *512/1024/1024)) # Not precise.
 desired_MiB=$((14*${imgfile_MiB}/10)) # Approx. space for imgfile +imgfile.xz
@@ -1073,8 +1115,8 @@ desired_MiB=$((14*${imgfile_MiB}/10)) # Approx. space for imgfile +imgfile.xz
 cd $imgfile_dir
 imgfile_loc=${imgfile_dir}/${imgfile_name}
 
-echo -e "Image container file path (during build):"
-echo $imgfile_loc
+echo "Image container file path (during build):"
+echo $(b_msg $imgfile_loc)
 
 if [[ "$compressed_img" == "no" ]]; then
     required_MiB=$imgfile_MiB
@@ -1088,7 +1130,7 @@ fi
 echo -e "\nMake sure that you have enough space: up to ~${required_MiB} MB +some.\n"
 echo "This is what you have:"
 df -h
-echo -n -e "\nIs this enough? [N,y] "
+echo -ne "\nIs this enough? [N,y] "
 read is_space_enough
 
 if [[ "$is_space_enough" == "y" ]] ; then
@@ -1098,20 +1140,20 @@ else
     exit 1
 fi
 
-echo -e "\n\033[92m -- Starting the installation -- \033[0m\n"
+echo -e "\n"$(g_msg "-- Starting the installation --")"\n"
 
 umask 022
 
-echo -n -e ${i_msg}" Making a directory for temporary files ..."
+echo -n ${i_msg}" Making a directory for temporary files ..."
 mkdir -p $tmpfile_dir
 echo " Done."
 
-echo -e ${i_msg}" Setting up container file (${imgfile_MiB} MB) ..."
+echo ${i_msg}" Setting up container file (${imgfile_MiB} MB) ..."
 dd if=/dev/zero of=$imgfile_loc bs=512 count=$imgfile_num_sectors conv=fsync status=progress
 sync
 echo "Done."
 
-echo -n -e ${i_msg}" Setting up loop device for container file ..."
+echo -n ${i_msg}" Setting up loop device for container file ..."
 loop_dev=$(losetup -P -f --show ${imgfile_loc})
 if [[ -z $loop_dev ]]; then
     echo -e "\n"${e_msg}" The command losetup $imgfile_loc failed, exiting."
@@ -1119,14 +1161,14 @@ if [[ -z $loop_dev ]]; then
 fi
 echo " Done."
 
-echo -e ${i_msg}" Creating partitions in container file with sfdisk ..."
+echo ${i_msg}" Creating partitions in container file with sfdisk ..."
 echo -e "$sfdisk_script" | sfdisk $loop_dev
 sync
 p4_PARTUUID=$(sfdisk --part-uuid $loop_dev 4 2>/dev/null)
 echo "Rootfs PARTUUID: $p4_PARTUUID"
 echo "Done."
 
-echo -n -e ${i_msg}" Formatting the container file partitions ..."
+echo -n ${i_msg}" Formatting the container file partitions ..."
 mkfs.fat -F32 -n $bootfs_label ${loop_dev}p3 >/dev/null 2>&1
 if [[ $rootfs_type == "ext4" ]]; then
     mkfs.ext4 -F -q -U $rootfs_UUID -L $rootfs_label -b 4k -m 0 ${loop_dev}p4 >/dev/null 2>&1
@@ -1137,35 +1179,35 @@ else
 fi
 echo " Done."
 
-rootp_msg="\033[94mroot\033[0m"
-echo -n -e ${i_msg}" Mounting the $rootp_msg partition inside the container file ..."
+rootp_msg=$(b_msg "root")
+echo -n ${i_msg}" Mounting the $rootp_msg partition inside the container file ..."
 mkdir -p $rootfs_mnt
 if ! mount ${loop_dev}p4 $rootfs_mnt ; then
-    echo -e ${e_msg}" The command mount ${loop_dev}p4 failed, exiting."
+    echo ${e_msg}" The command mount ${loop_dev}p4 failed, exiting."
     exit 1
 fi
 sync
 echo " Done."
 
-bootp_msg="\033[94mboot\033[0m"
-echo -n -e ${i_msg}" Mounting the $bootp_msg partition inside the container file ..."
+bootp_msg=$(b_msg "boot")
+echo -n ${i_msg}" Mounting the $bootp_msg partition inside the container file ..."
 mkdir -p $bootfs_mnt
 if ! mount ${loop_dev}p3 $bootfs_mnt ; then
-    echo -e ${e_msg}" The command mount ${loop_dev}p3 failed, exiting."
+    echo ${e_msg}" The command mount ${loop_dev}p3 failed, exiting."
     exit 1
 fi
 echo " Done."
 
-echo -e ${i_msg}" Debootstrapping ${distro_name} system to ${rootfs_mnt}"
+echo ${i_msg}" Debootstrapping ${distro_name} system to ${rootfs_mnt}"
 debootstrap --arch riscv64 --keyring $keyring_file $distro_release $rootfs_mnt $distro_repourl
 if [[ $? -ne 0 ]]; then
-    echo -e ${e_msg} " Could not complete debootstrapping, exiting."
+    echo ${e_msg} " Could not complete debootstrapping, exiting."
     exit 1
 else
-    echo -e ${k_msg}" Done."
+    echo ${k_msg}" Done."
 fi
 
-echo -n -e ${i_msg}" Setting up the /etc/fstab file..."
+echo -n ${i_msg}" Setting up the /etc/fstab file..."
 echo -e "$fstab_file" >${rootfs_mnt}/etc/fstab
 # There is no UUID on a fat partition but in fstab the serial number works.
 bootfs_UUID=$(blkid -s UUID -o value ${loop_dev}p3)
@@ -1173,32 +1215,32 @@ fstab_lastline="UUID=${bootfs_UUID}  $bootfs_dir  vfat $bootfs_mnt_opts  0  2"
 echo -e "$fstab_lastline" >>${rootfs_mnt}/etc/fstab
 echo " Done."
 
-echo -n -e ${i_msg}" Setting the hostname in /etc/hostname ..."
+echo -n ${i_msg}" Setting the hostname in /etc/hostname ..."
 echo -e "$host_name" >${rootfs_mnt}/etc/hostname
 echo " Done."
 
 # This script (Canonical) provides an alternative method for resizing rootfs.
-echo -e ${i_msg}" Installing script at /usr/local/bin/growpart.sh ..."
+echo ${i_msg}" Installing script at /usr/local/bin/growpart.sh ..."
 wget -P $tmpfile_dir -nv $growpart_url
 if [[ $? -ne 0 ]]; then
-    echo -e ${w_msg}" Unable to download the script growpart.sh"
+    echo ${w_msg}" Unable to download the script growpart.sh"
 else
     cp ${tmpfile_dir}/growpart ${rootfs_mnt}/usr/local/bin/growpart.sh
     chmod 0755 ${rootfs_mnt}/usr/local/bin/growpart.sh
-    echo -e ${k_msg}" Done."
+    echo ${k_msg}" Done."
 fi
 
-echo -n -e ${i_msg}" Setting up directories /boot/extlinux and /boot/grub ..."
+echo -n ${i_msg}" Setting up directories /boot/extlinux and /boot/grub ..."
 mkdir -p -m 0755 ${rootfs_mnt}/boot/extlinux
 mkdir -p -m 0755 ${rootfs_mnt}/boot/grub
 echo " Done."
 
-echo -n -e ${i_msg}" Setting up symlink /etc/default/dtb to default dtb ..."
+echo -n ${i_msg}" Setting up symlink /etc/default/dtb to default dtb ..."
 mkdir -p ${rootfs_mnt}/etc/default
 ln -s ../..${dtbfile_path} ${rootfs_mnt}/etc/default/dtb
 echo " Done."
 
-echo -n -e ${i_msg}" Setting up uEnv.txt ..."
+echo -n ${i_msg}" Setting up uEnv.txt ..."
 echo -e "$uEnv_txt" >${bootfs_mnt}/uEnv.txt
 vf2_str=$(grep "visionfive-2" <<< "$dtbfile_name")
 if [[ ! -z "$vf2_str" ]]; then
@@ -1214,11 +1256,11 @@ if [[ ! -z "$vf2_str" ]]; then
 fi
 echo " Done."
 
-echo -n -e ${i_msg}" Setting up /etc/fw_env.config ..."
+echo -n ${i_msg}" Setting up /etc/fw_env.config ..."
 echo -e "$fw_env_config" >${rootfs_mnt}/etc/fw_env.config
 echo " Done."
 
-echo -n -e ${i_msg}" Installing utility scripts in /usr/local/bin ..."
+echo -n ${i_msg}" Installing utility scripts in /usr/local/bin ..."
 # This script uses grub-mkconfig but it doesn't work inside a loop device.
 # (It is installed for later use, to produce fancier grub menus.)
 echo -e "$mkgrubcfg" >${rootfs_mnt}/usr/local/bin/mkgrubcfg.bash
@@ -1252,7 +1294,7 @@ setup_dtb_file $1
 
 remove_riscv64_qemu_binary
 
-echo -n -e ${i_msg}" Creating extlinux.conf update hook after kernel install/removal ..."
+echo -n ${i_msg}" Creating extlinux.conf update hook after kernel install/removal ..."
 mkdir -p ${rootfs_mnt}/etc/kernel/postinst.d
 mkdir -p ${rootfs_mnt}/etc/kernel/postrm.d
 echo -e "$extlinux_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/update-extlinux-conf
@@ -1265,18 +1307,18 @@ echo -e ${i_msg}" Creating /boot/extlinux/extlinux.conf ..."
 chroot ${rootfs_mnt} bash -c "rootfs_PARTUUID_=$rootfs_PARTUUID /etc/kernel/postinst.d/update-extlinux-conf"
 echo "Done."
 
-echo -n -e ${i_msg}" Creating grub.cfg (simple version) update hook after kernel install/removal ..."
+echo -n ${i_msg}" Creating grub.cfg (simple version) update hook after kernel install/removal ..."
 echo -e "$grubcfg_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/update-grub-cfg-simple
 echo -e "$grubcfg_update_hook" > /${rootfs_mnt}/etc/kernel/postrm.d/update-grub-cfg-simple
 chmod 0755 ${rootfs_mnt}/etc/kernel/postinst.d/update-grub-cfg-simple
 chmod 0755 ${rootfs_mnt}/etc/kernel/postrm.d/update-grub-cfg-simple
 echo " Done."
 
-echo -e ${i_msg}" Creating /boot/grub/grub.cfg (simple version) ..."
+echo ${i_msg}" Creating /boot/grub/grub.cfg (simple version) ..."
 chroot ${rootfs_mnt} bash -c "rootfs_PARTUUID_=$rootfs_PARTUUID /etc/kernel/postinst.d/update-grub-cfg-simple"
 echo "Done."
 
-echo -n -e ${i_msg}" Setting up /etc/default/zramswap ..."
+echo -n ${i_msg}" Setting up /etc/default/zramswap ..."
 sed -i "s/.*ALGO=.*/ALGO=${zram_compression}/g" ${rootfs_mnt}/etc/default/zramswap
 sed -i "s/.*PERCENT=.*/PERCENT=${zram_percent}/g" ${rootfs_mnt}/etc/default/zramswap
 echo " Done."
@@ -1287,7 +1329,7 @@ kernel_version=$(ls ${bootfs_mnt} | grep -E "vmlinu[x,z]-" | cut -d '-' -f 2-)
 cd $imgfile_dir
 
 if [[ -f $root_sshkey_loc ]]; then
-    echo -e -n ${i_msg}" Installing key in file \033[94m${root_sshkey_loc}\033[0m as ssh key for root..."
+    echo -n ${i_msg}" Installing key in file "$(b_msg ${root_sshkey_loc})" as ssh key for root..."
     mkdir -p ${rootfs_mnt}/root/.ssh
     chmod 0700 ${rootfs_mnt}/root/.ssh
     cp $root_sshkey_loc ${rootfs_mnt}/root/.ssh/authorized_keys
@@ -1303,18 +1345,18 @@ if [[ -f $root_sshkey_loc ]]; then
 fi
 
 if [[ -d $add_dir_loc ]]; then
-    echo -e ${i_msg}" Installing the contents of the local directory \033[94m${add_dir_loc}\033[0m to"
-    echo -e "         directory \033[94m${add_dir_img}\033[0m on the image..."
+    echo ${i_msg}" Installing the contents of the local directory "$(b_msg ${add_dir_loc})" to"
+    echo "         directory "$(b_msg ${add_dir_img})" on the image..."
     mkdir -p ${rootfs_mnt}/${add_dir_img}
     cp -vR ${add_dir_loc##*/} ${rootfs_mnt}/${add_dir_img}
     echo " Done."
 fi
 
-echo -n -e ${i_msg}" Writing info about grub.cfg and alternate kernels ..."
+echo -n ${i_msg}" Writing info about grub.cfg and alternate kernels ..."
 echo -e "$README_kernels" >${rootfs_mnt}/boot/README_kernels.txt
 echo " Done."
 
-echo -n -e ${i_msg}" Writing instructions for installing Petitboot ..."
+echo -n ${i_msg}" Writing instructions for installing Petitboot ..."
 echo -e "$README_auxbootldr" >${bootfs_mnt}/README_auxbootldr.txt
 echo " Done."
 
@@ -1330,30 +1372,30 @@ if [[ $rootfs_type == "ext4" ]]; then
 fi
 echo " Done."
 
-echo -n -e ${i_msg}" Disconnecting and removing the loop devices ..."
+echo -n ${i_msg}" Disconnecting and removing the loop devices ..."
 losetup -d $loop_dev 2>/dev/null 
 echo " Done."
 
 imgfile_name_full=${distro_name}_${distro_edition}_${kernel_version}_${img_tag}.img
-echo -n -e ${i_msg}" Adding kernel version to image name..."
+echo -n ${i_msg}" Adding kernel version to image name..."
 imgfile_loc_full=${imgfile_dir}/${imgfile_name_full}
 mv $imgfile_loc $imgfile_loc_full
 echo " Done."
 
-echo -e ${i_msg}" Output file: \033[94m${imgfile_name_full}\033[0m"
+echo ${i_msg}" Output file: "$(b_msg ${imgfile_name_full})
 
 if [[ "$docleanup_after" == "yes" ]]; then
-    echo -n -e ${i_msg}" Doing final cleanup of build area ..."
+    echo -n ${i_msg}" Doing final cleanup of build area ..."
     rm -rf $tmpfile_dir
     rmdir $rootfs_mnt
     echo " Done."
 fi
 
 if [[ "$compressed_img" == "yes" ]]; then
-    echo -e ${i_msg}" Compressing the image using xz compression ..."
+    echo ${i_msg}" Compressing the image using xz compression ..."
     xz -v $imgfile_loc_full
     sleep 1
     echo "Done."
 fi
 
-echo -e "\n\033[92m -- $0 finished -- \033[0m\n"
+echo $(g_msg "-- $0 finished --")
