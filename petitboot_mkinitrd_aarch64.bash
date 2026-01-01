@@ -118,7 +118,7 @@ use_build_ver_tag=true # {true_false}
 # The initramfs can be built also in a smaller version where the e2fsprogs
 # tools are omitted (file system tools are still available in Busybox).
 # (Note: The name tage format of the generated initrd is still the same.)
-no_e2fsprogs=true # {true,false}
+no_e2fsprogs=false # {true,false}
 
 # In the download parameter settings below the setting dload_<pkg>_tarball
 # can be set to true or false. If set to false it is assumed that the 
@@ -131,6 +131,12 @@ bootdisk_dir=bootdisk # Clone into dir, relative to $temp_dir
 
 extract_vmlinux_url="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/plain/scripts/extract-vmlinux?h=v6.18.2"
 misc_patch_dir="misc_patches" # Relative to $bootdisk_dir
+
+# Definitions for binaries in 'linux' and 'archive' categories for 'file' cmd.
+file_magic_ver="FILE5_46"
+file_magic_url_base="https://raw.githubusercontent.com/file/file/refs/tags/${file_magic_ver}/magic/Magdir"
+file_magic_arr=(linux archive compress)
+file_magic_cut=("515,524p" "327,419p" "1,458p") # Arguments to sed -n below.
 
 kexectools_ver="2.0.30"
 kexectools_url_base="https://github.com/horms/kexec-tools/archive/refs/tags"
@@ -212,9 +218,7 @@ fi
 # These files are not necessary for Petitboot to start but decompression of
 # kernel/initramfs will not work if file or grep (the complete one) is missing.
 # (The binary for can probably be omitted.)
-copy_exe_list=("/usr/bin/file" "/usr/bin/grep" "/usr/bin/unzstd" "/usr/bin/gpg")
-copy_misc_list=("/usr/lib/file/magic.mgc")
-copy_file_list=(${copy_exe_list[@]} ${copy_misc_list[@]})
+copy_file_list=("/usr/bin/file" "/usr/bin/grep" "/usr/bin/unzstd" "/usr/bin/gpg")
 
 stat_linked_exe_list=("/bin/busybox")
 
@@ -745,7 +749,6 @@ mkdir ${temp_dir}/initramfs/usr/lib/${this_arch}-linux-gnu
 mkdir ${temp_dir}/initramfs/usr/lib/udev
 mkdir ${temp_dir}/initramfs/usr/lib/udev/rules.d
 mkdir ${temp_dir}/initramfs/usr/lib/terminfo
-mkdir ${temp_dir}/initramfs/usr/lib/file
 mkdir ${temp_dir}/initramfs/usr/sbin
 mkdir ${temp_dir}/initramfs/usr/share
 mkdir ${temp_dir}/initramfs/usr/share/kexectools
@@ -820,12 +823,6 @@ for loc_file in ${copy_file_list[@]}; do
     fi
 done
 
-echo -e -n ${i_msg}" Setting a symlink for the magic file for the cmd 'file' ..."
-mkdir -p ${temp_dir}/initramfs/usr/share
-cd ${temp_dir}/initramfs/usr/share/misc
-ln -s ../../lib/file/magic.mgc
-echo " Done."
-
 # -------------------------------- Downloads --------------------------------
 
 # This is small so we always clone it.
@@ -877,13 +874,28 @@ if [[ $dload_eudev_tarball == true ]]; then
     do_download "eudev" $eudev_pkg_url $eudev_pkg_loc
 fi
 
-echo -e -n ${i_msg}" Downloading the script 'extract-vmlinux' from Linux src ..."
+echo -e ${i_msg}" Downloading the script 'extract-vmlinux' from Linux src ..."
 wget $extract_vmlinux_url -O ${temp_dir}/downloads/extract-vmlinux
 if [[ $? == 0 ]]; then
     echo -e ${k_msg}" Done."
 else
-    echo -e ${e_msg}" Failed to download 'extract-vmlinux', exiting."
-    exit 1
+    echo -e ${w_msg}" Failed download 'extract-vmlinux', kernel decompr. will not work."
+fi
+
+echo -e ${i_msg}" Downloading magic file definitions for kernel and initramfs ..."
+have_all_magic=true
+for file_magic in ${file_magic_arr[@]} ; do
+    wget ${file_magic_url_base}/$file_magic -O ${temp_dir}/downloads/$file_magic
+    if [[ $? != 0 ]]; then
+        echo -e ${w_msg}" Failed to download magic file ${file_magic}."
+        have_all_magic=false
+    fi
+done
+
+if [[ $have_all_magic == true ]]; then
+    echo -e ${k_msg}" Done."
+else
+    echo " Kernel decompression will not work due to failed downloads."
 fi
 
 # ---------------------------------- Build ---------------------------------
@@ -1082,6 +1094,23 @@ echo -e -n ${i_msg}" Installing the script 'extract-initrd-pb' ..."
 echo -e "$extract_initrd_pb" >${temp_dir}/initramfs/usr/sbin/extract-initrd-pb
 chmod 0755 ${temp_dir}/initramfs/usr/sbin/extract-initrd-pb
 echo " Done."
+
+if [[ $have_all_magic == true ]]; then
+    echo -e -n ${i_msg}" Generating the file 'magic.mgc' for the 'file' command ..."
+    cd ${temp_dir}/initramfs/usr/share/misc
+    for idx in "${!file_magic_arr[@]}" ; do
+        cat ${temp_dir}/downloads/"${file_magic_arr[idx]}" | sed -n "${file_magic_cut[idx]}" >>magic
+    done
+    file -m magic -C
+    if [[ ! -f "magic.mgc" ]]; then
+        echo -e ${w_msg}" The 'file' command failed to compile the magic file."
+        echo "            Kernel decompression will not work."
+    else
+        chmod 0755 magic.mgc
+        mv magic magic.txt
+        echo " Done."
+    fi
+fi
 
 # ----------------------------- Find and copy libs ---------------------------
 
