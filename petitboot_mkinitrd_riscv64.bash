@@ -2,6 +2,7 @@
 
 # petitboot_mkinitrd_riscv64.bash
 # 24-12-18: v0.1
+# 26-01-01: v0.11
 # Author: Tripole
 
 # Script to build and pack Petitboot for RISCV64 in an initramfs (cpio+gzip).
@@ -24,11 +25,14 @@
 # libblkid-dev libdevmapper-dev libdw-dev libelf-dev libgd-tools
 # libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev libssl-dev libtool
 # libudev-dev pkg-config tree u-boot-tools wget
+# The build host must also have installed some commands that are copied (along
+# with some conf files), namely file, grep, unzstd (see copy_*_list below).
 
 # Patches: There are some patches for Petitboot applied to enhance/adjust
 # functionality and there are patches needed to get RISCV64 support in the
 # version (fork) of kexec-tools that we use here (see below). These patches
-# downloaded and applied as part of the build.
+# downloaded and applied as part of the build. The script extract-vmlinux from
+# Linux src is downloaded and patched at build time as well.
 
 # Usage: The script can be run as an ordinary user but near the end it will
 # ask for the user password to execute a sudo command to change ownership of
@@ -45,6 +49,7 @@
 # below (these files are small, but you can omit them to save space).
 
 # Things to note about Petitboot:
+# - Petitboot has a configuration menu but settings cannot be saved to disk.
 # - The dmidecode command is fake and is just a link to /sbin/sysinfo which is
 #   a hacky shell script to extract info from /proc/device-tree. This script
 #   may need tweaking for different platforms in order to correctly show the
@@ -53,15 +58,20 @@
 # - gpg (which is only needed for verifying signed or encrypted boot) is not
 #   properly setup (missing certificates and libraries); for instructions, see
 #   e.g. the notes at raptorengineering.com in the link above.
-# - Some files (the libraries and gpg, cf. below) are just copied from the host.
+# - Some files (libraries and executables, cf. below) are just copied from the
+#   host.
 # - Sometimes it is necessary to hit "Rescan devices" in Petitboot in order to
-#   see all bootable devices attached. (There is a default delay of a few secs
-#   in starting the Petitboot main manu window to allow for all devices to be
-#   detected before the display is drawn but when many devices are connected
-#   the scan may take longer than this delay and therefore a rescan is needed.)
+#   see all bootable devices attached (if devices respond slowly, e.g. on USB).
+#   (There is a default delay of a few secs when starting the Petitboot main
+#   menu window to allow for all devices to be detected before the display is
+#   drawn but when many devices are connected the scan may take longer.)
+# - Petitboot does not seem to be able to follow symlinks when loading kernel
+#   and initramfs so their names in grub.cfg must refer to real files.
 # - There are five kernel command line options that can be sent to the kernel
 #   running Petitboot and which will direct the behavior of Petitboot:
 #     pb_no_autoboot={true,false} (default false). No autoboot if true.
+#       (Petitboot has a default autoboot of 10s (here patched to 60s), but the
+#       feature is of limited use; the selected boot entry cannot be saved.)
 #     pb_nonet={true,false} (default false) Will create a netns jail for
 #       Petitboot if true so that only the loopback interface will be enabled.
 #     pb_delay={0,1,2,3,...} (default 1) Will delay starting main UI x seconds.
@@ -75,11 +85,17 @@
 #       needed when booting some kernels that (for some reason) cannot see all
 #       RAM and hence would otherwise not find the initramfs (which is placed
 #       near the top of RAM for kexec reboot). More info below.
+#     pb_no_decompr={true,false} (default false). Decompression of kernel
+#       and initrfamfs is never attempted if this option is set to true.
+#       (In the default mode, the decompression code will detect uncompressed
+#       items and leave them as-is.) The compression formats recognized for
+#       kernels are gzip, xz, bzip2, lzma and zstd; the last also for
+#       initramfs.
 
 # Things to note about Busybox and other utils:
 # - When entering the Busybox command line you will see an error message like
 #   "can't access tty; job control turned off". This is due to the choice of
-#   /dev/console which will be serial; thus cannot be a controlled tty, see e.g.
+#   /dev/console is will be serial; thus cannot be a controlled tty, see e.g.
 #   https://raw.githubusercontent.com/brgl/busybox/master/shell/cttyhack.c
 # - The commands reboot, halt, poweroff are available in Busybox but must be
 #   used with the -f flag (force; do not go through init).
@@ -91,8 +107,9 @@
 # ToDo:
 # - Perhaps add the option of having a user supplied file tree baked into the
 #   initramfs, e.g. with firmware files for the kernel running Petitboot.
+#   (The plugin mechanism of Petitboot requires manual invocation.)
 # - There seems to be an option for Petitboot named petitboot.debug that can
-#   be passed via the kernel command line, what is it?
+#   be passed via the kernel command line, but it is unclear what it is.
 
 # Final note: I'm aware (now, D'oh!) that the name of the program is a bit of a
 # misnomer since the program creates an initramfs (file system), not an initrd
@@ -109,21 +126,16 @@ mytag="3p-${to_day}"
 build_ver_tag="${mytag}"
 # If the next line is set to true, the build_ver_tag is shown in the top
 # margin in the Petitboot main menu (after the Petitboot version number)
-# and the tag is also applied to the resulting initramfs(s) (see +100 lines).
+# and the tag is also applied to the resulting initramfs(s) (see below).
 use_build_ver_tag=true # {true_false}
 
 # The initramfs can be built also in a smaller version where the e2fsprogs
 # tools are omitted (file file system tools are still available in Busybox).
-# (Note: The name tage format of the generated initrd is still the same though.)
+# (Note: The name tag format of the generated initrd is still the same though.)
 no_e2fsprogs=false # {true,false}
 
-# Optionally, a u-boot tagged copy of the initramfs (uInitrd-*) can be made.
-make_uboot_tagged_initrd=false # {true,false}
-
-# In the download parameter settings below the setting dload_<pkg>_tarball
-# can be set to true or false. If set to false it is assumed that the 
-# correctly named tarball is already placed in ${temp_dir}/downloads and if
-# set to true it will be downloaded there.
+# The source packages listed/defined below are downloaded unless a copy of the
+# package in question already exists in ${temp_dir}/downloads (see below).
 
 # The standard kexec-tools maintained by Simon Horman (horms) at
 # https://github.com/horms/kexec-tools do not yet have the required support
@@ -142,6 +154,16 @@ make_uboot_tagged_initrd=false # {true,false}
 bootdisk_url="https://gitlab.com/tripole-inc/bootdisk.git"
 bootdisk_dir=bootdisk # Clone into dir, relative to $temp_dir
 
+# Script to decompress the Linux kernel.
+extract_vmlinux_url="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/plain/scripts/extract-vmlinux?h=v6.18.2"
+misc_patch_dir="misc_patches" # Relative to $bootdisk_dir
+
+# Definitions for categories 'linux', 'archive' and 'compress' for 'file' cmd.
+file_magic_ver="FILE5_46"
+file_magic_url_base="https://raw.githubusercontent.com/file/file/refs/tags/${file_magic_ver}/magic/Magdir"
+file_magic_arr=(linux archive compress)
+file_magic_cut=("524,530p" "327,419p" "1,458p") # Arguments to sed -n below.
+
 kexectools_ver="sf-rv-Image-56552e1"
 kexectools_branch="rv-Image"
 kexectools_url="https://github.com/sugarfillet/kexec-tools.git"
@@ -157,26 +179,22 @@ busybox_tarball_rpo=busybox-${busybox_ver}.tar.bz2
 busybox_tarball_loc=busybox-v${busybox_ver}.tar.bz2
 # busybox_bch=$(sed -e 's/\./_/g' <<< $busybox_ver)
 # busybox_git_url="https://git.busybox.net/busybox"
-dload_busybox_tarball=true
 
 iproute2_ver="6.12.0"
 iproute2_url_base="https://github.com/iproute2/iproute2/archive/refs/tags"
 # iproute2_url_base="https://git.kernel.org/pub/scm/network/iproute2/iproute2.git/snapshot"
 iproute2_tarball_rpo=v${iproute2_ver}.tar.gz
 iproute2_tarball_loc=iproute2-$iproute2_tarball_rpo
-dload_iproute2_tarball=true
 
 e2fsprogs_ver="1.47.2"
 e2fsprogs_url_base="https://github.com/tytso/e2fsprogs/archive/refs/tags"
 e2fsprogs_tarball_rpo=v${e2fsprogs_ver}.tar.gz
 e2fsprogs_tarball_loc=e2fsprogs-$e2fsprogs_tarball_rpo
-dload_e2fsprogs_tarball=true
 
 petitboot_ver="1.15"
 petitboot_url_base="https://github.com/open-power/petitboot/releases/download"/v${petitboot_ver}
 petitboot_tarball_rpo=petitboot-v${petitboot_ver}.tar.gz
 petitboot_tarball_loc=$petitboot_tarball_rpo
-dload_petitboot_tarball=true
 pb_patch_dir="petitboot_patches" # Relative to dir of this script.
 pb_1v13_add_grubcfg_path_patch_fname="pb_1v13_add_grubcfg_path_patch.patch"
 pb_1v13_ui_and_bootcfg_patch_fname="pb_1v13_ui_and_bootcfg_patch.patch"
@@ -190,7 +208,6 @@ eudev_ver="3.2.14"
 eudev_url_base="https://github.com/eudev-project/eudev/releases/download"/v${eudev_ver}
 eudev_tarball_rpo=eudev-${eudev_ver}.tar.gz
 eudev_tarball_loc=eudev-v${eudev_ver}.tar.gz
-dload_eudev_tarball=true
 eudev_udev_rules_list=("50-udev-default.rules" "60-autosuspend.rules"
                        "60-block.rules" "60-cdrom_id.rules" "60-drm.rules"
                        "60-evdev.rules" "60-fido-id.rules" "60-input-id.rules"
@@ -203,11 +220,12 @@ eudev_udev_rules_list=("50-udev-default.rules" "60-autosuspend.rules"
 # in the script ${pb_build}/utils/pb-console which is copied to the initramfs
 # at the location /usr/sbin/pb-console). The standard location for the terminfo
 # files is typically /usr/share/terminfo but it can also be /lib/terminfo.
-terminfo_dir="/lib/terminfo"
+terminfo_dir="/usr/lib/terminfo"
 pb_term_list="ansi dumb linux vt220"
 
 # Libraries used by these executables will be copied from the host.
-dyn_linked_exe_list_noe2fs=("/sbin/kexec_pb"
+dyn_linked_exe_list_noe2fs=("/sbin/kexec_bin" "/usr/bin/file" "/usr/bin/grep"
+                            "/usr/bin/unzstd"
                             "/usr/bin/udevd" "/usr/bin/udevadm" "/usr/bin/collect"
                             "/bin/ip" "/usr/sbin/pb-event" "/usr/sbin/pb-config"
                             "/usr/sbin/pb-discover" "/usr/sbin/petitboot-nc"
@@ -223,6 +241,11 @@ else
     dyn_linked_exe_list=(${dyn_linked_exe_list_noe2fs[@]}
                          ${dyn_linked_exe_list_e2fs[@]})
 fi
+
+# These files are not necessary for Petitboot to start but decompression of
+# kernel/initramfs will not work if file or grep (the complete one) is missing.
+# (The binary for can probably be omitted.)
+copy_file_list=("/usr/bin/file" "/usr/bin/grep" "/usr/bin/unzstd" "/usr/bin/gpg")
 
 stat_linked_exe_list=("/bin/busybox")
 
@@ -525,113 +548,202 @@ EOF
 kexec_wrapper=$(cat << "EOF"
 #!/bin/sh
 
-# 24-12-16, Tripole
+# 26-01-01, Tripole
 
-# Here we do some filtering of the kexec call from Petitboot so that it
-# matches what the kexec for RISCVr6 created by Nick Kossifidis and Song
-# Shuai (sugarfillet) expects.
+# This script performs filtering of the kexec call from Petitboot and can do
+# (optional) decompression of kernels and initramfses before calling kexec.
+# The script can collect and use one argument from the (trailing part of the)
+# kernel command line; pb_no_decompr. If pb_no_decompr=true then the code for
+# decompression of the kernel and initramfs below is disabled and the kernel
+# and initramfs are both loaded as-is (always).
 # The kexec executable we use is based on a slightly patched version of
-# the the code due to NK and SS described here:
-# https://lkml.iu.edu/hypermail/linux/kernel/2309.1/07133.html.
+# the the code due to Nick Kossifidis and Song Shuai (sugarfillet) described
+# here: https://lkml.iu.edu/hypermail/linux/kernel/2309.1/07133.html.
 # We also employ an option for a mem-max restriction in the kexec call,
 # which seems to be needed for some kernels (see below).
 
-kexec_executable="/sbin/kexec_pb"
+kexec_executable="/sbin/kexec_bin" # The real McCoy.
 
-debug=0
+if [ -z $pb_no_decompr ]; then
+    pb_no_decompr=false
+fi
 
-# The kexec call invoking this script can be only one of two forms:
-# (1) kexec -e
+# The kexec call (issued by Petitboot) invoking this script can be only one
+# of two forms (for details, see boot.c in the Petitboot src):
+# (1) kexec -e {-f} # The -f switch is added by Petitboot only after -e fails.
 # (2) kexec -{l,s} --initrd=/path/to/initrd \
-#              --dtb=/path/to/dtb \
-#              --append=<possibly_several_append_substrings> \
-#              --- /path/to/kernel
-# In the second case with -s we translate this to -l since this is the
-# option that sugarfillet's kexec expects.
+#                  --dtb=/path/to/dtb \
+#                  --append=<can_be_several_whitespace_separated_substrings> \
+#                  --- /path/to/kernel
+# where the all options except /path/to/kernel are optional.
+# The call kexec -s (file based kexec syscall) is here translated to kexec -l
+# (ordinary kexec operation; the option that sugarfillet's kexec expects).
 
-args_str=""
-append_mode=0
-append_args=""
+# We proceed in three steps. Step 1; dissassemble the incoming kexec call
+# string into args for initrd, dtb, kernel. Step 2 (optional); decompression of
+# kernel and initramfs. Step 3; do the actual (filtered) kexec call.
+
+# Step 1. Loop over the input call args and collect the parts for initrd, dtb,
+# append and kernel. When (if) we find a section (of substrings) starting with
+# "--append=" we switch to append mode and collect the substrings for append.
 kernel_str=""
-call_str=""
+initrd_str=""
+dtb_str=""
+append_args=""
+append_mode=false
 arg_num=1
-
-if [ "$#" = 1 ]; then
-    call_str="-e"
-else
-    # This is one of the cases -s or -l (we map both to -l).
-
-    # Parse the string with calling arguments and extract pieces.
-    for arg ; do
-        if [ "$arg_num" = "$#" ]; then
-            # Pick up the trailing /path/to/kernel
-            kernel_str=$arg
-        else
-            if [ "$append_mode" = "0" ]; then
-                # Pick up the initrd, dtb and cmdline strings.
-                case "$arg" in
-                    "-s" | "-l" )
-                    # do nothing
-                    ;;
-                    "--append="* )
-                        append_args="${arg#--append=}"
-                        append_mode=1
-                    ;;
-                    * )
-                        args_str="$args_str $arg"
-                    ;;
-                esac
-            else
-                # Gobble up all the substrings of the append string
-                # (below we filter out the trailing "---").
-                append_args=${append_args}" $arg"
+if [ "$1" != "-e" ]; then
+    for current_arg in "$@"; do
+        if [ "$arg_num" -lt "$#" ] ; then
+            if [ "$current_arg" != "---" ]; then
+                if [ $append_mode = false ]; then
+                    case $current_arg in
+                        "-s" | "-l" )
+                        ;;
+                        "--initrd="* )
+                            initrd_str=${current_arg#--initrd=}
+                        ;;
+                        "--dtb="* )
+                            dtb_str=${current_arg#--dtb=}
+                        ;;
+                        "--append"* )
+                            append_args=${current_arg#--append=}
+                            append_mode=true
+                        ;;
+                    esac
+                else # Gobble up the space separated parts of the append string.
+                    if [ "$current_arg" != "---" ]; then
+                       append_args=${append_args}" "${current_arg}
+                    fi
+                fi
             fi
+            arg_num=$((arg_num +1))
+        else
+            kernel_str=$current_arg
         fi
-        arg_num=$((arg_num +1))
     done
+fi
 
-    # Remove the string "---" and trailing space(s) from the string with
-    # append arguments.
-    append_args_trimmed=$(echo $append_args | sed 's/---//g' | sed 's/[[:space:]]*$//g')
-    append_str=--append=\"${append_args_trimmed}\"
-
-    # - Hack (mostly) for Petitboot on VisionFive 2: -
-    # It seems that, after kexec reboot, under some circumstances (unclear
-    # exactly which) some kernels can see only half the memory (~4G for VF2).
-    # On the other hand, some kernels can apparently always see to see all of
-    # the memory (~8G for VF2). Since kexec loads the new initrd at the top of
-    # the memory, as seen by the first (loading) kernel, this can be outside
-    # what the second (loaded) kernel can see. For this reason we may want to
-    # force the initrd memory load address to be lower, at a point in memory
-    # which the new kernel considers admissible. We do this by using the
-    # --mem-max argument of kexec (working values can be inferrred from dmesg
-    # from failed reboots). The mem-max value can be passed to this script by
-    # using the environment variable pb_mem_max. This variable should give the
-    # max memory address in hex, e.g. pb_mem_max=0x13fffffff, and it can be
-    # passed in two ways: Either globally, for all kernels to be booted by
-    # Petitboot, by adding an argument pb_mem_max=<val> to the kernel command
-    # line for the kernel running Petitboot (this is typically done by editing
-    # extlinux.conf). Alternatively, the mem-max value can be defined on a
-    # per-kernel basis by adding a command line argument pb_mem_max=<val> to
-    # the kernel command line in grub.cfg (or by editing the command line for
-    # in Petitboot's main menu before boot).
-
-    if [ ! -z "$pb_mem_max" ]; then
-        call_mem_append_str="--mem-max="${pb_mem_max}
+# Step 2.
+call_str=""
+if [ "$1" != "-e" ]; then
+    if [ $pb_no_decompr = true ]; then
+        call_str="--load $kernel_str"
+        if [ ! -z "$initrd_str" ]; then
+            call_str=${call_str}" --initrd="${initrd_str}
+        fi
+        if [ ! -z "$dtb_str" ]; then
+            call_str=${call_str}" --dtb="${dtb_str}
+        fi
+        if [ $append_mode = true ]; then
+            call_str=${call_str}" --append="${append_args}
+        fi
     else
-        call_mem_append_str=""
+        # Petitboot aborts kexec load/boot procedure on any stdout/stderr msg.
+        # echo "Decompressing: "$kernel_str
+        # The patched kecex-tools we use can handle symlinks but when we use
+        # the scripts extract-{vmlinux,inird}-pb we must insert a realpath cmd.
+        eval "extract-vmlinux-pb $(realpath $kernel_str) >/tmp/vmlinux-pb" 2>/dev/null
+        call_str="--load /tmp/vmlinux-pb"
+        if [ ! -z $initrd_str ]; then
+            # echo "Decompressing: "$initrd_str
+            eval "extract-initrd-pb $(realpath $initrd_str) >/tmp/initrd.img-pb" 2>/dev/null
+            call_str=${call_str}" --initrd=/tmp/initrd.img-pb"
+        fi
+        if [ ! -z $dtb_str ]; then
+            call_str=${call_str}" --dtb="${dtb_str}
+        fi
+        if [ $append_mode = true ]; then
+           call_str=${call_str}" --append="${append_args}
+        fi
     fi
-
-    call_str_raw="--load $kernel_str $args_str $call_mem_append_str $append_str"
-    call_str=$(echo $call_str_raw | tr -s ' ') # Squeeze multiple spaces.
+else
+    call_str=$1
 fi
 
-if [ "$debug" = 1 ]; then
-    echo "Call string sent to kexec executable: [$call_str]"
+# - Hack (mostly) for Petitboot on VisionFive 2: -
+# It seems that, after kexec reboot, under some circumstances some kernels can
+# see only half the memory (~4G for VF2). (It is unclear what exactly causes
+# this but it is related to how different kernels handle the info in the dtb.
+# Some kernels can apparently always see to see all memory, about 8G for VF2.)
+# Since kexec loads the new initrd at the top of the memory, as seen by the
+# first (loading) kernel, this can be outside what the second (loaded) kernel
+# can see. For this reason we may want to force the initrd memory load address
+# to be lower, at a point in memory which the new kernel considers admissible.
+# We do this by using the --mem-max argument of kexec (working values can be
+# inferrred from dmesg from failed reboots). The mem-max value can be passed
+# to this script by using the environment variable pb_mem_max. This variable
+# should give the max memory address in hex, e.g. pb_mem_max=0x13fffffff, and
+# it can be passed in two ways: Either globally, for all kernels to be booted
+# by Petitboot, by adding an argument pb_mem_max=<val> to the kernel command
+# line for the kernel running Petitboot (this is typically done by editing
+# extlinux.conf). Alternatively, the mem-max value can be defined on a
+# per-kernel basis by adding a command line argument pb_mem_max=<val> to
+# the kernel command line in grub.cfg (or by editing the command line for
+# in Petitboot's main menu before boot).
+
+if [ ! -z "$pb_mem_max" ]; then
+    call_mem_append_str="--mem-max="${pb_mem_max}
+else
+    call_mem_append_str=""
 fi
+
+if [ $append_mode = true ]; then
+    call_str=${call_str}" "${call_mem_append_str}
+else
+    call_str=${call_str}" --append="${call_mem_append_str}
+fi
+
+# echo "Call string sent to kexec executable: [$call_str]"
 
 eval "${kexec_executable} ${call_str}"
 
+EOF
+)
+
+extract_initrd_pb=$(cat << "EOF"
+#!/bin/sh
+
+# 2025-12-26, Tripole
+# Tries to decompress the first argument by a sequence of decompressors and,
+# if successful, sends the result to stdout (info messages are sent to stderr).
+# Inspired by extract-linux in Linux src tree.
+
+this_prog=${0##*/}
+
+try_decompress()
+{
+	echo "Trying $1 ..." >&2
+	if	"$1" -c "$2" 2>/dev/null
+	then
+		echo "$this_prog: Extracted initramfs using '$1'" >&2
+	fi
+}
+
+# Check invocation:
+initrd="$1"
+if	[ $# -ne 1 -o ! -s "$initrd" ]
+then
+	echo "Usage: $this_prog <initramfs>" >&2
+	exit 2
+fi
+
+# First check for uncompressed initramfs:
+echo "Trying decompressor 'none' ..." >&2
+if	file -b --mime-type "$initrd" | awk -F "/" '{print $2}' | grep -q "x-cpio" >/dev/null 2>&1
+then
+	echo "$this_prog: $(basename ${initrd}) is not compressed (piping to stdout)." >&2
+	cat $initrd
+	exit 0
+fi
+
+# Normally we would use something like
+# for decompr_bin in "gunzip" "unzstd" (...)
+# but if only e.g. zstd needs to be decompressed we can use a shortlist:
+for decompr_bin in "unzstd"
+do
+	try_decompress "$decompr_bin" "$initrd"
+done
 EOF
 )
 
@@ -641,20 +753,26 @@ do_download() {
     bundle_name=$1
     bundle_pkg_url=$2
     bundle_pkg_loc=$3
-    echo -e ${i_msg}" Downloading $bundle_name tarball from"
-    echo "         $bundle_pkg_url"
-    echo "         to local directory/name"
-    echo "         $bundle_pkg_loc"
-    wget $bundle_pkg_url -O $bundle_pkg_loc
-    if [[ $? == 0 ]]; then
-        echo -e ${k_msg}" Done. $bundle_name source tarball successfully downloaded."
+    if [[ ! -f $bundle_pkg_loc ]]; then
+        echo -e ${i_msg}" Downloading $bundle_name tarball from"
+        echo "         $bundle_pkg_url"
+        echo "         to local directory/name"
+        echo "         $bundle_pkg_loc"
+        wget $bundle_pkg_url -O $bundle_pkg_loc
+        if [[ $? == 0 ]]; then
+            echo -e ${k_msg}" Done. $bundle_name source tarball successfully downloaded."
+        else
+            echo -e ${e_msg}" Failed to download $bundle_name source, exiting."
+            exit 1
+        fi
     else
-        echo -e ${e_msg}" Failed to download $bundle_name source, exiting."
-        exit 1
+        echo -e ${k_msg}" Skipping download of ${bundle_name}; file already exists."
     fi
 }
 
 # ------------------------------- Preliminaries -----------------------------
+
+PATH=${PATH}:/usr/sbin
 
 this_arch=$(arch)
 
@@ -720,6 +838,7 @@ mkdir ${temp_dir}/initramfs/usr/share/e2fsprogs
 mkdir ${temp_dir}/initramfs/usr/share/petitboot
 mkdir ${temp_dir}/initramfs/usr/share/eudev
 mkdir ${temp_dir}/initramfs/usr/share/udhcpc
+mkdir ${temp_dir}/initramfs/usr/share/misc
 mkdir ${temp_dir}/initramfs/var
 mkdir ${temp_dir}/initramfs/var/log
 mkdir ${temp_dir}/initramfs/var/log/petitboot
@@ -729,21 +848,23 @@ cd ${temp_dir}/initramfs
 ln -s usr/lib lib
 echo " Done."
 
-echo -e -n ${i_msg}" Setting up init script in initramfs ..."
+echo -e -n ${i_msg}" Setting up 'init' script in initramfs ..."
 echo -e "$init_script" >${temp_dir}/initramfs/init
 chmod +x ${temp_dir}/initramfs/init
 echo " Done."
 
-echo -e -n ${i_msg}" Setting up basic configuration files in initramfs tree ..."
+echo -e ${i_msg}" Setting up basic configuration files in initramfs tree ..."
+echo    "         /etc/{group,mdev.conf,nsswitch.conf}"
 echo -e "$etc_group" >${temp_dir}/initramfs/etc/group
 touch ${temp_dir}/initramfs/etc/mdev.conf
 echo -e "$etc_nsswitch_conf" >${temp_dir}/initramfs/etc/nsswitch.conf
+echo    "         /usr/share/udhcpc/default.script"
 echo -e "$usr_share_udhcpc_default_script" \
 >${temp_dir}/initramfs/usr/share/udhcpc/default.script
 chmod 0755 ${temp_dir}/initramfs/usr/share/udhcpc/default.script
 echo " Done."
 
-echo -e -n ${i_msg}" Setting up sysinfo script in initramfs tree ..."
+echo -e -n ${i_msg}" Setting up 'sysinfo' script in initramfs tree ..."
 cd ${temp_dir}/initramfs/sbin
 echo -e "$sbin_sysinfo" >sysinfo
 chmod +x sysinfo
@@ -769,12 +890,18 @@ for terminfo_file in $pb_term_list ; do
 done
 echo " Done."
 
-echo -e -n ${i_msg}" Copying gpg to initramfs tree ..."
-if [[ -f "/usr/bin/gpg" ]]; then
-    cp /usr/bin/gpg ${temp_dir}/initramfs/usr/bin
-else
-    echo -e ${w_msg}" Could not find the gpg binary (so no gpg in initramfs)."
-fi
+# Petitboot will start without these files, but it may not function properly.
+for loc_file in ${copy_file_list[@]}; do
+    mkdir -p $(dirname $loc_file)
+    echo -e -n ${i_msg}" Copying the file $loc_file to initramfs tree ..."
+    if [[ -f $loc_file ]]; then
+        cp $loc_file ${temp_dir}/initramfs${loc_file}
+        chmod 0755 ${temp_dir}/initramfs${loc_file}
+        echo " Done."
+    else
+        echo -e ${w_msg}" Could not find the file ${loc_file}."
+    fi
+done
 echo " Done."
 
 # -------------------------------- Downloads --------------------------------
@@ -812,34 +939,47 @@ fi
 
 busybox_pkg_url=${busybox_url_base}/${busybox_tarball_rpo}
 busybox_pkg_loc=${temp_dir}/downloads/${busybox_tarball_loc}
-if [[ $dload_busybox_tarball == true ]]; then
-    do_download "Busybox" $busybox_pkg_url $busybox_pkg_loc
-fi
+do_download "Busybox" $busybox_pkg_url $busybox_pkg_loc
 
 iproute2_pkg_url=${iproute2_url_base}/${iproute2_tarball_rpo}
 iproute2_pkg_loc=${temp_dir}/downloads/${iproute2_tarball_loc}
-if [[ $dload_iproute2_tarball == true ]]; then
-    do_download "iproute2" $iproute2_pkg_url $iproute2_pkg_loc
-fi
+do_download "iproute2" $iproute2_pkg_url $iproute2_pkg_loc
 
 if [[ $no_e2fsprogs != true ]]; then
     e2fsprogs_pkg_url=${e2fsprogs_url_base}/${e2fsprogs_tarball_rpo}
     e2fsprogs_pkg_loc=${temp_dir}/downloads/${e2fsprogs_tarball_loc}
-    if [[ $dload_e2fsprogs_tarball == true ]]; then
-        do_download "e2fsprogs" $e2fsprogs_pkg_url $e2fsprogs_pkg_loc
-    fi
+    do_download "e2fsprogs" $e2fsprogs_pkg_url $e2fsprogs_pkg_loc
 fi
 
 petitboot_pkg_url=${petitboot_url_base}/${petitboot_tarball_rpo}
 petitboot_pkg_loc=${temp_dir}/downloads/${petitboot_tarball_loc}
-if [[ $dload_petitboot_tarball == true ]]; then
-    do_download "Petitboot" $petitboot_pkg_url $petitboot_pkg_loc
-fi
+do_download "Petitboot" $petitboot_pkg_url $petitboot_pkg_loc
 
 eudev_pkg_url=${eudev_url_base}/${eudev_tarball_rpo}
 eudev_pkg_loc=${temp_dir}/downloads/${eudev_tarball_loc}
-if [[ $dload_eudev_tarball == true ]]; then
-    do_download "eudev" $eudev_pkg_url $eudev_pkg_loc
+do_download "eudev" $eudev_pkg_url $eudev_pkg_loc
+
+echo -e ${i_msg}" Downloading the script 'extract-vmlinux' from Linux src ..."
+wget $extract_vmlinux_url -O ${temp_dir}/downloads/extract-vmlinux
+if [[ $? == 0 ]]; then
+    echo -e ${k_msg}" Done."
+else
+    echo -e ${w_msg}" Failed download 'extract-vmlinux', kernel decompr. will not work."
+fi
+
+echo -e ${i_msg}" Downloading magic file definitions for kernel and initramfs ..."
+have_all_magic=true
+for file_magic in ${file_magic_arr[@]} ; do
+    wget ${file_magic_url_base}/$file_magic -O ${temp_dir}/downloads/$file_magic
+    if [[ $? != 0 ]]; then
+        echo -e ${w_msg}" Failed to download magic file ${file_magic}."
+    have_all_magic=false
+fi
+done
+if [[ $have_all_magic == true ]]; then
+    echo -e ${k_msg}" Done."
+else
+    echo " Kernel decompression will not work due to failed downloads."
 fi
 
 # ---------------------------------- Build ---------------------------------
@@ -870,9 +1010,10 @@ autoupdate
 ./configure --prefix=/usr
 make -j $no_comp_cores
 tar -czf ${temp_dir}/initramfs/usr/share/kexectools/build.tgz config.log configure.ac Makefile
-echo -e -n ${i_msg}" Installing kexec binary to initramfs tree ..."
-strip ./build/sbin/kexec -o ${temp_dir}/initramfs/sbin/kexec_pb
+echo -e ${i_msg}" Installing kexec binary to initramfs tree ..."
+strip ./build/sbin/kexec -o ${temp_dir}/initramfs/sbin/kexec_bin
 cd ${temp_dir}/initramfs/sbin
+echo -e -n ${i_msg}" Installing kexec wrapper script (and symlink) ..."
 echo -e "$kexec_wrapper" >kexec_wrapper.sh
 chmod 0755 kexec_wrapper.sh
 ln -s kexec_wrapper.sh kexec
@@ -883,11 +1024,20 @@ echo -e ${i_msg}" Building Busybox ..."
 tar -xjf ${temp_dir}/downloads/${busybox_tarball_loc} -C ${temp_dir}/busybox
 cd ${temp_dir}/busybox/busybox-${busybox_ver}
 make defconfig
+
 # We will compile a separate iproute2.
 sed -i 's/CONFIG_IPROUTE=y/\# CONFIG_IPROUTE is not set/g' .config
 if [[ $no_e2fsprogs != true ]]; then
     sed -i 's/CONFIG_MKE2FS=y/\# CONFIG_MKE2FS is not set/g' .config
 fi
+
+# We need to use the full version of grep (/usr/bin/grep) copied from the host.
+sed -i 's/CONFIG_GREP=y/\# CONFIG_GREP is not set/g' .config
+sed -i 's/CONFIG_EGREP=y/\# CONFIG_EGREP is not set/g' .config
+sed -i 's/CONFIG_FGREP=y/\# CONFIG_FGREP is not set/g' .config
+sed -i 's/CONFIG_PGREP=y/\# CONFIG_PGREP is not set/g' .config
+sed -i 's/CONFIG_FEATURE_GREP_CONTEXT=y/\# CONFIG_FEATURE_GREP_CONTEXT is not set/g' .config
+
 # make menuconfig
 LDFLAGS=--static make -j $no_comp_cores
 cp .config dot_config
@@ -1032,6 +1182,43 @@ done
 echo " Done."
 echo -e ${k_msg}" Finished building and installing eudev."
 
+cd ${temp_dir}/downloads
+echo -e ${i_msg}" Patching the script 'extract-vmlinux' ..."
+patch -N -p1 --ignore-whitespace <\
+      ${temp_dir}/${bootdisk_dir}/${misc_patch_dir}/extract-vmlinux.patch
+if [[ "$?" != 0 ]]; then
+    echo -e ${w_msg}"\n The patch on 'extract-vmlinux' was not successfully applied."	
+else
+    echo " Done."
+fi
+
+echo -e -n ${i_msg}" Installing the script 'extract-vmlinux-pb' ..."
+cp extract-vmlinux ${temp_dir}/initramfs/usr/sbin/extract-vmlinux-pb
+chmod 0755 ${temp_dir}/initramfs/usr/sbin/extract-vmlinux-pb
+echo " Done."
+
+echo -e -n ${i_msg}" Installing the script 'extract-initrd-pb' ..."
+echo -e "$extract_initrd_pb" >${temp_dir}/initramfs/usr/sbin/extract-initrd-pb
+chmod 0755 ${temp_dir}/initramfs/usr/sbin/extract-initrd-pb
+echo " Done."
+
+if [[ $have_all_magic == true ]]; then
+    echo -e -n ${i_msg}" Generating the file 'magic.mgc' for the 'file' command ..."
+    cd ${temp_dir}/initramfs/usr/share/misc
+    for idx in "${!file_magic_arr[@]}" ; do
+        cat ${temp_dir}/downloads/"${file_magic_arr[idx]}" | sed -n "${file_magic_cut[idx]}" >>magic
+    done
+    file -m magic -C
+    if [[ ! -f "magic.mgc" ]]; then
+        echo -e ${w_msg}" The 'file' command failed to compile the magic file."
+        echo "            Kernel decompression will not work."
+    else
+        chmod 0755 magic.mgc
+        mv magic magic.txt
+        echo " Done."
+    fi
+fi
+
 # ----------------------------- Find and copy libs ---------------------------
 
 echo -e ${i_msg}" Finding and listing all libraries required by the executables:"
@@ -1084,25 +1271,11 @@ echo -e ${i_msg}" Preparing to pack up the initramfs tree into a gzipped cpio ar
 cd ${temp_dir}/initramfs
 my_username=$(whoami)
 echo "Enter your password to change ownership (root) of files in initramfs tree:"
-sudo chown -R root:root ${temp_dir}/initramfs && \
-  find . | cpio -H newc -o | gzip -c > ../${initrd_pb_name} && \
-  chown $my_username:$my_username ../${initrd_pb_name}
+sudo chown -R root:root ${temp_dir}/initramfs
+sudo find . | cpio -H newc -o | gzip -c > ../${initrd_pb_name}
+sudo chown $my_username:$my_username ../${initrd_pb_name}
 mv ${temp_dir}/${initrd_pb_name} $result_dir
 echo " Done. Resulting initramfs: ${initrd_pb_name}"
-
-if [[ $make_uboot_tagged_initrd == true ]]; then
-    which_mkimage=$(which mkimage)${temp_dir}
-    test_which_mkimage=$?
-    if [[ $test_which_mkimage == 0 ]]; then
-        echo -e -n "Making u-boot tagged version of the initramfs ..."
-        mkimage -n "Petitboot-v${petitboot_ver}" -A $uboot_arch -O linux -T ramdisk \
-          -C gzip -d ${result_dir}/${initrd_pb_name} ${result_dir}/${uInitrd_pb_name}
-        echo " Done."
-        echo "Result: ${uInitrd_pb_name}"
-    else
-        echo -e ${w_msg} "Cannot find mkimage command, skipping making u-boot tagged initramfs."
-    fi
-fi
 
 # Typically the sudo cache timeout is 5m or so so this is not needed:
 # echo "Enter your password to change back ownership (you) of initramfs tree:"
@@ -1114,15 +1287,22 @@ echo -e ${k_msg}" Finished building and packing the Petitboot initramfs."
 
 echo -e -n ${k_msg}" Saving some build info to result dir ..."
 cd ${temp_dir}/
-tree initramfs >${result_dir}/initramfs_file_tree.txt
+if [[ $no_e2fsprogs == true ]]; then
+    initramfs_tree_name=initramfs_file_tree_noe2fs.txt
+else
+    initramfs_tree_name=initramfs_file_tree.txt
+fi
+tree initramfs >${result_dir}/${initramfs_tree_name}
 compgen -v | while read line; do echo $line=${!line}; done \
     | gzip -c >${result_dir}/pb_build_vars.txt.gz
 echo " Done."
 
-echo -e -n ${k_msg}" Renaming result dir ..."
+echo -e -n ${k_msg}" Adding timestamp tag to result and temporary dirs ..."
 timestamp_iso=$(date +%y%m%dT%H%M)
 result_dir_tstamped=${result_dir}_${timestamp_iso}
 mv $result_dir $result_dir_tstamped
+temp_dir_tstamped=${temp_dir}_${timestamp_iso}
+mv $temp_dir $temp_dir_tstamped
 echo " Done."
 
 echo -e ${i_msg}" The finished initramfs and other output files can be found in"
@@ -1135,26 +1315,26 @@ echo -e ${i_msg}" Cleanup of build area:"
 echo -n "Do you want to delete the build directories?    [n/Y] >"
 read do_del_pkgblddirs
 if [[ "$do_del_pkgblddirs" != "n" ]]; then
-    rm -rf ${temp_dir}/{bootdisk,kexectools,busybox,iproute2,e2fsprogs,petitboot,eudev}
+    rm -rf ${temp_dir_tstamped}/{bootdisk,kexectools,busybox,iproute2,e2fsprogs,petitboot,eudev}
 fi
 
 echo -n "Do you want to delete the download directory?   [n/Y] >"
 read do_del_downloads
 if [[ "$do_del_pkgblddirs" != "n" ]]; then
-    rm -rf ${temp_dir}/downloads
+    rm -rf ${temp_dir_tstamped}/downloads
 fi
 
 echo -n "Do you want to delete the initramfs build tree? [n/Y] >"
 read do_del_initramfsdir
 if [[ "$do_del_initramfsdir" != "n" ]]; then
     echo "Enter your password to delete the initramfs dir (owned by root):"
-    sudo rm -rf ${temp_dir}/initramfs
+    sudo rm -rf ${temp_dir_tstamped}/initramfs
 fi
 
-test_empty_temp=$(ls -A ${temp_dir})
+test_empty_temp=$(ls -A ${temp_dir_tstamped})
 if [[ -z "$test_empty_temp" ]]; then
-    echo -e "Removing the empty directory for temporary files (${temp_dir}) ..."
-    rmdir ${temp_dir}
+    echo -e "Removing the empty directory for temporary files (${temp_dir_tstamped}) ..."
+    rmdir ${temp_dir_tstamped}
     echo " Done."
 fi
 
