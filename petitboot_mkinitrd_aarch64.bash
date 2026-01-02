@@ -64,7 +64,7 @@
 # - There are five kernel command line options that can be sent to the kernel
 #   running Petitboot and which will direct the behavior of Petitboot:
 #     pb_no_autoboot={true,false} (default false). No autoboot if true.
-#     (Petitboot has a default autoboot of 10s (here patched to 60s), but the
+#       (Petitboot has a default autoboot of 10s (here patched to 60s), but the
 #     feature is of limited use since the selected boot entry cannot be saved.)
 #     pb_nonet={true,false} (default false) Will create a netns jail for
 #       Petitboot if true so that only the loopback interface will be enabled.
@@ -74,10 +74,10 @@
 #       M,m = manufacturer (long, short), d = product name,
 #       b = board info string. (See also code below.)
 #     pb_no_decompr={true,false} (default false). Decompression of kernel
-#     and initrfamfs is never attempted if this option is set to true.
-#     (In the default mode, the decompression code will detect uncompressed
-#     items and leave them as-is.) The compression formats recognized for
-#     kernels are gzip, xz, bzip2, lzma and zstd; the last also for initramfs.
+#       and initrfamfs is never attempted if this option is set to true.
+#       (In the default mode, the decompression code will detect uncompressed
+#       items and leave them as-is.) The compression formats recognized for
+#       kernels are gzip, xz, bzip2, lzma, zstd; the last also for initramfs.
 
 # Things to note about Busybox and other utils:
 # - When entering the Busybox command line you will see an error message like
@@ -94,6 +94,7 @@
 # ToDo:
 # - Perhaps add the option of having a user supplied file tree baked into the
 #   initramfs, e.g. with firmware files for the kernel running Petitboot.
+#   (The plugin mechanism of Petitboot requires manual invocation.)
 # - There seems to be an option for Petitboot named petitboot.debug that can
 #   be passed via the kernel command line, but it is unclear what it is.
 
@@ -112,18 +113,16 @@ mytag="3p-${to_day}"
 build_ver_tag="${mytag}"
 # If the next line is set to true, the build_ver_tag is shown in the top
 # margin in the Petitboot main menu (after the Petitboot version number)
-# and the tag is also applied to the resulting initramfs(s) (see +100 lines).
+# and the tag is also applied to the resulting initramfs(s) (see below).
 use_build_ver_tag=true # {true_false}
 
 # The initramfs can be built also in a smaller version where the e2fsprogs
 # tools are omitted (file system tools are still available in Busybox).
-# (Note: The name tage format of the generated initrd is still the same.)
+# (Note: The name tag format of the generated initrd is still the same.)
 no_e2fsprogs=false # {true,false}
 
-# In the download parameter settings below the setting dload_<pkg>_tarball
-# can be set to true or false. If set to false it is assumed that the 
-# correctly named tarball is already placed in ${temp_dir}/downloads (see
-# below) and if set to true it will be downloaded there.
+# The source packages listed/defined below are downloaded unless a copy of the
+# package in question already exists in ${temp_dir}/downloads (see below).
 
 # Patches (e.g. Petitboot) are taken from here.
 bootdisk_url="https://gitlab.com/tripole-inc/bootdisk.git"
@@ -132,7 +131,7 @@ bootdisk_dir=bootdisk # Clone into dir, relative to $temp_dir
 extract_vmlinux_url="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/plain/scripts/extract-vmlinux?h=v6.18.2"
 misc_patch_dir="misc_patches" # Relative to $bootdisk_dir
 
-# Definitions for binaries in 'linux' and 'archive' categories for 'file' cmd.
+# Definitions for categories 'linux', 'archive' and 'compress' for 'file' cmd.
 file_magic_ver="FILE5_46"
 file_magic_url_base="https://raw.githubusercontent.com/file/file/refs/tags/${file_magic_ver}/magic/Magdir"
 file_magic_arr=(linux archive compress)
@@ -142,7 +141,6 @@ kexectools_ver="2.0.30"
 kexectools_url_base="https://github.com/horms/kexec-tools/archive/refs/tags"
 kexectools_tarball_rpo=v${kexectools_ver}.tar.gz
 kexectools_tarball_loc=kexectools-v${kexectools_ver}.tar.gz
-dload_kexectools_tarball=true
 # kt_patch_dir="kexectools_patches" # Relative to dir of this script.
 
 busybox_ver="1.36.1"
@@ -151,26 +149,22 @@ busybox_tarball_rpo=busybox-${busybox_ver}.tar.bz2
 busybox_tarball_loc=busybox-v${busybox_ver}.tar.bz2
 # busybox_bch=$(sed -e 's/\./_/g' <<< $busybox_ver)
 # busybox_git_url="https://git.busybox.net/busybox"
-dload_busybox_tarball=true
 
 iproute2_ver="6.12.0"
 iproute2_url_base="https://github.com/iproute2/iproute2/archive/refs/tags"
 # iproute2_url_base="https://git.kernel.org/pub/scm/network/iproute2/iproute2.git/snapshot"
 iproute2_tarball_rpo=v${iproute2_ver}.tar.gz
 iproute2_tarball_loc=iproute2-$iproute2_tarball_rpo
-dload_iproute2_tarball=true
 
 e2fsprogs_ver="1.47.2"
 e2fsprogs_url_base="https://github.com/tytso/e2fsprogs/archive/refs/tags"
 e2fsprogs_tarball_rpo=v${e2fsprogs_ver}.tar.gz
 e2fsprogs_tarball_loc=e2fsprogs-$e2fsprogs_tarball_rpo
-dload_e2fsprogs_tarball=true
 
 petitboot_ver="1.15"
 petitboot_url_base="https://github.com/open-power/petitboot/releases/download"/v${petitboot_ver}
 petitboot_tarball_rpo=petitboot-v${petitboot_ver}.tar.gz
 petitboot_tarball_loc=$petitboot_tarball_rpo
-dload_petitboot_tarball=true
 
 pb_patch_dir="petitboot_patches" # Relative to $bootdisk_dir
 pb_1v13_add_grubcfg_path_patch_fname="pb_1v13_add_grubcfg_path.patch"
@@ -600,11 +594,11 @@ if [ "$1" != "-e" ]; then
     else
         # Petitboot aborts kexec load/boot procedure on any stdout/stderr msg.
         # echo "Decompressing: "$kernel_str
-        eval "extract-vmlinux-pb $kernel_str >/tmp/vmlinux-pb" 2>/dev/null
+        eval "extract-vmlinux-pb $(realpath $kernel_str) >/tmp/vmlinux-pb" 2>/dev/null
         call_str="--load /tmp/vmlinux-pb"
         if [ ! -z $initrd_str ]; then
             # echo "Decompressing: "$initrd_str
-            eval "extract-initrd-pb $initrd_str >/tmp/initrd.img-pb" 2>/dev/null
+            eval "extract-initrd-pb $(realpath $initrd_str) >/tmp/initrd.img-pb" 2>/dev/null
             call_str=${call_str}" --initrd=/tmp/initrd.img-pb"
         fi
         if [ ! -z $dtb_str ]; then
@@ -677,16 +671,20 @@ do_download() {
     bundle_name=$1
     bundle_pkg_url=$2
     bundle_pkg_loc=$3
-    echo -e ${i_msg}" Downloading $bundle_name tarball from"
-    echo "         $bundle_pkg_url"
-    echo "         to local directory/name"
-    echo "         $bundle_pkg_loc"
-    wget $bundle_pkg_url -O $bundle_pkg_loc
-    if [[ $? == 0 ]]; then
-        echo -e ${k_msg}" Done. $bundle_name source tarball successfully downloaded."
+    if [[ ! -f $bundle_pkg_loc ]]; then
+        echo -e ${i_msg}" Downloading $bundle_name tarball from"
+        echo "         $bundle_pkg_url"
+        echo "         to local directory/name"
+        echo "         $bundle_pkg_loc"
+        wget $bundle_pkg_url -O $bundle_pkg_loc
+        if [[ $? == 0 ]]; then
+            echo -e ${k_msg}" Done. $bundle_name source tarball successfully downloaded."
+        else
+            echo -e ${e_msg}" Failed to download $bundle_name source, exiting."
+            exit 1
+        fi
     else
-        echo -e ${e_msg}" Failed to download $bundle_name source, exiting."
-        exit 1
+	echo -e ${k_msg}" Skipping download of ${bundle_name}; file already exists."
     fi
 }
 
@@ -838,41 +836,29 @@ fi
 
 kexectools_pkg_url=${kexectools_url_base}/${kexectools_tarball_rpo}
 kexectools_pkg_loc=${temp_dir}/downloads/${kexectools_tarball_loc}
-if [[ $dload_kexectools_tarball == true ]]; then
-    do_download "kexectools" $kexectools_pkg_url $kexectools_pkg_loc
-fi
+do_download "kexectools" $kexectools_pkg_url $kexectools_pkg_loc
 
 busybox_pkg_url=${busybox_url_base}/${busybox_tarball_rpo}
 busybox_pkg_loc=${temp_dir}/downloads/${busybox_tarball_loc}
-if [[ $dload_busybox_tarball == true ]]; then
-    do_download "Busybox" $busybox_pkg_url $busybox_pkg_loc
-fi
+do_download "Busybox" $busybox_pkg_url $busybox_pkg_loc
 
 iproute2_pkg_url=${iproute2_url_base}/${iproute2_tarball_rpo}
 iproute2_pkg_loc=${temp_dir}/downloads/${iproute2_tarball_loc}
-if [[ $dload_iproute2_tarball == true ]]; then
-    do_download "iproute2" $iproute2_pkg_url $iproute2_pkg_loc
-fi
+do_download "iproute2" $iproute2_pkg_url $iproute2_pkg_loc
 
 if [[ $no_e2fsprogs != true ]]; then
     e2fsprogs_pkg_url=${e2fsprogs_url_base}/${e2fsprogs_tarball_rpo}
     e2fsprogs_pkg_loc=${temp_dir}/downloads/${e2fsprogs_tarball_loc}
-    if [[ $dload_e2fsprogs_tarball == true ]]; then
-        do_download "e2fsprogs" $e2fsprogs_pkg_url $e2fsprogs_pkg_loc
-    fi
+    do_download "e2fsprogs" $e2fsprogs_pkg_url $e2fsprogs_pkg_loc
 fi
 
 petitboot_pkg_url=${petitboot_url_base}/${petitboot_tarball_rpo}
 petitboot_pkg_loc=${temp_dir}/downloads/${petitboot_tarball_loc}
-if [[ $dload_petitboot_tarball == true ]]; then
-    do_download "Petitboot" $petitboot_pkg_url $petitboot_pkg_loc
-fi
+do_download "Petitboot" $petitboot_pkg_url $petitboot_pkg_loc
 
 eudev_pkg_url=${eudev_url_base}/${eudev_tarball_rpo}
 eudev_pkg_loc=${temp_dir}/downloads/${eudev_tarball_loc}
-if [[ $dload_eudev_tarball == true ]]; then
-    do_download "eudev" $eudev_pkg_url $eudev_pkg_loc
-fi
+do_download "eudev" $eudev_pkg_url $eudev_pkg_loc
 
 echo -e ${i_msg}" Downloading the script 'extract-vmlinux' from Linux src ..."
 wget $extract_vmlinux_url -O ${temp_dir}/downloads/extract-vmlinux
@@ -908,7 +894,7 @@ autoupdate
 ./configure --prefix=/usr
 make -j $no_comp_cores
 tar -czf ${temp_dir}/initramfs/usr/share/kexectools/build.tgz config.log configure.ac Makefile
-echo -e -n ${i_msg}" Installing kexec binary to initramfs tree ..."
+echo -e ${i_msg}" Installing kexec binary to initramfs tree ..."
 strip ./build/sbin/kexec -o ${temp_dir}/initramfs/sbin/kexec_bin
 cd ${temp_dir}/initramfs/sbin
 echo -e -n ${i_msg}" Installing kexec wrapper script (and symlink) ..."
@@ -1191,7 +1177,12 @@ echo -e ${k_msg}" Finished building and packing the Petitboot initramfs."
 
 echo -e -n ${k_msg}" Saving some build info to result dir ..."
 cd ${temp_dir}/
-tree initramfs >${result_dir}/initramfs_file_tree.txt
+if [[ $no_e2fsprogs == true ]]; then
+    initramfs_tree_name=initramfs_file_tree_noe2fs.txt
+else
+    initramfs_tree_name=initramfs_file_tree.txt
+fi
+tree initramfs >${result_dir}/${initramfs_tree_name}
 compgen -v | while read line; do echo $line=${!line}; done \
     | gzip -c >${result_dir}/pb_build_vars.txt.gz
 echo " Done."

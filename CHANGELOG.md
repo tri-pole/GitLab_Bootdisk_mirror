@@ -36,7 +36,12 @@ For changelogs of older material, see the `attic` area of the repo.
 
 # petitboot_mkinitrd_riscv64.bash
 
-## [0v.1] 24-12-18
+## [v0.11] 26-01-01
+
+### Added
+ - Handling of compressed kernels.
+
+## [v0.1] 24-12-18
 
 ### Added
  - First commit.
