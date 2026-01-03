@@ -59,8 +59,10 @@
 #   copied from the host.
 # - Sometimes it is necessary to hit "Rescan devices" in Petitboot in order to
 #   see all bootable devices attached (if devices respond slowly, e.g. USB).
-# - Petitboot does not seem to be able to follow symlinks when loading kernel
-#   and initramfs so their names in grub.cfg must refer to real files.
+# - Petitboot (proper) does not seem to be able to follow symlinks when loading
+#   kernel and initramfs so their names in grub.cfg must refer to real files.
+#   However, if kernel decompression is enabled (default) the wrapper script
+#   dereferences symlinks using realpath.
 # - There are five kernel command line options that can be sent to the kernel
 #   running Petitboot and which will direct the behavior of Petitboot:
 #     pb_no_autoboot={true,false} (default false). No autoboot if true.
@@ -77,7 +79,8 @@
 #       and initrfamfs is never attempted if this option is set to true.
 #       (In the default mode, the decompression code will detect uncompressed
 #       items and leave them as-is.) The compression formats recognized for
-#       kernels are gzip, xz, bzip2, lzma, zstd; the last also for initramfs.
+#       kernels are gzip, xz, bzip2, lzma, lzo and zstd; the last also for
+#       initramfs.
 
 # Things to note about Busybox and other utils:
 # - When entering the Busybox command line you will see an error message like
@@ -863,9 +866,9 @@ do_download "eudev" $eudev_pkg_url $eudev_pkg_loc
 echo -e ${i_msg}" Downloading the script 'extract-vmlinux' from Linux src ..."
 wget $extract_vmlinux_url -O ${temp_dir}/downloads/extract-vmlinux
 if [[ $? == 0 ]]; then
-    echo -e ${k_msg}" Done."
+    echo -e ${k_msg}" Done. The script 'extract-vmlinux' successfully downloaded."
 else
-    echo -e ${w_msg}" Failed download 'extract-vmlinux', kernel decompr. will not work."
+    echo -e ${w_msg}" Failed to download 'extract-vmlinux, kernel decompr. will not work."
 fi
 
 echo -e ${i_msg}" Downloading magic file definitions for kernel and initramfs ..."
@@ -879,7 +882,7 @@ for file_magic in ${file_magic_arr[@]} ; do
 done
 
 if [[ $have_all_magic == true ]]; then
-    echo -e ${k_msg}" Done."
+    echo -e ${k_msg}" Done. All magic file definitions successfully downloaded."
 else
     echo " Kernel decompression will not work due to failed downloads."
 fi
