@@ -6,11 +6,10 @@ boot manager+loader by replacing the default Linux initramfs with an initramfs
 containing `Petitboot` or `u-root` (provided your default Linux kernel has
 `kexec`). (For download links, see below.)
 
-__News:__ We have added material for RISCV64, such as build scripts for
-`Petitboot`, Linux images and kernels (all tested on VisionFive 2), and we
-have moved some material to the [attic](attic). `Petitboot` now runs as
-expected on the VisionFive 2 (on serial console, and on HDMI if the kernel
-supports it).
+__News:__ `Petitboot` built with our scripts now runs on both on ARM64 and
+RISCV64, e.g. on VisionFive 2 (on serial console, and on HDMI if the kernel
+supports it). For both architectures the ability to boot compressed kernels
+(e.g. recent Fedora) has also been added.
 
 This repo contains, mostly, information about some
 [bootloaders](https://en.wikipedia.org/wiki/Bootloader) and
