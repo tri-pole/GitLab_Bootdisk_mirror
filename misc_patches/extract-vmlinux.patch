@@ -1,5 +1,5 @@
---- ./extract-vmlinux	2026-01-02 19:55:26.756468999 +0100
-+++ ./extract-vmlinux-pb	2026-01-02 20:16:39.589152270 +0100
+--- ./extract-vmlinux	2026-01-06 12:45:19.789442151 +0100
++++ ./extract-vmlinux-pb	2026-01-06 12:58:47.082362778 +0100
 @@ -14,8 +14,7 @@
  
  check_vmlinux()
@@ -18,7 +18,7 @@
  	# Try to find the header ($1) and decompress from here
  	for	pos in `tr "$1\n$2" "\n$2=" < "$img" | grep -abo "^$2"`
  	do
-@@ -46,20 +46,22 @@
+@@ -46,19 +46,21 @@
  fi
  
  # Prepare temp files:
@@ -26,10 +26,6 @@
 +tmp=$(mktemp /tmp/vmlinux-XXXXXX)
  trap "rm -f $tmp" 0
  
-+# First check for uncompressed images or objects:
-+echo "Trying decompressor 'none' ..." >&2
-+check_vmlinux "$img" cat 0
-+
  # That didn't work, so retry after decompression.
 +# (For better efficiency going forward we have here moved unzstd to the top.)
 +try_decompress '(\265/\375'   xxx   unzstd
@@ -40,10 +36,10 @@
  try_decompress '\211\114\132' xy    'lzop -d'
 -try_decompress '\002!L\030'   xxx   'lz4 -d'
 -try_decompress '(\265/\375'   xxx   unzstd
--
--# Finally check for uncompressed images or objects:
--check_vmlinux "$img" cat 0
 +# try_decompress '\002!L\030'   xxx   'lz4 -d'
  
+ # Finally check for uncompressed images or objects:
++echo "Trying decompressor 'none' ..." >&2
+ check_vmlinux "$img" cat 0
+ 
  # Bail out:
- echo "$me: Cannot find vmlinux." >&2
