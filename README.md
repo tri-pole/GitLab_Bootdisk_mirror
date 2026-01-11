@@ -9,7 +9,8 @@ containing `Petitboot` or `u-root` (provided your default Linux kernel has
 __News:__ `Petitboot` built with our scripts now runs on both on ARM64 and
 RISCV64, e.g. on VisionFive 2 (on serial console, and on HDMI if the kernel
 supports it). For both architectures the ability to boot compressed kernels
-(e.g. recent Fedora) has also been added.
+(e.g. recent Fedora) has also been added as well as remote mode (UI over
+telnet).
 
 This repo contains, mostly, information about some
 [bootloaders](https://en.wikipedia.org/wiki/Bootloader) and
