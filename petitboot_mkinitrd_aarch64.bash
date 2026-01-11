@@ -3,13 +3,14 @@
 # petitboot_mkinitrd_aarch64.bash
 # 24-12-18: v0.14
 # 25-12-30: v0.15
+# 26-01-11: v0.16
 # Author: Tripole
 
 # Script to build and pack Petitboot for ARM64 in an initramfs (cpio+gzip).
 
 # Requirements: ARM64 build host with normal build environment (see below)
 # where the user running the script must be in the sudo group. (At the end
-# of the build proper ownership of files in the initramfs need to be set.)
+# of the build proper ownership of files in the initramfs needs to be set.)
 
 # Tested on: Ubuntu 22.04.5 and Debian 12.12 build hosts running in QEMU
 # (qemu-system-aarch64) on x86_64. (Cross compilation is not possible since
@@ -38,7 +39,8 @@
 # the files in the initramfs. During execution of this script, two dirs will
 # be created in the same directory as this script; one result dir and one
 # temp file directory hearchy. (Near the end of this script you will be asked
-# which of the temp dirs you want to delete.)
+# which of the temp dirs you want to delete.) Run time for the script is ~30m
+# in QEMU (on a reasonably modern box) and less than 15m on bare metal.
 
 # Inspiration taken from: https://www.raptorengineering.com/content/kb/1.html
 
@@ -55,32 +57,46 @@
 # - gpg (which is only needed for verifying signed or encrypted boot) is not
 #   properly setup (missing certificates and libraries); for instructions, see
 #   e.g. the notes at raptorengineering.com in the link above.
-# - Some files (the libraries and some executables, cf. below) are simply
-#   copied from the host.
+# - Some files (libraries and executables, cf. below) are simply copied from
+#   the host.
 # - Sometimes it is necessary to hit "Rescan devices" in Petitboot in order to
-#   see all bootable devices attached (if devices respond slowly, e.g. USB).
-# - Petitboot (proper) does not seem to be able to follow symlinks when loading
-#   kernel and initramfs so their names in grub.cfg must refer to real files.
-#   However, if kernel decompression is enabled (default) the wrapper script
-#   dereferences symlinks using realpath.
-# - There are five kernel command line options that can be sent to the kernel
+#   see all bootable devices attached (if devices respond slowly, e.g. on USB).
+#   (There is a default delay of a few secs when starting the Petitboot main
+#   menu window to allow for all devices to be detected before the display is
+#   drawn but when many devices are connected the scan may take longer.)
+# - There are ten kernel command line options that can be sent to the kernel
 #   running Petitboot and which will direct the behavior of Petitboot:
-#     pb_no_autoboot={true,false} (default false). No autoboot if true.
+#   * pb_no_autoboot={true,false} (default false). No autoboot if true.
 #       (Petitboot has a default autoboot of 10s (here patched to 60s), but the
-#     feature is of limited use since the selected boot entry cannot be saved.)
-#     pb_nonet={true,false} (default false) Will create a netns jail for
+#       feature is of limited use since the chosen boot entry cannot be saved.)
+#   * pb_nonet={true,false} (default false). Will create a netns jail for
 #       Petitboot if true so that only the loopback interface will be enabled.
-#     pb_delay={0,1,2,3,...} (default 1) Will delay starting main UI x seconds.
-#     pb_displ={{M,m},d,b} (default db) Determines what is displayed in the
-#       header of Petitboot's main screen. The format descriptors are:
+#   * pb_delay={0,1,2,3,...} (default 1). Delay in seconds to start main UI.
+#   * pb_displ={{M,m},d,{b,s}} (default ds). Determines what is displayed in
+#       the header of Petitboot's main screen. The format descriptors are:
 #       M,m = manufacturer (long, short), d = product name,
-#       b = board info string. (See also code below.)
-#     pb_no_decompr={true,false} (default false). Decompression of kernel
-#       and initrfamfs is never attempted if this option is set to true.
-#       (In the default mode, the decompression code will detect uncompressed
-#       items and leave them as-is.) The compression formats recognized for
-#       kernels are gzip, xz, bzip2, lzma, lzo and zstd; the last also for
-#       initramfs.
+#       b = board info string, s = SoC info string. (See sysinfo code below.)
+#   * pb_mem_max=<0xXYZ> (default not set). This hex number will be used as max
+#       RAM during kexec reboot. (The option pb_mem_max does not limit the
+#       available RAM for the kernel being booted.) The limit pb_mem_max is
+#       needed when booting some kernels that (for some reason) cannot see all
+#       RAM and hence would otherwise not find the initramfs (which is placed
+#       near the top of RAM for kexec reboot). More info below.
+#   * pb_no_decompr={true,false} (default false). Decompression of a kernel to
+#       be loaded is never attempted if this option is set to true. (In the
+#       default mode, the code will detect uncompressed items and leave them
+#       as-is.) The compression formats recognized for kernels are gzip, xz,
+#       bzip2, lzma, lzo and zstd.
+#   Remote mode: If the option pb_rootpw is given along with one of the options
+#       pb_ipstr or pb_hostname then Petitboot starts in remote mode and waits
+#       for telnet login (tcp/23) where the UI appears. If pb_hostname is given
+#       then the IP address is obtained via DHCP, otherwise the IP address used
+#       is the one supplied in pb_ipstr (pb_hostname/DHCP has precedence).
+#   * pb_rootpw={string,undef} (default undefined). Root password for telnet.
+#   * pb_ipstr={xxx.yyy.zzz.uuu/vv,undef} (default is undef) IPv4 addr/prefix.
+#       The option pb_ipstr sets the IP address and subnet size (prefix) in rm.
+#   * pb_hostname={string,undef} (default undef). Hostname (for DHCP in rm).
+#   * pb_netdev={string,undef} (default eth0). Only applies to remote mode.
 
 # Things to note about Busybox and other utils:
 # - When entering the Busybox command line you will see an error message like
@@ -109,11 +125,11 @@
 # --------------------------------- Parameters -------------------------------
 
 # If used, this tag is inserted inside the header in the Petitboot main menu
-# where it normally says e.g. Petitboot (v1.13) so that instead it will say
-# something like Petitboot (v1.13 (mytaglinehere))
+# where it normally says e.g. Petitboot (v1.15) so that instead it will say
+# something like Petitboot (v1.15 (mytaglinehere))
 to_day=$(date +"%y%m%d")
-mytag="3p-${to_day}"
-build_ver_tag="${mytag}"
+mytag="3p-$to_day"
+build_ver_tag="$mytag"
 # If the next line is set to true, the build_ver_tag is shown in the top
 # margin in the Petitboot main menu (after the Petitboot version number)
 # and the tag is also applied to the resulting initramfs(s) (see below).
@@ -131,6 +147,7 @@ no_e2fsprogs=false # {true,false}
 bootdisk_url="https://gitlab.com/tripole-inc/bootdisk.git"
 bootdisk_dir=bootdisk # Clone into dir, relative to $temp_dir
 
+# Script to decompress the Linux kernel.
 extract_vmlinux_url="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/plain/scripts/extract-vmlinux?h=v6.18.2"
 misc_patch_dir="misc_patches" # Relative to $bootdisk_dir
 
@@ -177,7 +194,6 @@ eudev_ver="3.2.14"
 eudev_url_base="https://github.com/eudev-project/eudev/releases/download"/v${eudev_ver}
 eudev_tarball_rpo=eudev-${eudev_ver}.tar.gz
 eudev_tarball_loc=eudev-v${eudev_ver}.tar.gz
-dload_eudev_tarball=true
 eudev_udev_rules_list=("50-udev-default.rules" "60-autosuspend.rules"
                        "60-block.rules" "60-cdrom_id.rules" "60-drm.rules"
                        "60-evdev.rules" "60-fido-id.rules" "60-input-id.rules"
@@ -242,7 +258,7 @@ fi
 
 # ---------------------------------- Here docs -------------------------------
 
-README_petitboot_initrd=$(cat << EOF
+README_petitboot_initrd=$(cat <<EOF
 
 This Petitboot initramfs is built with $this_script from
 
@@ -264,7 +280,7 @@ $os_info
 EOF
 )
 
-README_PB_Busybox=$(cat << EOF
+README_PB_Busybox=$(cat <<EOF
 Notes for Busybox $busybox_ver on Petitboot $petitboot_ver :
 
   When entering the Busybox command line you will see an error message like
@@ -282,13 +298,13 @@ Notes for Busybox $busybox_ver on Petitboot $petitboot_ver :
 EOF
 )
 
-etc_motd=$(cat << "EOF"
-This is the Busybox shell. Standard UNIX/shell-isms apply.
-Please see also /usr/share/busybox/README_PB_Busybox
+etc_motd=$(cat <<"EOF"
+This is the Busybox shell (ash).
+For some usage notes, see /usr/share/busybox/README_PB_Busybox.txt
 EOF
 )
 
-etc_group=$(cat << "EOF"
+etc_group=$(cat <<"EOF"
 root:x:0:
 daemon:x:1:
 tty:x:5:
@@ -304,7 +320,7 @@ input:x:122:
 EOF
 )
 
-etc_nsswitch_conf=$(cat << "EOF"
+etc_nsswitch_conf=$(cat <<"EOF"
 root:x:0:
 daemon:x:1:
 tty:x:5:
@@ -320,7 +336,7 @@ input:x:122:
 EOF
 )
 
-usr_share_udhcpc_default_script=$(cat << "EOF"
+usr_share_udhcpc_default_script=$(cat <<"EOF"
 #!/bin/sh
 
 /usr/share/udhcpc/simple.script "$@"
@@ -328,31 +344,79 @@ usr_share_udhcpc_default_script=$(cat << "EOF"
 EOF
 )
 
-init_script=$(cat << "EOF"
+init_script=$(cat <<"EOF"
 #!/bin/sh
 
-# 22-07-29, 23-10-07, Tripole
-# Adapted after Raptor Engineering's How-To note on Petitboot.
+# 22-07-29, 23-10-07, 26-01-05, Tripole
+# Adapted from Raptor Engineering's How-To note on Petitboot.
 # https://www.raptorengineering.com/content/kb/1.html
 
-# This script can collect and use three arguments from the (trailing part of
-# the) kernel command line; pb_no_autoboot, pb_nonet and pb_delay.
-# If pb_no_autoboot=true the autoboot function is disabled and if
-# pb_nonet=true then pb-discover is started in a netns network jail so that
-# only the loopback interface works. The variable pb_delay can be used to give
-# a (non negative) delay time in sec before the main UI comes up (default 1s),
-# see below.
+# This script can collect and use seven arguments from the kernel command line
+# (typically the trailing part). Another three arguments from the kernel
+# command line are used in scripts in the initramfs. The arguments used in
+# this script are pb_no_autoboot, pb_nonet, pb_delay, pb_ipstr, pb_rootpw and
+# pb_netdev. If (and only if) the two parameters pb_ipstr and pb_rootpw are
+# both defined, then Petitboot starts in remote mode, where the UI can be
+# accessed via telnet (and the console will only give a shell).
 
-if [ "${pb_no_autoboot}" != "false"] && [ "${pb_no_autoboot}" != "true" ]; then
+# Kernel command line arguments used in this script:
+# * pb_no_autoboot={true,false,undef}, default is false (i.e. do autoboot).
+#   If pb_no_autoboot=true the autoboot function is disabled. When the autoboot
+#   function is enabled the first boot entry (after Petitboot's sorting) in the
+#   boot entry list is started after the timeout period. The timeout period in
+#   Petitboot is typically 10s (but this may have been altered by patches).
+# * pb_nonet={true,false,undef}, default is false (i.e. bring up network).
+#   If pb_nonet=true then pb-discover is started in a netns network jail so
+#   that only the loopback interface works (thus also disabling PXE/netboot).
+# * pb_delay={nonnegative integer,undef}, units of seconds, default is 1.
+#   The variable pb_delay can be used to give a delay time before the main UI
+#   comes up. This can be useful to let certain hardware "settle" (see below).
+#   Remote (UI) mode options. This mode is triggered if pb_rootpw is set and
+#   one of pb_hostname or pb_ipstr is set (the option pb_netdev is optional).
+# * pb_rootpw={string,undef}, default is undefined. Root password for telnet.
+# * pb_hostname={string,undef}, default is undefined. Hostname for telnet DHCP.
+# * pb_ipstr={xxx.yyy.zzz.uuu/vv,undef}, default is undef, IPv4 addr/prefix.
+#   The option pb_ipstr sets IP address and subnet size for telnet static addr.
+# * pb_netdev={string}, default is eth0. Network device name for remote mode.
+
+# Kernel command line arguments used in other scripts:
+# * pb_no_decompr={true,false}, default false. Decompression of a kernel to be
+#   loaded is never attempted if this option is set to true. (In the default
+#   mode, the code will detect uncompressed items and leave them as-is.) The
+#   compression formats recognized for kernels are gzip, xz, bzip2, lzma, lzo
+#   and zstd.
+# * pb_displ={{M,m},d,{b,s}}, default ds. Used in the dmidecode/sysinfo cmd.
+#   Determines what is displayed in the header of Petitboot's main screen.
+#   The format descriptors are: M,m = manufacturer (long, short), d = product
+#   name, b = board info string, s = SoC info string.
+# * pb_mem_max={hex number,undef}, default undef. Passed to kexec_wrapper.sh
+#   via the shell that kxec_wrapper is executed in (Petitboot main UI or the  
+#   telnet login shell in remote mode).
+
+if [ "$pb_no_autoboot" != "false" ] && [ "$pb_no_autoboot" != "true" ] ; then
     pb_no_autoboot=false
 fi
-if [ "${pb_nonet}" != "false"] && [ "${pb_nonet}" != "true" ]; then
+if [ "$pb_nonet" != "false"] && [ "$pb_nonet" != "true" ] ; then
     pb_nonet=false
 fi
-if [ ! -z "${pb_delay##*[!0-9]*}" ]; then
+if [ ! -z "${pb_delay##*[!0-9]*}" ] ; then
     delay=$pb_delay
 else
     delay=1
+fi
+
+remote_mode=""
+netdev="eth0"
+if [ "$pb_nonet" = "false" ] && [ ! -z "$pb_rootpw" ] && \
+     ( [ ! -z "$pb_ipstr" ] || [ ! -z "$pb_hostname" ] ) ; then
+    if [ ! -z "$pb_hostname" ]; then
+        remote_mode="dhcp"
+    else
+        remote_mode="static"
+    fi 
+    if [ ! -z "$pb_netdev" ]; then
+        netdev=$pb_netdev
+    fi
 fi
 
 /bin/busybox --install -s
@@ -375,53 +439,79 @@ sleep 1s
 sleep 1s
 /usr/bin/udevadm trigger
 
-if [ "${pb_no_autoboot}" == "true" ]; then
+pb_discover_cmd="/usr/sbin/pb-discover"
+if [ "$pb_no_autoboot" = "true" ] ; then
    pb_discover_cmd="/usr/sbin/pb-discover -a"
-else
-   pb_discover_cmd="/usr/sbin/pb-discover"
 fi
+
+# The verbose setting here only gives a little more info in the PB log.
+pb_nc_cmd="/usr/sbin/petitboot-nc -v"
 
 # This hack with a delay + some writing to the tty seems to be needed for the
 # ncurses menu/UI to come up correctly (on some monitors/ttys). Also, some time
-# may be needed for pb-discover to detect all devices and partitions properly.
-if [ "${delay}" -gt "1" ]; then
-    echo -n "Starting Petitboot UI in ..."
-    while [ "${delay}" -gt "0" ]; do
+# may be needed for udev/pb-discover to detect all devices/partitions properly.
+if [ "$delay" -gt "1" ]; then
+    echo -n "Starting Petitboot in ..."
+    while [ "$delay" -gt "0" ] ; do
         echo -n "${delay}..."
         sleep 1s
         delay=$((delay -1))
     done
 else
-    echo "Starting Petitboot UI ..."
+    echo "Starting Petitboot ..."
     sleep 1s
 fi
 
-if [ "${pb_nonet}" == "true" ] ; then
+if [ "$pb_nonet" = "true" ] ; then
     # Set up a network namespace to deny Petiboot access to external networks.
     /bin/ip netns add mininet
     /bin/ip netns exec mininet /bin/ip link set dev lo up
     /bin/ip netns exec mininet $pb_discover_cmd 2>/dev/null &
-    /bin/ip netns exec mininet /usr/sbin/petitboot-nc
+    /bin/ip netns exec mininet $pb_nc_cmd
+elif [ ! -z "$remote_mode" ] ; then
+    mkdir /dev/pts
+    mount -t devpts none /dev/pts
+    echo "23 stream tcp nowait root /usr/sbin/telnetd telnetd -l /bin/login" > /etc/inetd.conf
+    echo -e "export pb_mem_max=$pb_mem_max" > /root/.profile
+    echo -e "$pb_discover_cmd 2>/dev/null &" >> /root/.profile
+    echo -e "$pb_nc_cmd" >> /root/.profile
+    echo "root:x:0:0:root:/root:/bin/sh" > /etc/passwd
+    echo -e "${pb_rootpw}\\n${pb_rootpw}" | passwd >/dev/null 2>&1
+    echo "[ -- Petitboot in remote mode -- ]"
+    ip_addr=$(echo $pb_ipstr | cut -d '/' -f1)
+    if [ "$remote_mode" = "dhcp" ]; then
+        hostname $pb_hostname
+        udhcpc -i $netdev -x hostname:$pb_hostname
+        echo "[ -- Waiting for telnet login (root, tcp/23) on host: '$pb_hostname' -- ]"
+    else
+        hostname pb-$ip_addr
+        ip addr add $pb_ipstr dev $netdev
+        sleep 1
+        ip link set dev $netdev up
+        echo "[ -- Waiting for telnet login (root, tcp/23) on IP: $ip_addr -- ]"
+    fi
+    /usr/sbin/telnetd
+    echo "[ To resume Petitboot UI here, do: killall telnetd && source /root/.profile ]"
 else
     $pb_discover_cmd 2>/dev/null &
-    /usr/sbin/petitboot-nc
+    $pb_nc_cmd
 fi
 
+# Lockdown is related to (failed) secure boot (search for LOCKDOWN in PB src).
 if [ -e /etc/pb-lockdown ] ; then
-    echo "Failed to launch petitboot, rebooting!"
+    echo "Failed to launch Petitboot, rebooting!"
     echo 1 > /proc/sys/kernel/sysrq
     echo b > /proc/sysrq-trigger
 else
-    echo "Failed to launch petitboot, dropping to a shell."
+    echo "No Petitboot UI on console. Dropping to a shell here."
     exec sh
 fi
-
 EOF
 )
 
 # sh does not support null characters '\0' (they will be mangled when a here
 # doc is written to file).
-sbin_sysinfo=$(cat << "EOF"
+sbin_sysinfo=$(cat <<"EOF"
 #!/bin/sh
 
 # 22-07-29, 23-10-05, 24-12-19, Tripole
@@ -437,19 +527,20 @@ sbin_sysinfo=$(cat << "EOF"
 # For Ugoos AM6, cat gives the following results (w/ null bytes in strings):
 # /proc/device-tree/compatible :  "ugoos,am6\0amlogic,s922x\0amlogic,g12b"
 # /proc/device-tree/name       :  <empty>
-# /proc/device-tree/model      :  "Ugoos AM6" # With a \0 somewhere.
+# /proc/device-tree/model      :  "Ugoos AM6" # With a null char \0 somewhere.
 # In the pipe filters below using tr we cannot use the null character \0
 # explicity since sh does not allow nulls inside strings (only at the end).
 
 # Busybox's version of stty is stripped down and there is no reliable way to
 # determine the column width of the screen. To determine what is displayed
 # we therefore use an environment variable from the kernel command line with
-# the name/format pb_displ={{M,m},d,b} where M,m = manufacturer (long,short),
-# d = product name, b = board info string, see below. (Note that the board
-# info string is also used in Petitboot's System information screen.)
+# the name/format pb_displ={{M,m},d,{b,s}} where M,m = manufacturer (long,
+# short), d = product name, b = board info string, s = SoC info string, see
+# below. (Note: The board/SoC info string is also used in Petitboot's System
+# information screen.)
 
-if [ -z $pb_displ ]; then
-    pb_displ=db
+if [ -z "$pb_displ" ]; then
+    pb_displ=ds
 fi
 
 query_str=${1#--string=}
@@ -495,6 +586,12 @@ case "$query_str" in
                 response_str="${lead_str}${val_str}  "
                 break
             ;;
+            *s )
+                lead_str="SoC: "
+                val_str_cut=$(echo -n $val_str | cut -d ',' -f 2)
+                response_str="${lead_str}${val_str_cut}  "
+                break
+            ;;
             * )
                 response_str=""
             ;;
@@ -506,165 +603,126 @@ echo $response_str
 EOF
 )
 
-kexec_wrapper=$(cat << "EOF"
+README_memmax=$(cat <<"EOF"
+# Remark on the mem-max argument (pb_mem_max):
+# The following is valid at the time of this writing and applies, probably
+# mostly, to VisionFive 2.
+# Some kernels are only aware of half the memory (e.g. ~4G for VF2 8G) after
+# kexec reboot. It is unclear what exactly causes this but it is related to how
+# kernels (possibly with help of u-boot) handle the info in the dtb to
+# determine the (total) physical memory size in cases when this size is not
+# explicitly stated in the dtb. Some kernels (e.g. openSUSE's) are always aware
+# of all memory, but others (e.g. Debian's) are not.
+# Since kexec loads the new initrd at the top of the memory, as seen by the
+# first (loading) kernel, this can be outside what the second (loaded) kernel
+# is aware of.
+# For this reason we may want to force the initrd mem load address in kexec to
+# be lower, at a point in memory which the new kernel considers admissible.
+# We do this by using the --mem-max arg of kexec (working values can be
+# inferred from dmesg from failed reboots).
+# The mem-max value can be passed to this script by using the environment
+# variable pb_mem_max and the variable should give the max memory address in
+# hex, e.g. pb_mem_max=0x13fffffff.
+# The variable pb_mem_max can be passed in two ways:
+# (1) Globally, for all kernels to be booted by Petitboot, by adding an
+# argument pb_mem_max=<val> to the kernel command line for the kernel running
+# Petitboot (this is typically done by editing extlinux.conf).
+# (2) On a per-kernel basis, by adding a command line arg pb_mem_max=<val> to
+# the kernel command line in grub.cfg (or by editing the command line for
+# in Petitboot's main menu before boot).
+EOF
+)
+
+kexec_wrapper=$(cat <<"EOF"
 #!/bin/sh
 
-# 25-12-28, Tripole
+# 26-01-01, 26-01-07, Tripole
 
 # This script performs filtering of the kexec call from Petitboot and can do
-# (optional) decompression of kernels and initramfses before calling kexec.
-# The script can collect and use one argument from the (trailing part of the)
-# kernel command line; pb_no_decompr. If pb_no_decompr=true then the code for
-# decompression of the kernel and initramfs below is disabled and the kernel
-# and initramfs are both loaded as-is (always).
+# (optional) decompression of kernels before calling kexec (the binary).
+# The script can use two arguments from the kernel command line; pb_no_decompr
+# and pb_mem_max. If pb_no_decompr=true then the code for kernel decompression
+# below is disabled and the kernel is loaded as-is (always). The argument
+# pb_mem_max can be used to restrict the loading region of the initrd during
+# kexec which can sometimes be needed (for more info, see the file
+# /usr/share/kexectools/README_memmax.txt).
 
-kexec_executable="/sbin/kexec_bin" # The real McCoy.
+kexec_binary="/sbin/kexec_bin" # The real McCoy.
 
-if [ -z $pb_no_decompr ]; then
+# The environment variables pb_no_decompr and pb_mem_max are explained below.
+if [ -z "$pb_no_decompr" ]; then
     pb_no_decompr=false
 fi
+call_memmax_str=""
+if [ ! -z "$pb_mem_max" ]; then
+    call_memmax_str=" --mem-max="$pb_mem_max
+fi
 
-# The kexec call (issued by Petitboot) invoking this script can be only one
-# of two forms (for details, see boot.c in the Petitboot src):
+# The kexec call (issued by Petitboot) invoking this script can be only one of
+# the following two forms (for details, see e.g. boot.c in the Petitboot src
+# and/or run /usr/sbin/petitboot-nc -v in ./init):
 # (1) kexec -e {-f} # The -f switch is added by Petitboot only after -e fails.
 # (2) kexec -{l,s} --initrd=/path/to/initrd \
 #                  --dtb=/path/to/dtb \
 #                  --append=<can_be_several_whitespace_separated_substrings> \
-#                  --- /path/to/kernel
-# where the all options except /path/to/kernel are optional.
+#                  /path/to/kernel
+# where the all options except the last /path/to/kernel are optional.
 # The call kexec -s (file based kexec syscall) is here translated to kexec -l
-# (ordinary/classic kexec operation).
+# (ordinary kexec operation).
+# (The kexec binary accepts both --command-line and --append (to command line).
+# If --command-line is absent it uses the contents from --append as cmd. line.)
 
-# We proceed in three steps. Step 1; dissassemble the incoming kexec call
-# string into args for initrd, dtb, kernel. Step 2 (optional); decompression of
-# kernel and initramfs. Step 3; do the actual (filtered) kexec call.
+# In this script we unpack the kexec call, filter the arguments, and send a
+# repackaged version to kexec_binary (after optional kernel decompression).
 
-# Step 1. Loop over the input call args and collect the parts for initrd, dtb,
-# append and kernel. When (if) we find a section (of substrings) starting with
-# "--append=" we switch to append mode and collect the substrings for append.
-kernel_str=""
-initrd_str=""
-dtb_str=""
-append_args=""
-append_mode=false
-arg_num=1
-if [ "$1" != "-e" ]; then
-    for current_arg in "$@"; do
-        if [ "$arg_num" -lt "$#" ] ; then
-            if [ "$current_arg" != "---" ]; then
-                if [ $append_mode = false ]; then
-                    case $current_arg in
-                        "-s" | "-l" )
-                        ;;
-                        "--initrd="* )
-                            initrd_str=${current_arg#--initrd=}
-                        ;;
-                        "--dtb="* )
-                            dtb_str=${current_arg#--dtb=}
-                        ;;
-                        "--append"* )
-                            append_args=${current_arg#--append=}
-                            append_mode=true
-                        ;;
-                    esac
-                else # Gobble up the space separated parts of the append string.
-                    if [ "$current_arg" != "---" ]; then
-                       append_args=${append_args}" "${current_arg}
-                    fi
-                fi
-            fi
-            arg_num=$((arg_num +1))
-        else
-            kernel_str=$current_arg
-        fi
-    done
-fi
-
-# Step 2.
 call_str=""
-if [ "$1" != "-e" ]; then
-    if [ $pb_no_decompr = true ]; then
-        call_str="--load $kernel_str"
-        if [ ! -z "$initrd_str" ]; then
-            call_str=${call_str}" --initrd="${initrd_str}
+case "$1" in
+    "-s"|"-l")
+        shift # We drop the leading -s or -l in "$@"
+        arg_str="$@"; num_args="$#"
+        par_str=""; kernel_str=""; arg_num=1
+        while [ "$arg_num" -lt "$num_args" ]; do # All args before kernel.
+            par_str=${par_str}" "$1
+            shift; arg_num=$((arg_num +1))
+        done
+        kernel_str="$1"
+        par_str=$(echo $par_str | xargs) # Trim leading and trailing space.
+
+        # If compression is enabled, check first if the kernel is uncompressed.
+        # If it is not, then decompress the kernel.
+        kernel_path=$kernel_str
+        if [ "$pb_no_decompr" != "true" ]; then
+            kernel_path_real=$(realpath $kernel_str)
+            file $kernel_path_real | grep -q 'Linux kernel.*boot executable' >/dev/null 2>&1
+            if [ $? -ne 0 ]; then
+                kernel_path=/tmp/vmlinux-pb
+                eval "extract-vmlinux-pb $kernel_path_real >$kernel_path" 2>/dev/null
+            fi
         fi
-        if [ ! -z "$dtb_str" ]; then
-            call_str=${call_str}" --dtb="${dtb_str}
+
+        # Base part of call_str.
+        if [ -z "$par_str" ]; then
+            call_str="--load $kernel_path"
+        else
+            call_str="--load $kernel_path $par_str"
         fi
-        if [ $append_mode = true ]; then
-            call_str=${call_str}" --append="${append_args}
-        fi
-    else
-        # Petitboot aborts kexec load/boot procedure on any stdout/stderr msg.
-        # echo "Decompressing: "$kernel_str
-        eval "extract-vmlinux-pb $(realpath $kernel_str) >/tmp/vmlinux-pb" 2>/dev/null
-        call_str="--load /tmp/vmlinux-pb"
-        if [ ! -z $initrd_str ]; then
-            # echo "Decompressing: "$initrd_str
-            eval "extract-initrd-pb $(realpath $initrd_str) >/tmp/initrd.img-pb" 2>/dev/null
-            call_str=${call_str}" --initrd=/tmp/initrd.img-pb"
-        fi
-        if [ ! -z $dtb_str ]; then
-            call_str=${call_str}" --dtb="${dtb_str}
-        fi
-        if [ $append_mode = true ]; then
-           call_str=${call_str}" --append="${append_args}
-        fi
-    fi
-else
-    call_str=$1
-fi
 
-# echo "Call string sent to kexec executable: '$call_str'"
+        # Add the optional kexec mem-max argument (see trailing remarks).
+        call_str=${call_str}${call_memmax_str}
+    ;;
+    "-e")
+        # If telnetd is running (remote mode), kill it before kexec -e.
+        kill -s SIGTERM $(pidof telnetd) >/dev/null 2>&1
+        call_str=$1
+    ;;
+    *)
+        echo "${0}: Malformed command string, exiting."
+        exit 1
+esac
 
-eval "${kexec_executable} ${call_str}"
+# echo "Call string sent to kexec executable: [$call_str]"
 
-EOF
-)
-
-extract_initrd_pb=$(cat << "EOF"
-#!/bin/sh
-
-# 2025-12-26, Tripole
-# Tries to decompress the first argument by a sequence of decompressors and,
-# if successful, sends the result to stdout (info messages are sent to stderr).
-# Inspired by extract-linux in Linux src tree.
-
-this_prog=${0##*/}
-
-try_decompress()
-{
-	echo "Trying $1 ..." >&2
-	if	"$1" -c "$2" 2>/dev/null
-	then
-		echo "$this_prog: Extracted initramfs using '$1'" >&2
-	fi
-}
-
-# Check invocation:
-initrd="$1"
-if	[ $# -ne 1 -o ! -s "$initrd" ]
-then
-	echo "Usage: $this_prog <initramfs>" >&2
-	exit 2
-fi
-
-# First check for uncompressed initramfs:
-echo "Trying decompressor 'none' ..." >&2
-if	file -b --mime-type "$initrd" | awk -F "/" '{print $2}' | grep -q "x-cpio" >/dev/null 2>&1
-then
-	echo "$this_prog: $(basename ${initrd}) is not compressed (piping to stdout)." >&2
-	cat $initrd
-	exit 0
-fi
-
-# Normally we would use something like
-# for decompr_bin in "gunzip" "unzstd" (...)
-# but if only e.g. zstd needs to be decompressed we can use a shortlist:
-for decompr_bin in "unzstd"
-do
-	try_decompress "$decompr_bin" "$initrd"
-done
+eval "$kexec_binary $call_str"
 EOF
 )
 
@@ -687,7 +745,7 @@ do_download() {
             exit 1
         fi
     else
-	echo -e ${k_msg}" Skipping download of ${bundle_name}; file already exists."
+        echo -e ${k_msg}" Skipping download of ${bundle_name}; file already exists."
     fi
 }
 
@@ -868,7 +926,7 @@ wget $extract_vmlinux_url -O ${temp_dir}/downloads/extract-vmlinux
 if [[ $? == 0 ]]; then
     echo -e ${k_msg}" Done. The script 'extract-vmlinux' successfully downloaded."
 else
-    echo -e ${w_msg}" Failed to download 'extract-vmlinux, kernel decompr. will not work."
+    echo -e ${w_msg}" Failed to download 'extract-vmlinux', kernel decompr. will not work."
 fi
 
 echo -e ${i_msg}" Downloading magic file definitions for kernel and initramfs ..."
@@ -880,7 +938,6 @@ for file_magic in ${file_magic_arr[@]} ; do
         have_all_magic=false
     fi
 done
-
 if [[ $have_all_magic == true ]]; then
     echo -e ${k_msg}" Done. All magic file definitions successfully downloaded."
 else
@@ -906,6 +963,11 @@ chmod 0755 kexec_wrapper.sh
 ln -s kexec_wrapper.sh kexec
 echo " Done."
 echo -e ${k_msg}" Finished building and installing kexec-tools."
+
+echo -e -n ${i_msg}" Writing some notes on kexectools to /usr/share/kexectools ..."
+echo -e "$README_memmax" \
+    >${temp_dir}/initramfs/usr/share/kexectools/README_memmax.txt
+echo " Done."
 
 echo -e ${i_msg}" Building Busybox ..."
 tar -xjf ${temp_dir}/downloads/${busybox_tarball_loc} -C ${temp_dir}/busybox
@@ -1067,7 +1129,7 @@ echo -e ${k_msg}" Finished building and installing eudev."
 cd ${temp_dir}/downloads
 echo -e ${i_msg}" Patching the script 'extract-vmlinux' ..."
 patch -N -p1 --ignore-whitespace <\
-      ${temp_dir}/${bootdisk_dir}/${misc_patch_dir}/extract-vmlinux.patch
+        ${temp_dir}/${bootdisk_dir}/${misc_patch_dir}/extract-vmlinux.patch
 if [[ "$?" != 0 ]]; then
     echo -e ${w_msg}"\n The patch on 'extract-vmlinux' was not successfully applied."
 else
@@ -1077,11 +1139,6 @@ fi
 echo -e -n ${i_msg}" Installing the script 'extract-vmlinux-pb' ..."
 cp extract-vmlinux ${temp_dir}/initramfs/usr/sbin/extract-vmlinux-pb
 chmod 0755 ${temp_dir}/initramfs/usr/sbin/extract-vmlinux-pb
-echo " Done."
-
-echo -e -n ${i_msg}" Installing the script 'extract-initrd-pb' ..."
-echo -e "$extract_initrd_pb" >${temp_dir}/initramfs/usr/sbin/extract-initrd-pb
-chmod 0755 ${temp_dir}/initramfs/usr/sbin/extract-initrd-pb
 echo " Done."
 
 if [[ $have_all_magic == true ]]; then
