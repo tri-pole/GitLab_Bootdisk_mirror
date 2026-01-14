@@ -40,7 +40,7 @@
 # be created in the same directory as this script; one result dir and one
 # temp file directory hearchy. (Near the end of this script you will be asked
 # which of the temp dirs you want to delete.) Run time for the script is ~30m
-# in QEMU (on a reasonably modern box) and less than 15m on bare metal.
+# in QEMU (on a reasonably modern box) and about 10m on bare metal.
 
 # Inspiration taken from: https://www.raptorengineering.com/content/kb/1.html
 
@@ -608,14 +608,14 @@ README_memmax=$(cat <<"EOF"
 # The following is valid at the time of this writing and applies, probably
 # mostly, to VisionFive 2.
 # Some kernels are only aware of half the memory (e.g. ~4G for VF2 8G) after
-# kexec reboot. It is unclear what exactly causes this but it is related to how
-# kernels (possibly with help of u-boot) handle the info in the dtb to
-# determine the (total) physical memory size in cases when this size is not
-# explicitly stated in the dtb. Some kernels (e.g. openSUSE's) are always aware
-# of all memory, but others (e.g. Debian's) are not.
-# Since kexec loads the new initrd at the top of the memory, as seen by the
-# first (loading) kernel, this can be outside what the second (loaded) kernel
-# is aware of.
+# kexec reboot. The reasons for this can be traced to how kernels determine
+# the physical memory size based on the info in dtb and hardware probing, see
+# e.g. https://github.com/starfive-tech/VisionFive2/issues/20
+#      https://www.reddit.com/r/RISCV/comments/10jg152/comment/j9f2bri
+# Some kernels (e.g. openSUSE's) are always aware of all memory, but others
+# (e.g. Debian's) are not. Since kexec loads the new initrd at the top of the
+# memory, as seen by the first (loading) kernel, this can be outside what the
+# second (loaded) kernel is aware of.
 # For this reason we may want to force the initrd mem load address in kexec to
 # be lower, at a point in memory which the new kernel considers admissible.
 # We do this by using the --mem-max arg of kexec (working values can be
@@ -630,6 +630,8 @@ README_memmax=$(cat <<"EOF"
 # (2) On a per-kernel basis, by adding a command line arg pb_mem_max=<val> to
 # the kernel command line in grub.cfg (or by editing the command line for
 # in Petitboot's main menu before boot).
+# A workaround to the problem described above is to edit the dtb to reflect
+# the correct memory size, as described in the reddit post above.
 EOF
 )
 
@@ -728,6 +730,24 @@ EOF
 
 # --------------------------------- Functions -------------------------------
 
+run_time () {
+epoch_secs_now=$(date +"%s")
+case "$#" in
+    "1" ) # $1 is a dummy argument.
+        result=$epoch_secs_now
+    ;;
+    "2" )
+        run_time_secs=$(($epoch_secs_now -$2))
+        result=$(date -d@$run_time_secs -u +"%H:%M:%S")
+    ;;
+    * )
+        echo "Error in function run_time(), exiting."
+        exit 1
+    ;;
+esac
+echo $result
+}
+
 do_download() {
     bundle_name=$1
     bundle_pkg_url=$2
@@ -750,6 +770,8 @@ do_download() {
 }
 
 # ------------------------------- Preliminaries -----------------------------
+
+run_time_start=$(run_time "start")
 
 PATH=${PATH}:/usr/sbin
 
@@ -1204,6 +1226,8 @@ echo -e ${i_msg}" Running ldconfig for the libraries in the initramfs tree."
 ldconfig -vr ${temp_dir}/initramfs
 echo -e ${k_msg}" Finished with libraries."
 
+tot_run_time=$(run_time "stop" $run_time_start)
+
 # ------------------------------- Packing it up ------------------------------
 
 echo -e ${i_msg}" Preparing to pack up the initramfs tree into a gzipped cpio archive ..."
@@ -1289,3 +1313,4 @@ if [[ -z "$test_empty_temp" ]]; then
 fi
 
 echo -e ${k_msg}" Finished executing ${this_script}"
+echo -e ${i_msg}" Run time (excl. user dialogue) [h:m:s]: "$tot_run_time

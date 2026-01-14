@@ -36,7 +36,7 @@ For changelogs of older material, see the `attic` area of the repo.
 
 # petitboot_mkinitrd_riscv64.bash
 
-## [v0.12]
+## [v0.12] 26-01-11
 
 ### Added
  - Remote (telnet) mode.
