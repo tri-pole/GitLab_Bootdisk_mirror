@@ -9,6 +9,11 @@ For changelogs of older material, see the `attic` area of the repo.
 
 # debuntu_dbstrap_riscv64.bash
 
+## [v0.16] 26-02-10
+
+### Added
+ - Support for Devuan.
+
 ## [v0.15] 25-12-12
 
 ### Changed

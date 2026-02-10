@@ -2,31 +2,33 @@
 
 # debuntu_dbstrap_riscv64.bash
 # 24-12-10: v0.13
-# 25-12-12: v0.15
+# 26-02-10: v0.16
 # Author: Tripole
 
 # Usage: ./debuntu_dbstrap_riscv64.bash <distro>
-#        where distro is one of: ubuntu, debian
+#        where distro is one of: ubuntu, debian, devuan
 
-# * This is a script to create a (small, CLI) Debian or Ubuntu Linux RISCV64
-#   image using debootstrap. Compared to pristine Debian/Ubuntu it has only a
-#   small number of additions; a bootfs partition with a copy of kernel,
-#   initramfs, dtb and (u-boot) boot scripts, some scripts on rootfs under
-#   /etc/kernel/post{inst,rm} to update extlinux.conf on the bootfs partition
-#   and some utility scripts in /usr/local/bin to update grub.cfg. (Optionally,
-#   it also has a directory with supplementary files, such as a petitboot
-#   directory on the bootfs for setup of the Petitboot boot loader/manager.)
+# * This is a script to create a (small, CLI) Ubuntu, Debian or Devuan Linux
+#   RISCV64 image using debootstrap, adding only a small number of items:
+#   A bootfs partition with a copy of kernel, initramfs, dtb and (u-boot) boot
+#   scripts, some scripts on rootfs under /etc/kernel/post{inst,rm} to update
+#   extlinux.conf on the bootfs partition after kernel update and some utility
+#   scripts in /usr/local/bin to also update grub.cfg. (Optionally, it also has
+#   a directory with supplementary files, such as a petitboot directory on the
+#   bootfs for setup of the Petitboot boot loader/manager.)
 # * The script is designed to be run (as root) on an Ubuntu build host, either
-#   natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static) on
-#   x86_64/amd64. The build host must have Debian keys installed (see below).
-#   (It is quite possible it runs on a Debian host too, but this is not tested.)
+#   natively on RISCV64 or virtualized (using qemu-riscv64-static) on
+#   x86_64/amd64. (The script probably runs on Debian too but it is not tested.)
+# * The build host must have Debian keys installed (see below) and the
+#   debootstrap package in order to debootstrap Ubuntu and Debian. For Devuan,
+#   the debootstrap scripts are downloaded automagically by this script.
+# * Target SoC/board: The generated images are tailored to VisionFive 2 but can
+#   be adapted to other RISCV64 SBCs (by e.g. changing partition layout, dtb).
 # * Booting: The generated images can be booted with board resident (e.g. QSPI)
 #   openSBI+u-boot using extlinux.conf on the image or by using Petitboot for
 #   RISCV64 (using grub.cfg on the image). (Petitboot can be installed/set up
 #   on the image or on e.g. eMMC.) The partition layout has two leading empty
 #   2M+4M partitions for manual addition SPL and openSPI+u-boot, if needed.
-# * Target SoC/board: The generated images are tailored to VisionFive 2 but can
-#   easily be adapted to other RISCV64 SBCs (by updating the dtb and uEnv.txt).
 # * Requirements: The script requires basic functionality incl. blkid, dd,
 #   losetup, mkfs, wget, xz and the pkg. systemd-container (for systemd-nspawn).
 #   (Most requirements are checked at runtime below.) For "cross-scripting"
@@ -49,16 +51,16 @@
 #   need to update grub.cfg and this can can be done by using grub-mkimage or
 #   via scripts in /usr/local/bin, e.g. the script mkgrubcfg_simple.bash
 # - The dtb files on the image are located at
-#   /usr/lib/linux-image-<kernel version>-riscv64 (Debian)
 #   /usr/lib/firmware/<kernel version>-generic/device-tree (Ubuntu)
+#   /usr/lib/linux-image-<kernel version>-riscv64 (Debian, Devuan)
 #   A link to the default dtb must exist as /etc/default/dtb (as set up by this
 #   script) in order for the kernel postinst extlinux.conf update hook to work.
 # - The dtb file is specified in the devicetree entry in the grub.cfg file
 #   (cf. mkgrubcfg_simple.bash). However, bootloaders based on kexec, such as
 #   Petitboot, typically allow/let the booted Linux kernel inherit the dtb used
-#   by kernel running the bootloader if the devicetree entry is not
-#   valid/present in the grub.cfg for the kernel to be booted. (This holds for
-#   the version of Petitboot for RISCV64 provided at Gitlab/Tripole.)
+#   by kernel running the bootloader if the devicetree entry is not present
+#   (or valid) in the grub.cfg for the kernel to be booted. (This holds at
+#   least for the version of Petitboot for RISCV64 provided at Gitlab/Tripole.)
 # - The automatic copying of vmlinuz,initrd.img to the bootfs partition after
 #   kernel upgrade or initramfs rebuild always copies the newest kernel, initrd
 #   (the one with the highest version number), as determined by the sort -V
@@ -69,8 +71,8 @@
 #   the commands inside the here-doc below named ubuntu_custom_inst and comment
 #   out the relevant sections of the function setup_distro_specifics below.
 # - The numbering of the eth interfaces may vary, so try all RJ45 connectors.
-# - Domain name resolution is now handled (also on Debian) by systemd, see
-#   e.g. sec 2.1 in https://wiki.archlinux.org/title/Systemd-resolved
+# - Domain name resolution is now handled on Ubuntu and Debian by systemd,
+#   see e.g. sec 2.1 in https://wiki.archlinux.org/title/Systemd-resolved
 # - The package linux-firmware is installed but firmware for e.g. a specific
 #   WiFi or Bluethooth chip might not be included and thus have to be sought
 #   elsewhere.
@@ -113,10 +115,12 @@
 # (Typically img_file_dir is the directory in which this script is located.)
 imgfile_dir=$PWD
 
-ubuntu_name=Ubuntu     # Used for the image name and in grub.cfg
-ubuntu_edition=Noble   # Tested with Jammy and Noble.
-debian_name=Debian     # Used for the image name and in grub.cfg
-debian_edition=Trixie  # Works only w/ Trixie currently (caveat with RISCV64).
+ubuntu_name=Ubuntu       # Used for the image name and in grub.cfg
+ubuntu_edition=Noble     # Tested with Jammy and Noble.
+debian_name=Debian       # Used for the image name and in grub.cfg
+debian_edition=Trixie    # Works only w/ Trixie currently (caveat with RISCV64).
+devuan_name=Devuan       # Used for the image name and in grub.cfg
+devuan_edition=Excalibur # Tested with Excalibur.
 
 # The image tag will be added to img. name after distro name and kernel version.
 img_tag=3pole-$(date +"%y%m%d")
@@ -136,7 +140,7 @@ dtbfile_path=/boot/dtbs/${dtb_mfg}/${dtbfile_name} # Full path, starts w/ /boot
 # on the image as /root/.ssh/authorized_keys (for passwordless ssh root login).
 root_sshkey_loc="mysshkey.pub"
 
-# If the directory $add_loc_dir exists in $imgfile_dir then this dir and its
+# If the directory $add_loc_dir exists in $imgfile_dir then $add_loc_dir and its
 # contents will be copied to $add_dir_img on the image (rel. to its root lvl.).
 add_dir_loc=petitboot
 add_dir_img=boot # No leading forward slash here.
@@ -163,6 +167,12 @@ docleanup_after=yes # {yes,no}
 # https://www.debian.org/mirror/list and http://mirrors.ubuntu.com
 ubuntu_repourl="http://ports.ubuntu.com/ubuntu-ports"
 debian_repourl="http://ftp.debian.org/debian"
+devuan_repourl="http://deb.devuan.org/merged"
+
+# Location Devuan specific debootstrap scripts.
+devuan_dbscripts_url="https://pkgmaster.devuan.org/devuan/pool/main/d/debootstrap"
+# Current Devuan tarball with debootstrap scripts.
+devuan_dbscripts_tgz="debootstrap_1.0.142devuan1.tar.gz"
 
 # Link to growpart for resizing second partition (rootfs) to desired size.
 growpart_url="https://raw.githubusercontent.com/canonical/cloud-utils/main/bin/growpart"
@@ -189,23 +199,23 @@ bootfs_mnt="${rootfs_mnt}""${bootfs_dir}"
 rootfs_mnt_opts="errors=remount-ro"
 bootfs_mnt_opts="dmask=0027,errors=remount-ro"
 
-# Nowadays this should be end0 for both Debian and Ubuntu.
-iface_name=end0
-
 # Some (but not all) commands used below to create the image.
-reqd_cmdlist=("blkid" "dd" "debootstrap" "losetup" "mkfs.fat" "mkimage"
-              "fdisk" "systemd-nspawn" "tar" "wget" "xz"
+reqd_cmdlist=("blkid" "dd" "debootstrap" "fsck.fat" "e2fsck" "losetup"
+              "mkfs.fat" "mkimage" "sfdisk" "systemd-nspawn" "tar" "wget" "xz"
 )
 
 # List of packages to be added to (the ones minimally needed for) the install.
-debian_extra_packages="aptitude man-db firmware-linux-free zram-tools sudo openssh-server"
-ubuntu_extra_packages="nano aptitude man-db zram-tools sudo openssh-server"
+ubuntu_extra_packages="nano aptitude man-db openssh-server"
+debian_extra_packages="aptitude man-db firmware-linux-free openssh-server"
+devuan_extra_packages="aptitude man-db firmware-linux-free openssh-server"
 
 # For running in QEMU the user mode emulation binary qemu-static-<arch> is reqd.
 reqd_cmdlist_virt=("qemu-riscv64-static")
 
 # Bling (color in stdout)? Yes, we like.
 enable_color_msg=yes # {yes,no}
+
+# Some distro dependent settings are defined below after prepatations/checks.
 
 # --------------------------- preparations/checks ----------------------------
 
@@ -253,6 +263,15 @@ if [[ "$1" == "debian" ]]; then
     fi
 fi
 
+# The devuan-keyring package contains also the keys for the archives/repos.
+if [[ "$1" == "devuan" ]]; then
+    dev_keyring_isinst=$(dpkg -l | awk '/devuan-keyring/ {print }' | wc -l)
+    if [[ $dev_keyring_isinst -eq 0 ]]; then
+        echo ${e_msg}" The Devuan keyring is not installed, exiting."
+        exit 1
+    fi
+fi
+
 if [[ "$rootfs_type" == "ext4" ]]; then
     reqd_cmdlist=("${reqd_cmdlist[@]}" "mkfs.ext4")
 elif [[ "$rootfs_type" == "btrfs" ]]; then # Only a placeholder for now.
@@ -280,6 +299,7 @@ case $1 in
         bootfs_label=UBNT_BOOT
         rootfs_label=UBNT_ROOT
         kernel_img_name_short=vmlinuz
+	iface_name=end0
         ;;
     "debian")
         distro_name=$debian_name
@@ -289,8 +309,20 @@ case $1 in
         bootfs_label=DEBN_BOOT
         rootfs_label=DEBN_ROOT
         kernel_img_name_short=vmlinux
-        nonfree_list="non-free non-free-firmware"
-    ;;
+	iface_name=end0
+        # nonfree_list="non-free non-free-firmware"
+	;;
+     "devuan")
+        distro_name=$devuan_name
+        distro_edition=$devuan_edition
+        distro_repourl=$devuan_repourl
+        keyring_file=/usr/share/keyrings/devuan-archive-keyring.gpg
+        bootfs_label=DEVU_BOOT
+        rootfs_label=DEVU_ROOT
+        kernel_img_name_short=vmlinux
+	iface_name=eth0
+        # nonfree_list="non-free non-free-firmware"
+        ;;
     *)
         calling_cmd=$0
         calling_cmd_tail=${calling_cmd##*/}
@@ -313,12 +345,8 @@ gpt_bu_start=$(($p4_start +$p4_size +1))
 gpt_bu_size=34 # Trailing GPT backup table.
 imgfile_num_sectors=$(($p1_start +$p1_size +$p2_size +$p3_size +$p4_size +$gpt_bu_size))
 
-# For the debootstrapping.
-distro_release="$(tr [A-Z] [a-z] <<< "$distro_edition")" # To lowercase.
-
-# For processing in the here-docs below.
-ubuntu_release="$(tr [A-Z] [a-z] <<< "$ubuntu_edition")" # To lowercase.
-debian_release="$(tr [A-Z] [a-z] <<< "$debian_edition")" # To lowercase.
+# For the debootstrapping and the here-docs below we use lowercase.
+distro_release="$(tr [A-Z] [a-z] <<< "$distro_edition")"
 
 # ------------------------------- here-docs ----------------------------------
 
@@ -387,7 +415,7 @@ iface $iface_name inet dhcp
 EOF
 )
 
-# Only used with manual configuration.
+# Only used with manual configuration (/etc/resolv.conf).
 # debian_resolver_file=$(cat <<EOF
 # nameserver $name_server_1
 # nameserver $name_server_2
@@ -435,33 +463,33 @@ EOF
 )
 
 ubuntu_repo_list=$(cat <<EOF
-deb http://ports.ubuntu.com/ubuntu-ports/ $ubuntu_release main restricted
-deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-updates main restricted
+deb http://ports.ubuntu.com/ubuntu-ports/ $distro_release main restricted
+deb http://ports.ubuntu.com/ubuntu-ports/ ${distro_release}-updates main restricted
 
-deb http://ports.ubuntu.com/ubuntu-ports/ $ubuntu_release universe
-deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-updates universe
+deb http://ports.ubuntu.com/ubuntu-ports/ $distro_release universe
+deb http://ports.ubuntu.com/ubuntu-ports/ ${distro_release}-updates universe
 
-deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release} multiverse
-deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-updates multiverse
+deb http://ports.ubuntu.com/ubuntu-ports/ ${distro_release} multiverse
+deb http://ports.ubuntu.com/ubuntu-ports/ ${distro_release}-updates multiverse
 
-# deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-backports main restricted universe multiverse
+# deb http://ports.ubuntu.com/ubuntu-ports/ ${distro_release}-backports main restricted universe multiverse
 
-deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-security main restricted
-deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-security universe
-deb http://ports.ubuntu.com/ubuntu-ports/ ${ubuntu_release}-security multiverse
+deb http://ports.ubuntu.com/ubuntu-ports/ ${distro_release}-security main restricted
+deb http://ports.ubuntu.com/ubuntu-ports/ ${distro_release}-security universe
+deb http://ports.ubuntu.com/ubuntu-ports/ ${distro_release}-security multiverse
 EOF
 )
 
 ubuntu_repo_list_deb822=$(cat <<EOF
 Types: deb
 URIs: http://ports.ubuntu.com/ubuntu-ports
-Suites: noble noble-updates noble-backports
+Suites: $distro_release ${distro_release}-updates ${distro_release}-backports
 Components: main universe restricted multiverse
 Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 
 Types: deb
 URIs: http://ports.ubuntu.com/ubuntu-ports
-Suites: noble-security
+Suites: ${distro_release}-security
 Components: main universe restricted multiverse
 Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 EOF
@@ -482,7 +510,7 @@ apt-get update
 DEBIAN_FRONTEND=noninteractive apt -y install linux-image-generic # linux-headers-generic
 echo "Setting FSTYPE to $rootfs_type in /etc/initramfs-tools/initramfs.conf"
 sed -i "s/.*FSTYPE=.*/FSTYPE=${rootfs_type}/g" /etc/initramfs-tools/initramfs.conf
-DEBIAN_FRONTEND=noninteractive apt -y install dialog network-manager usbutils
+DEBIAN_FRONTEND=noninteractive apt -y install dialog network-manager usbutils zram-tools
 DEBIAN_FRONTEND=noninteractive apt -y install $ubuntu_extra_packages
 dpkg-reconfigure tzdata
 dpkg-reconfigure locales
@@ -496,15 +524,32 @@ EOF
 debian_repo_list_deb822=$(cat <<EOF
 Types: deb
 URIs: http://deb.debian.org/debian
-Suites: $debian_release ${debian_release}-updates
+Suites: $distro_release ${distro_release}-updates
 Components: main non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 
 Types: deb
 URIs: https://security.debian.org/debian-security
-Suites: ${debian_release}-security
+Suites: ${distro_release}-security
 Components: main non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+EOF
+)
+
+devuan_repo_list_deb822=$(cat <<EOF
+Types: deb
+URIs: http://deb.devuan.org/merged
+Suites: $distro_release ${distro_release}-backports ${distro_release}-proposed-updates ${distro_release}-updates
+Components: main non-free contrib non-free-firmware
+Signed-By: /usr/share/keyrings/devuan-archive-keyring.gpg
+Enabled: yes
+
+Types: deb
+URIs: http://deb.devuan.org/merged
+Suites: ${distro_release}-security
+Components: main non-free contrib non-free-firmware
+Signed-By: /usr/share/keyrings/devuan-archive-keyring.gpg
+Enabled: yes
 EOF
 )
 
@@ -516,7 +561,7 @@ apt-get update
 DEBIAN_FRONTEND=noninteractive apt -y install linux-image-riscv64 # linux-headers-riscv64
 echo "Setting FSTYPE to $rootfs_type in /etc/initramfs-tools/initramfs.conf"
 sed -i "s/.*FSTYPE=.*/FSTYPE=${rootfs_type}/g" /etc/initramfs-tools/initramfs.conf
-DEBIAN_FRONTEND=noninteractive apt -y install locales systemd-timesyncd usbutils
+DEBIAN_FRONTEND=noninteractive apt -y install locales systemd-timesyncd usbutils zram-tools
 DEBIAN_FRONTEND=noninteractive apt -y install $debian_extra_packages
 dpkg-reconfigure tzdata
 dpkg-reconfigure locales
@@ -528,6 +573,25 @@ until passwd; do echo "Try again."; done
 EOF
 )
 
+devuan_custom_inst=$(cat <<EOF
+#!/bin/bash
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt -y install linux-image-riscv64 # install linux-headers-riscv64
+echo "Setting FSTYPE to $rootfs_type in /etc/initramfs-tools/initramfs.conf"
+sed -i "s/.*FSTYPE=.*/FSTYPE=${rootfs_type}/g" /etc/initramfs-tools/initramfs.conf
+echo "Enabling serial console login (T0) in /etc/inittab."
+sed -i "s/.*T0.*/T0:23:respawn:\/sbin\/getty -L ttyS0 115200 screen/g" /etc/inittab
+DEBIAN_FRONTEND=noninteractive apt -y install locales ntpsec u-boot-tools zram-tools
+DEBIAN_FRONTEND=noninteractive apt -y install $devuan_extra_packages
+dpkg-reconfigure tzdata
+dpkg-reconfigure locales
+apt -y install console-setup
+
+echo "Set password for \033[91mroot:\033[0m"
+until passwd; do echo "Try again."; done
+EOF
+)
+
 # We split this file in two; one part with parameter substitution and one w/o.
 mkextlinux_conf_p1=$(cat <<EOF
 #!/bin/bash
@@ -535,7 +599,7 @@ mkextlinux_conf_p1=$(cat <<EOF
 # Scans for vmlinu[x,z]-* in /boot and sets up an extlinux.conf file in
 # /boot/extlinux
 #
-# Usage: /usr/local/bin/mkextlinux_conf.bash /boot/path/t/odtb/file where
+# Usage: /usr/local/bin/mkextlinux_conf.bash /boot/path/to/dtb/file where
 # /boot/path/to/dtb/file is the full path under /boot to the dtb file.
 #
 # The dtb path can be a symlink and it can also be given in the environment
@@ -859,7 +923,7 @@ for kernel_name in $(ls | grep -E "${kernel_name_template}-" | sort -V) ; do
     kernel_path_in_grubcfg=${kernel_path_prefix}/${kernel_name}
     initrd_path_in_grubcfg=${initrd_path_prefix}/${initrd_name}
 
-    menuentry_str="$distro_name $distro_num ($distro_edition) (kernel $kernel_vers)"
+    menuentry_str="$distro_name $distro_num ($distro_edition) kernel $kernel_vers"
 
     # Note: The leading tabs in the here-document below are important.
 	cat <<-EOF >> grub/grub.cfg
@@ -955,100 +1019,48 @@ y_msg () {
     fi
 }
 
-i_msg="[ $(b_msg "Info") ]"
-w_msg="[ $(y_msg "Warning") ]"
-e_msg="[ $(r_msg "Error") ]"
-k_msg="[ $(g_msg "OK") ]"
-
-install_riscv64_qemu_binary () {
-    if [[ $arch_str != "riscv64" ]]; then
-        echo -n ${i_msg}" Installing local qemu-riscv64-static binary ..."
-        qemu_binary_loc=$(which qemu-riscv64-static)
-        cp $qemu_binary_loc ${rootfs_mnt}/usr/bin
-        echo " Done."
-    fi
-}
-
-remove_riscv64_qemu_binary () {
-    if [[ $arch_str != "riscv64" ]]; then
-        echo -n ${i_msg}" Removing local qemu-riscv64-static binary ..."
-        rm ${rootfs_mnt}/usr/bin/qemu-riscv64-static
-        echo " Done."
-    fi
-}
-
-prepare_for_chroot_jail () {
-    echo -n ${i_msg}" Preparing for chroot jail ..."
-    case $1 in
-        "ubuntu")
-            echo -e "$ubuntu_custom_inst" >${rootfs_mnt}/root/"ubuntu_custom_inst.bash"
-        ;;
-        "debian")
-            echo -e "$debian_custom_inst" >${rootfs_mnt}/root/"debian_custom_inst.bash"
-        ;;
-    esac
-    chmod 0755 ${rootfs_mnt}/root/"${1}_custom_inst.bash"
-    echo " Done."
-}
-
-setup_apt_sources () {
-    case $1 in
-        "ubuntu")
-	    if [[ "$ubuntu_edition" == "Jammy" ]]; then
-		echo -n ${i_msg}" Setting up /etc/apt/sources.list ..."
-		rm -f ${rootfs_mnt}/etc/apt/sources.list
-                echo -e "$ubuntu_repo_list" >${rootfs_mnt}/etc/apt/sources.list
-
-	    else
-		echo -n ${i_msg}" Setting up /etc/apt/sources.list.d/ubuntu.sources ..."
-		rm -f ${rootfs_mnt}/etc/apt/sources.list
-		rm -f ${rootfs_mnt}/etc/apt/sources.list.d/ubuntu.sources
-		echo -e "$ubuntu_repo_list_deb822" > ${rootfs_mnt}/etc/apt/sources.list.d/ubuntu.sources
-	    fi
-        ;;
-        "debian")
-	    echo -n ${i_msg}" Setting up /etc/apt/sources.list.d/debian.sources ..."
-	    rm -f ${rootfs_mnt}/etc/apt/sources.list
-	    rm -f ${rootfs_mnt}/etc/apt/sources.list.d/debian.sources
-            echo -e "$debian_repo_list_deb822" > ${rootfs_mnt}/etc/apt/sources.list.d/debian.sources
-        ;;
-    esac
-    echo " Done."
-}
-
-do_chroot_jail_tasks () {
-    echo ${i_msg}" Entering "$(b_msg "chroot jail")". Installing some pkgs., running some scripts ..."
-    systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
-        /root/"${1}_custom_inst.bash"
-   rm ${rootfs_mnt}/root/"${1}_custom_inst.bash"
-    sleep 2 # Just to be able to read some of the messages.
-    echo "Done. Exited "$(b_msg "chroot jail")"."
-}
-
-setup_dtb_file () {
-    echo -n ${i_msg}" Copying the "$(b_msg "$dtbfile_name")" file to bootfs..."
-    kern_name=$(ls ${rootfs_mnt}/boot | grep "${kernel_img_name_short}-")
-    kern_vers=$(cut -d '-' -f 2- <<< $kern_name)
-    case $1 in
-        "ubuntu")
-            dtbfile_dir=${rootfs_mnt}/usr/lib/firmware/${kern_vers}/device-tree/${dtb_mfg}
-        ;;
-        "debian")
-            dtbfile_dir=${rootfs_mnt}/usr/lib/linux-image-${kern_vers}/${dtb_mfg}
-        ;;
-    esac
-
-    dtbfile_loc=${dtbfile_dir}/${dtbfile_name}
-    if [[ -f $dtbfile_loc ]]; then
-        mkdir -p ${bootfs_mnt}/dtbs/${dtb_mfg}
-        cp $dtbfile_loc ${bootfs_mnt}/dtbs/${dtb_mfg}
-        echo " Done."
+debuntu_debootstrap () {
+    echo ${i_msg}" Debootstrapping ${distro_name} system to ${rootfs_mnt}"
+    debootstrap --arch riscv64 --keyring $keyring_file $distro_release $rootfs_mnt $distro_repourl
+    if [[ $? -ne 0 ]]; then
+        echo ${e_msg} " Could not complete debootstrapping, exiting."
+        exit 1
     else
-	echo " Fail!"
-        echo ${w_msg}"\nCould not find $dtbfile_name"
-        echo " in $dtbfile_dir"
-        echo ${w_msg}" Device tree file must be set up manually on the image."
+        echo ${k_msg}" Done."
     fi
+}
+
+devuan_debootstrap () {
+    echo -e ${i_msg}" Downloading the Devuan debootstrab scripts ... "
+    wget -P $tmpfile_dir -nv ${devuan_dbscripts_url}/${devuan_dbscripts_tgz}
+    if [[ $? -ne 0 ]]; then
+        echo -e ${w_msg}" Unable to download the Devuan debootstrap scripts, exiting"
+        exit 1
+    else
+        tar -xzf ${tmpfile_dir}/${devuan_dbscripts_tgz} -C ${tmpfile_dir}
+        echo -e ${k_msg}" Done."
+    fi
+
+    echo -e ${i_msg}" Debootstrapping ${distro_name} system to ${rootfs_mnt}"
+    source $tmpfile_dir/source/functions
+    ${tmpfile_dir}/source/debootstrap --arch riscv64 --keyring $keyring_file \
+        $distro_release $rootfs_mnt $distro_repourl \
+        ${tmpfile_dir}/source/scripts/${distro_release}
+    echo "Done."
+}
+
+install_utility_scripts () {
+    echo -n ${i_msg}" Installing utility scripts in /usr/local/bin ..."
+    # This script uses grub-mkconfig but it doesn't work inside a loop device.
+    # (It is installed for later use, to produce fancier grub menus.)
+    echo -e "$mkgrubcfg" >${rootfs_mnt}/usr/local/bin/mkgrubcfg.bash
+    chmod 0755 ${rootfs_mnt}/usr/local/bin/mkgrubcfg.bash
+    # This script produces a basic grub.cfg file and works inside a loop device.
+    echo -e "$mkgrubcfg_simple" >${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
+    chmod 0755 ${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
+    echo -e "$mkextlinux_conf" >${rootfs_mnt}/usr/local/bin/mkextlinux_conf.bash
+    chmod 0755 ${rootfs_mnt}/usr/local/bin/mkextlinux_conf.bash
+    echo " Done."
 }
 
 setup_distro_specifics () {
@@ -1094,26 +1106,182 @@ setup_distro_specifics () {
                 ${rootfs_mnt}/etc/apt/preferences.d/no-flash-kernel
             echo " Done."
         ;;
-        "debian")
+        "debian" | "devuan")
             echo -n ${i_msg}" Setting up /etc/network/interfaces ..."
             mkdir -p ${rootfs_mnt}/etc/network
             echo -e "$debian_interfaces_file" >\
                 ${rootfs_mnt}/etc/network/interfaces
             echo " Done."
-    ;;
+        ;;
 esac
+}
 
+setup_apt_lists () {
+    case $1 in
+        "ubuntu")
+            if [[ "$ubuntu_edition" == "Jammy" ]]; then
+                echo -n ${i_msg}" Setting up /etc/apt/sources.list ..."
+                rm -f ${rootfs_mnt}/etc/apt/sources.list
+                echo -e "$ubuntu_repo_list" >${rootfs_mnt}/etc/apt/sources.list
+                echo " Done."
+            else
+                echo -n ${i_msg}" Setting up /etc/apt/sources.list.d/ubuntu.sources ..."
+                rm -f ${rootfs_mnt}/etc/apt/sources.list
+                rm -f ${rootfs_mnt}/etc/apt/sources.list.d/ubuntu.sources
+                echo -e "$ubuntu_repo_list_deb822" > ${rootfs_mnt}/etc/apt/sources.list.d/ubuntu.sources
+                echo " Done."
+            fi
+        ;;
+        "debian")
+            echo -n ${i_msg}" Setting up /etc/apt/sources.list.d/debian.sources ..."
+            rm -f ${rootfs_mnt}/etc/apt/sources.list
+            rm -f ${rootfs_mnt}/etc/apt/sources.list.d/debian.sources
+            echo -e "$debian_repo_list_deb822" > ${rootfs_mnt}/etc/apt/sources.list.d/debian.sources
+            echo " Done."
+        ;;
+        "devuan")
+            echo -n ${i_msg}" Setting up /etc/apt/sources.list.d/devuan.sources ..."
+            rm -f ${rootfs_mnt}/etc/apt/sources.list
+            rm -f ${rootfs_mnt}/etc/apt/sources.list.d/devuan.sources
+            echo -e "$devuan_repo_list_deb822" > ${rootfs_mnt}/etc/apt/sources.list.d/devuan.sources
+            echo " Done."
+        ;;
+    esac
+}
+
+prepare_for_chroot_jail () {
+    echo -n ${i_msg}" Preparing for chroot jail ..."
+    case $1 in
+        "ubuntu")
+            echo -e "$ubuntu_custom_inst" >${rootfs_mnt}/root/"ubuntu_custom_inst.bash"
+        ;;
+        "debian")
+            echo -e "$debian_custom_inst" >${rootfs_mnt}/root/"debian_custom_inst.bash"
+        ;;
+        "devuan")
+            echo -e "$devuan_custom_inst" >${rootfs_mnt}/root/"devuan_custom_inst.bash"
+        ;;
+    esac
+    chmod 0755 ${rootfs_mnt}/root/"${1}_custom_inst.bash"
+    echo " Done."
+}
+
+install_riscv64_qemu_binary () {
+    if [[ $arch_str != "riscv64" ]]; then
+        echo -n ${i_msg}" Installing local qemu-riscv64-static binary ..."
+        qemu_binary_loc=$(which qemu-riscv64-static)
+        cp $qemu_binary_loc ${rootfs_mnt}/usr/bin
+        echo " Done."
+    fi
+}
+
+do_chroot_jail_tasks () {
+    echo ${i_msg}" Entering "$(b_msg "chroot jail")". Installing some pkgs., running some scripts ..."
+    systemd-nspawn -q --resolv-conf=copy-host --timezone=off -D ${rootfs_mnt} \
+        /root/"${1}_custom_inst.bash"
+   rm ${rootfs_mnt}/root/"${1}_custom_inst.bash"
+    sleep 2 # Just to be able to read some of the messages.
+    echo "Done. Exited "$(b_msg "chroot jail")"."
+}
+
+setup_dtb_file () {
+    echo -n ${i_msg}" Copying the "$(b_msg "$dtbfile_name")" file to bootfs..."
+    kern_name=$(ls ${rootfs_mnt}/boot | grep "${kernel_img_name_short}-")
+    kern_vers=$(cut -d '-' -f 2- <<< $kern_name)
+    case $1 in
+        "ubuntu")
+            dtbfile_dir=${rootfs_mnt}/usr/lib/firmware/${kern_vers}/device-tree/${dtb_mfg}
+        ;;
+        "debian" | "devuan")
+            dtbfile_dir=${rootfs_mnt}/usr/lib/linux-image-${kern_vers}/${dtb_mfg}
+        ;;
+    esac
+
+    dtbfile_loc=${dtbfile_dir}/${dtbfile_name}
+    if [[ -f $dtbfile_loc ]]; then
+        mkdir -p ${bootfs_mnt}/dtbs/${dtb_mfg}
+        cp $dtbfile_loc ${bootfs_mnt}/dtbs/${dtb_mfg}
+        echo " Done."
+    else
+	echo " Fail!"
+        echo -e ${w_msg}"\nCould not find $dtbfile_name"
+        echo " in $dtbfile_dir"
+        echo ${w_msg}" Device tree file must be set up manually on the image."
+    fi
+}
+
+remove_riscv64_qemu_binary () {
+    if [[ $arch_str != "riscv64" ]]; then
+        echo -n ${i_msg}" Removing local qemu-riscv64-static binary ..."
+        rm ${rootfs_mnt}/usr/bin/qemu-riscv64-static
+        echo " Done."
+    fi
+}
+
+create_extlinux_upd_hook () {
+    echo -n ${i_msg}" Creating extlinux.conf update hook after kernel install/removal ..."
+    mkdir -p ${rootfs_mnt}/etc/kernel/postinst.d
+    mkdir -p ${rootfs_mnt}/etc/kernel/postrm.d
+    echo -e "$extlinux_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/update-extlinux-conf
+    echo -e "$extlinux_update_hook" > /${rootfs_mnt}/etc/kernel/postrm.d/update-extlinux-conf
+    chmod 0755 ${rootfs_mnt}/etc/kernel/postinst.d/update-extlinux-conf
+    chmod 0755 ${rootfs_mnt}/etc/kernel/postrm.d/update-extlinux-conf
+    echo " Done."
+}
+
+create_grub_upd_hook () {
+    echo -n ${i_msg}" Creating grub.cfg (simple version) update hook after kernel install/removal ..."
+    echo -e "$grubcfg_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/update-grub-cfg-simple
+    echo -e "$grubcfg_update_hook" > /${rootfs_mnt}/etc/kernel/postrm.d/update-grub-cfg-simple
+    chmod 0755 ${rootfs_mnt}/etc/kernel/postinst.d/update-grub-cfg-simple
+    chmod 0755 ${rootfs_mnt}/etc/kernel/postrm.d/update-grub-cfg-simple
+    echo " Done."
+}
+
+install_root_sshkey () {
+    echo -n ${i_msg}" Installing key in file "$(b_msg ${root_sshkey_loc})" as ssh key for root..."
+    mkdir -p ${rootfs_mnt}/root/.ssh
+    chmod 0700 ${rootfs_mnt}/root/.ssh
+    cp $root_sshkey_loc ${rootfs_mnt}/root/.ssh/authorized_keys
+    chmod 0600 ${rootfs_mnt}/root/.ssh/authorized_keys
+    # Typically, the defaults in sshd_config are;
+    # "PermitRootLogin prohibit-password"
+    # "PubkeyAuthentication yes"
+    # so the only thing we need to do change the line with
+    # "PasswordAuthentication".
+    sed -i '/.*PasswordAuthentication.*/c\PasswordAuthentication no' \
+        ${rootfs_mnt}/etc/ssh/sshd_config
+    echo " Done."
+}
+
+unmount_container_file () {
+    echo -e ${i_msg}" Unmounting the container file (and file system check) ..."
+    sync
+    umount -f ${loop_dev}p3
+    sleep 2
+    fsck.fat -a ${loop_dev}p3
+    umount -f ${loop_dev}p4
+    sleep 2
+    if [[ $rootfs_type == "ext4" ]]; then
+        e2fsck -p ${loop_dev}p4
+    fi
+    echo " Done."
 }
 
 # ---------------------------------- main ------------------------------------
+
+i_msg="[ $(b_msg "Info") ]"
+w_msg="[ $(y_msg "Warning") ]"
+e_msg="[ $(r_msg "Error") ]"
+k_msg="[ $(g_msg "OK") ]"
+
+cd $imgfile_dir
+imgfile_loc=${imgfile_dir}/${imgfile_name}
 
 echo -e "\n"$(g_msg "-- Making image for $distro_name ($distro_edition, riscv64) -- ")"\n"
 
 imgfile_MiB=$(($imgfile_num_sectors *512/1024/1024)) # Not precise.
 desired_MiB=$((14*${imgfile_MiB}/10)) # Approx. space for imgfile +imgfile.xz
-
-cd $imgfile_dir
-imgfile_loc=${imgfile_dir}/${imgfile_name}
 
 echo "Image container file path (during build):"
 echo $(b_msg $imgfile_loc)
@@ -1198,13 +1366,10 @@ if ! mount ${loop_dev}p3 $bootfs_mnt ; then
 fi
 echo " Done."
 
-echo ${i_msg}" Debootstrapping ${distro_name} system to ${rootfs_mnt}"
-debootstrap --arch riscv64 --keyring $keyring_file $distro_release $rootfs_mnt $distro_repourl
-if [[ $? -ne 0 ]]; then
-    echo ${e_msg} " Could not complete debootstrapping, exiting."
-    exit 1
+if [[ $1 == "devuan" ]]; then
+    devuan_debootstrap
 else
-    echo ${k_msg}" Done."
+    debuntu_debootstrap
 fi
 
 echo -n ${i_msg}" Setting up the /etc/fstab file..."
@@ -1260,17 +1425,7 @@ echo -n ${i_msg}" Setting up /etc/fw_env.config ..."
 echo -e "$fw_env_config" >${rootfs_mnt}/etc/fw_env.config
 echo " Done."
 
-echo -n ${i_msg}" Installing utility scripts in /usr/local/bin ..."
-# This script uses grub-mkconfig but it doesn't work inside a loop device.
-# (It is installed for later use, to produce fancier grub menus.)
-echo -e "$mkgrubcfg" >${rootfs_mnt}/usr/local/bin/mkgrubcfg.bash
-chmod 0755 ${rootfs_mnt}/usr/local/bin/mkgrubcfg.bash
-# This script produces a basic grub.cfg file and works inside a loop device.
-echo -e "$mkgrubcfg_simple" >${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
-chmod 0755 ${rootfs_mnt}/usr/local/bin/mkgrubcfg_simple.bash
-echo -e "$mkextlinux_conf" >${rootfs_mnt}/usr/local/bin/mkextlinux_conf.bash
-chmod 0755 ${rootfs_mnt}/usr/local/bin/mkextlinux_conf.bash
-echo " Done."
+install_utility_scripts
 
 # The configure script for Ubuntu's package linux-image-<version>-generic by
 # default sets links in /boot but that won't work here since we use fat as
@@ -1282,7 +1437,7 @@ echo "do_symlinks = no" >>${rootfs_mnt}/etc/kernel-img.conf
 
 setup_distro_specifics $1
 
-setup_apt_sources $1
+setup_apt_lists $1
 
 prepare_for_chroot_jail $1
 
@@ -1294,25 +1449,13 @@ setup_dtb_file $1
 
 remove_riscv64_qemu_binary
 
-echo -n ${i_msg}" Creating extlinux.conf update hook after kernel install/removal ..."
-mkdir -p ${rootfs_mnt}/etc/kernel/postinst.d
-mkdir -p ${rootfs_mnt}/etc/kernel/postrm.d
-echo -e "$extlinux_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/update-extlinux-conf
-echo -e "$extlinux_update_hook" > /${rootfs_mnt}/etc/kernel/postrm.d/update-extlinux-conf
-chmod 0755 ${rootfs_mnt}/etc/kernel/postinst.d/update-extlinux-conf
-chmod 0755 ${rootfs_mnt}/etc/kernel/postrm.d/update-extlinux-conf
-echo " Done."
+create_extlinux_upd_hook
 
 echo -e ${i_msg}" Creating /boot/extlinux/extlinux.conf ..."
 chroot ${rootfs_mnt} bash -c "rootfs_PARTUUID_=$rootfs_PARTUUID /etc/kernel/postinst.d/update-extlinux-conf"
 echo "Done."
 
-echo -n ${i_msg}" Creating grub.cfg (simple version) update hook after kernel install/removal ..."
-echo -e "$grubcfg_update_hook" > /${rootfs_mnt}/etc/kernel/postinst.d/update-grub-cfg-simple
-echo -e "$grubcfg_update_hook" > /${rootfs_mnt}/etc/kernel/postrm.d/update-grub-cfg-simple
-chmod 0755 ${rootfs_mnt}/etc/kernel/postinst.d/update-grub-cfg-simple
-chmod 0755 ${rootfs_mnt}/etc/kernel/postrm.d/update-grub-cfg-simple
-echo " Done."
+create_grub_upd_hook
 
 echo ${i_msg}" Creating /boot/grub/grub.cfg (simple version) ..."
 chroot ${rootfs_mnt} bash -c "rootfs_PARTUUID_=$rootfs_PARTUUID /etc/kernel/postinst.d/update-grub-cfg-simple"
@@ -1329,19 +1472,7 @@ kernel_version=$(ls ${bootfs_mnt} | grep -E "vmlinu[x,z]-" | cut -d '-' -f 2-)
 cd $imgfile_dir
 
 if [[ -f $root_sshkey_loc ]]; then
-    echo -n ${i_msg}" Installing key in file "$(b_msg ${root_sshkey_loc})" as ssh key for root..."
-    mkdir -p ${rootfs_mnt}/root/.ssh
-    chmod 0700 ${rootfs_mnt}/root/.ssh
-    cp $root_sshkey_loc ${rootfs_mnt}/root/.ssh/authorized_keys
-    chmod 0600 ${rootfs_mnt}/root/.ssh/authorized_keys
-    # Typically, the defaults in sshd_config are;
-    # "PermitRootLogin prohibit-password"
-    # "PubkeyAuthentication yes"
-    # so the only thing we need to do change the line with
-    # "PasswordAuthentication".
-    sed -i '/.*PasswordAuthentication.*/c\PasswordAuthentication no' \
-        ${rootfs_mnt}/etc/ssh/sshd_config
-    echo " Done."
+    install_root_sshkey
 fi
 
 if [[ -d $add_dir_loc ]]; then
@@ -1360,17 +1491,7 @@ echo -n ${i_msg}" Writing instructions for installing Petitboot ..."
 echo -e "$README_auxbootldr" >${bootfs_mnt}/README_auxbootldr.txt
 echo " Done."
 
-echo -e ${i_msg}" Unmounting the container file (and file system check)..."
-sync
-umount -f ${loop_dev}p3
-sleep 2
-fsck.fat -a ${loop_dev}p3
-umount -f ${loop_dev}p4
-sleep 2
-if [[ $rootfs_type == "ext4" ]]; then
-    e2fsck -p ${loop_dev}p4
-fi
-echo " Done."
+unmount_container_file
 
 echo -n ${i_msg}" Disconnecting and removing the loop devices ..."
 losetup -d $loop_dev 2>/dev/null 
