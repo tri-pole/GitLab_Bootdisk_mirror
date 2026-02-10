@@ -2,8 +2,7 @@
 
 # petitboot_mkinitrd_riscv64.bash
 # 24-12-18: v0.1
-# 26-01-01: v0.11
-# 26-01-11: v0.12
+# 26-02-10: v0.13
 # Author: Tripole
 
 # Script to build and pack Petitboot for RISCV64 in an initramfs (cpio+gzip).
@@ -660,7 +659,7 @@ EOF
 kexec_wrapper=$(cat <<"EOF"
 #!/bin/sh
 
-# 26-01-01, 26-01-07, Tripole
+# 26-01-01, 26-02-10, Tripole
 
 # This script performs filtering of the kexec call from Petitboot and can do
 # (optional) decompression of kernels before calling kexec (the binary).
@@ -671,12 +670,17 @@ kexec_wrapper=$(cat <<"EOF"
 # kexec which can sometimes be needed (for more info, see the file
 # /usr/share/kexectools/README_memmax.txt).
 # For RISCV64 we use a kexec binary which is based on a patched version of the
-# code due to Nick Kossifidis and Song Shuai (sugarfillet) described here:
+# code, due to Nick Kossifidis and Song Shuai (sugarfillet) described here:
 # https://lkml.iu.edu/hypermail/linux/kernel/2309.1/07133.html.
 
 kexec_binary="/sbin/kexec_bin" # The real McCoy.
 
-# The environment variables pb_no_decompr and pb_mem_max are explained below.
+# We use a modded version of extract-vmlinux where all informative output is
+# directed to stderr and the order of try_decompress calls is changed.
+extract_vmlinux_cmd=extract-vmlinux-pb
+
+kernel_path_extracted=/tmp/vmlinux-pb
+
 if [ -z "$pb_no_decompr" ]; then
     pb_no_decompr=false
 fi
@@ -687,67 +691,89 @@ fi
 
 # The kexec call (issued by Petitboot) invoking this script can be only one of
 # the following two forms (for details, see e.g. boot.c in the Petitboot src
-# and/or run /usr/sbin/petitboot-nc -v in ./init):
-# (1) kexec -e {-f} # The -f switch is added by Petitboot only after -e fails.
+# or run /usr/sbin/petitboot-nc -v in ./init, or uncomment two lines below):
+# (1) kexec -{e,f}
 # (2) kexec -{l,s} --initrd=/path/to/initrd \
 #                  --dtb=/path/to/dtb \
 #                  --append=<can_be_several_whitespace_separated_substrings> \
 #                  /path/to/kernel
-# where the all options except the last /path/to/kernel are optional.
-# The call kexec -s (file based kexec syscall) is here translated to kexec -l
-# (ordinary kexec operation).
-# (The kexec binary accepts both --command-line and --append (to command line).
-# If --command-line is absent it uses the contents from --append as cmd. line.)
+# where the all options except the last /path/to/kernel are optional. The call
+# kexec -s (file based kexec syscall) is here translated to kexec -l (ordinary
+# kexec operation). The call kexec -f is only tried by Petitboot if -e fails.
 
-# In this script we unpack the kexec call, filter the arguments, and send a
-# repackaged version to kexec_binary (after optional kernel decompression).
+# Below we unpack the kexec call, filter the arguments, and send a repackaged
+# version to kexec_binary (after optional kernel decompression).
 
+opt_args_str=""
+append_mode=false
+append_args=""
+kernel_str=""
 call_str=""
-case "$1" in
-    "-s"|"-l")
-        shift # We drop the leading -s or -l in "$@"
-        arg_str="$@"; num_args="$#"
-        par_str=""; kernel_str=""; arg_num=1
-        while [ "$arg_num" -lt "$num_args" ]; do # All args before kernel.
-            par_str=${par_str}" "$1
-            shift; arg_num=$((arg_num +1))
-        done
-        kernel_str="$1"
-        par_str=$(echo $par_str | xargs) # Trim leading and trailing space.
-
-        # If compression is enabled, check first if the kernel is uncompressed.
-        # If it is not, then decompress the kernel.
-        kernel_path=$kernel_str
-        if [ "$pb_no_decompr" != "true" ]; then
-            kernel_path_real=$(realpath $kernel_str)
-            file $kernel_path_real | grep -q 'Linux kernel.*boot executable' >/dev/null 2>&1
-            if [ $? -ne 0 ]; then
-                kernel_path=/tmp/vmlinux-pb
-                eval "extract-vmlinux-pb $kernel_path_real >$kernel_path" 2>/dev/null
+arg_num=1
+if [ "$#" = 1 ]; then
+    # If telnetd is running (Petitboot remote mode), kill it before kexec -e.
+    kill -s SIGTERM $(pidof telnetd) >/dev/null 2>&1
+    call_str=$1
+else
+    # This is one of the cases -s or -l (we map both to -l).
+    # We pick out the kernel_str, append_args and opt_args_str ("the rest").
+    for arg_item in "$@" ; do
+        if [ "$arg_num" = "$#" ]; then
+            # Pick up the trailing /path/to/kernel
+            kernel_str=$arg_item
+        else
+            if [ "$append_mode" = "false" ]; then
+                # Pick up the initrd, dtb and append string(s).
+                case "$arg_item" in
+                    "-s" | "-l" )
+                    # Do nothing.
+                    ;;
+                    "--append="* )
+                        append_args="${arg_item#--append=}"
+                        append_mode=true
+                    ;;
+                    * )
+                        opt_args_str="$opt_args_str $arg_item"
+                    ;;
+                esac
+            else
+                # Gobble up all the substrings of the append string.
+                append_args="$append_args $arg_item"
             fi
         fi
+        arg_num=$((arg_num +1))
+    done
 
-        # Base part of call_str.
-        if [ -z "$par_str" ]; then
-            call_str="--load $kernel_path"
-        else
-            call_str="--load $kernel_path $par_str"
+    # If compression is enabled, check first if the kernel is uncompressed.
+    # If it is not, then decompress the kernel.
+    kernel_path=$kernel_str
+    if [ "$pb_no_decompr" != "true" ]; then
+        kernel_path_real=$(realpath $kernel_str)
+        file $kernel_path_real | grep -q 'Linux kernel.*boot executable' >/dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            kernel_path=$kernel_path_extracted
+            eval "$extract_vmlinux_cmd $kernel_path_real >$kernel_path" 2>/dev/null
         fi
+    fi
 
-        # Add the optional kexec mem-max argument (see trailing remarks).
-        call_str=${call_str}${call_memmax_str}
-    ;;
-    "-e")
-        # If telnetd is running (remote mode), kill it before kexec -e.
-        kill -s SIGTERM $(pidof telnetd) >/dev/null 2>&1
-        call_str=$1
-    ;;
-    *)
-        echo "${0}: Malformed command string, exiting."
-        exit 1
-esac
+    if [ ! -z "$pb_mem_max" ]; then
+        call_mem_append_str="--mem-max="${pb_mem_max}
+    else
+        call_mem_append_str=""
+    fi
 
-# echo "Call string sent to kexec executable: [$call_str]"
+    # The kexec binary accepts both --command-line and --append (to cmdline).
+    # If --command-line is absent the --append contents is used as cmdline.
+    # If the argument to --command-line or --append is a string that contains
+    # whitespace (and it often does) it must be enclosed in double quotes.
+    call_str_head="--load $kernel_path $opt_args_str $call_mem_append_str"
+    call_str_tail=" --command-line="\"${append_args}\"
+    call_str_raw=${call_str_head}${call_str_tail}
+    call_str=$(echo $call_str_raw | tr -s ' ') # Squeeze any multiple spaces.
+fi
+
+# echo "Call string received from petitboot: [""$@""]" >/dev/console
+# echo "Call string sent to kexec executable: [$call_str]" >/dev/console
 
 eval "$kexec_binary $call_str"
 EOF

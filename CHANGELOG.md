@@ -36,6 +36,11 @@ For changelogs of older material, see the `attic` area of the repo.
 
 # petitboot_mkinitrd_riscv64.bash
 
+## [v0.13] 26-02-10
+
+### Changed
+ - Rewrite of kexec wrapper.
+
 ## [v0.12] 26-01-11
 
 ### Added
@@ -52,6 +57,11 @@ For changelogs of older material, see the `attic` area of the repo.
  - First commit.
 
 # petitboot_mkinitrd_aarch64.bash (renamed, was petitboot_mkinitrd.bash):
+
+## [v0.17] 26-02-10
+
+### Changed
+ - Rewrite of kexec wrapper.
 
 ## [v0.16] 26-01-11
 
