@@ -10,7 +10,8 @@ __News:__ `Petitboot` built with our scripts now runs on both on ARM64 and
 RISCV64, e.g. on VisionFive 2 (on serial console, and on HDMI if the kernel
 supports it). For both architectures the ability to boot compressed kernels
 (e.g. recent Fedora) has also been added as well as remote mode (UI over
-telnet).
+telnet). The script `debuntu_dbstrap_riscv64.bash` now also builds Devuan
+images.
 
 This repo contains, mostly, information about some
 [bootloaders](https://en.wikipedia.org/wiki/Bootloader) and
@@ -88,8 +89,8 @@ Initramfses with `u-root` built like this can be found
 
 ### RISCV64 Linux images
 
-Linux images with Debian or Ubuntu for RISCV64 can be created with the script
-[`debuntu_dbstrap_riscv64.bash`](debuntu_dbstrap_riscv64.bash).
+Linux images with Debian, Devuan or Ubuntu for RISCV64 can be created with the
+script [`debuntu_dbstrap_riscv64.bash`](debuntu_dbstrap_riscv64.bash).
 Images built with this script can be downloaded from
 [here](https://mega.nz/folder/PAtXyRgA#SI9z7Hgz2n-S7BLk2SuM2A).
 
