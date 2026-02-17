@@ -87,14 +87,26 @@ version of (the toolchain) `Go` (see e.g.
 Initramfses with `u-root` built like this can be found
 [here](https://mega.nz/folder/SMt1VLSY#VTR2-eZv4jC7PH4hASp0tg).
 
-### RISCV64 Linux images
+### Linux images
+
+Linux, e.g. Ubuntu, Debian or Devuan, can generally be installed to SBCs using
+the standard installer to produce an EFI/Grub setup that can be booted with
+on-board `u-boot`, at least if `u-boot` is a recent upstream/mainline version.
+However, there are situations where such a version of `u-boot` is not available
+(or not desirable) to install (e.g. many TV-boxes).
+For these situations it is useful to have pre made Linux images that can be
+booted with existing `u-boot` and run-as is, only relying on `u-boot`'s ability
+to do do `sysboot` via `extlinux.conf` (either directly or via chainloading of
+another stage of `u-boot`).
+
+#### RISCV64 Linux images
 
 Linux images with Debian, Devuan or Ubuntu for RISCV64 can be created with the
 script [`debuntu_dbstrap_riscv64.bash`](debuntu_dbstrap_riscv64.bash).
 Images built with this script can be downloaded from
 [here](https://mega.nz/folder/PAtXyRgA#SI9z7Hgz2n-S7BLk2SuM2A).
 
-### ARM64 Linux images
+#### ARM64 Linux images
 
 A collection of READMEs and scripts about creation of Linux images for ARM64
 can be found in the [`attic`](attic/Creating_Linux_images_ARM64) area but this
