@@ -426,6 +426,24 @@ else
     delay=1
 fi
 
+# This hack with a delay + some writing to the tty seems to be needed for the
+# ncurses menu/UI to come up correctly (on some monitors/ttys). Also, some time
+# may be needed for udev/pb-discover to detect/parse all devices/partitions.
+start_wait () {
+    wait_secs=$1
+    if [ "$wait_secs" -gt "1" ]; then
+        echo -n "Starting Petitboot in ..."
+        while [ "$wait_secs" -gt "0" ] ; do
+            echo -n "${wait_secs}..."
+            sleep 1s
+            wait_secs=$((wait_secs -1))
+        done
+    else
+        echo "Starting Petitboot ..."
+        sleep 1s
+    fi
+}
+
 remote_mode=""
 netdev="eth0"
 if [ "$pb_nonet" = "false" ] && [ ! -z "$pb_rootpw" ] && \
@@ -434,7 +452,7 @@ if [ "$pb_nonet" = "false" ] && [ ! -z "$pb_rootpw" ] && \
         remote_mode="dhcp"
     else
         remote_mode="static"
-    fi 
+    fi
     if [ ! -z "$pb_netdev" ]; then
         netdev=$pb_netdev
     fi
@@ -468,26 +486,12 @@ fi
 # The verbose setting here only gives a little more info in the PB log.
 pb_nc_cmd="/usr/sbin/petitboot-nc -v"
 
-# This hack with a delay + some writing to the tty seems to be needed for the
-# ncurses menu/UI to come up correctly (on some monitors/ttys). Also, some time
-# may be needed for udev/pb-discover to detect all devices/partitions properly.
-if [ "$delay" -gt "1" ]; then
-    echo -n "Starting Petitboot in ..."
-    while [ "$delay" -gt "0" ] ; do
-        echo -n "${delay}..."
-        sleep 1s
-        delay=$((delay -1))
-    done
-else
-    echo "Starting Petitboot ..."
-    sleep 1s
-fi
-
 if [ "$pb_nonet" = "true" ] ; then
     # Set up a network namespace to deny Petiboot access to external networks.
     /bin/ip netns add mininet
     /bin/ip netns exec mininet /bin/ip link set dev lo up
     /bin/ip netns exec mininet $pb_discover_cmd 2>/dev/null &
+    start_wait $delay
     /bin/ip netns exec mininet $pb_nc_cmd
 elif [ ! -z "$remote_mode" ] ; then
     mkdir /dev/pts
@@ -495,7 +499,7 @@ elif [ ! -z "$remote_mode" ] ; then
     echo "23 stream tcp nowait root /usr/sbin/telnetd telnetd -l /bin/login" > /etc/inetd.conf
     echo -e "export pb_mem_max=$pb_mem_max" > /root/.profile
     echo -e "$pb_discover_cmd 2>/dev/null &" >> /root/.profile
-    echo -e "$pb_nc_cmd" >> /root/.profile
+    echo -e "sleep $delay && $pb_nc_cmd" >> /root/.profile
     echo "root:x:0:0:root:/root:/bin/sh" > /etc/passwd
     echo -e "${pb_rootpw}\\n${pb_rootpw}" | passwd >/dev/null 2>&1
     echo "[ -- Petitboot in remote mode -- ]"
@@ -515,6 +519,7 @@ elif [ ! -z "$remote_mode" ] ; then
     echo "[ To resume Petitboot UI here, do: killall telnetd && source /root/.profile ]"
 else
     $pb_discover_cmd 2>/dev/null &
+    start_wait $delay
     $pb_nc_cmd
 fi
 
