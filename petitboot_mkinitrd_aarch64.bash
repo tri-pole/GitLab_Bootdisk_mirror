@@ -13,9 +13,9 @@
 # of the build proper ownership of files in the initramfs needs to be set.)
 
 # Tested on: Ubuntu 22.04.5 and Debian 12.12 build hosts running in QEMU
-# (qemu-system-aarch64) on x86_64. (Cross compilation is not possible since
-# some libs/utils are copied from the build host, see below.) The initramfs
-# has been tested on an Ugoos AM6 plus.
+# (qemu-system-aarch64) and in docker container on x86_64. (Cross compilation
+# is not possible since some libs/utils are copied from the build host, see
+# below.) The initramfs has been tested on Ugoos AM6 plus and on Le Potato.
 
 # Dependencies: GNU build tools w/ compiler suite, installed dependencies for
 # the packages kexec, busybox, iproute2, e2fsprogs, petitboot and eudev.

@@ -11,10 +11,10 @@
 # where the user running the script must be in the sudo group. (At the end
 # of the build proper ownership of files in the initramfs needs to be set.)
 
-# Tested on: Ubuntu 22.04.5 host running in QEMU (qemu-system-riscv64) on
-# x86_64 and Ubuntu 24.04.1 running on VisionFive 2. (Cross compilation is
-# not possible since some libs/utils are copied from the build host, see
-# below.) The initramfs has been tested on VisionFive 2, v1.3b.
+# Tested on: Ubuntu 22.04.5 host running in QEMU (qemu-system-riscv64) and in
+# docker container on x86_64, and on Ubuntu 24.04.1 running on VisionFive 2.
+# (Cross compilation is not possible since some libs/utils are copied from the
+# build host, see below.) The initramfs has been tested on VisionFive 2, v1.3b.
 
 # Dependencies: GNU build tools w/ compiler suite, installed dependencies for
 # the packages kexec, busybox, iproute2, e2fsprogs, petitboot and eudev.
@@ -24,9 +24,9 @@
 # autoconf bison build-essential flex gawk gettext git gperf libasprintf-dev
 # libblkid-dev libdevmapper-dev libdw-dev libelf-dev libgd-tools
 # libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev libssl-dev libtool
-# libudev-dev pkg-config tree u-boot-tools wget
-# The build host must also have installed some commands that are copied (along
-# with some conf files), namely file, grep, unzstd (see copy_*_list below).
+# libudev-dev pkg-config tree u-boot-tools wget zstd
+# The build host must have installed some commands that are copied (along with
+# some conf files), namely file, grep, unzstd (see copy_*_list below).
 
 # Patches: There are some patches for Petitboot applied to enhance/adjust
 # functionality and there are patches needed to get RISCV64 support in the
@@ -171,6 +171,8 @@ file_magic_url_base="https://raw.githubusercontent.com/file/file/refs/tags/${fil
 file_magic_arr=(linux archive compress)
 file_magic_cut=("524,530p" "327,419p" "1,458p") # Arguments to sed -n below.
 
+# Alternative location for Sugarfillet's patched kexec-tools:
+# https://github.com/tri-pole/kexec-tools-riscv64-sugarfillet
 kexectools_ver="sf-rv-Image-56552e1"
 kexectools_branch="rv-Image"
 kexectools_url="https://github.com/sugarfillet/kexec-tools.git"
