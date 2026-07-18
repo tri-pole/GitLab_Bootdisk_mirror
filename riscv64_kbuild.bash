@@ -57,7 +57,7 @@
 # Note: Kernel version numbers here (in $kern_ver_num) must be in the format
 # x.y.z so for an x.y kernel (e.g. 6.8) you must here add (pad with) a zero to
 # make into x.y.z format (e.g. 6.8.0).
-kern_ver_num=6.17.12
+kern_ver_num=7.1.3
 
 # Name for compiled (output) kernel and packages (tarballs).
 # Note: In the config file you should have these two settings
@@ -86,11 +86,8 @@ socdtbs_list=("starfive")
 
 kern_series_major=$(cut -b1 <<< $kern_ver_num)
 case $kern_series_major in
-    "5")
-        kern_series="v5.x"
-    ;;
-    "6")
-        kern_series="v6.x"
+    "5"|"6"|"7")
+        kern_series="v"${kern_series_major}".x"
     ;;
     *)
     echo "The kernel series ${kern_series_major}.x.y is not supported, exiting."
