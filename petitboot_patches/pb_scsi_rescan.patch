@@ -1,0 +1,8 @@
+--- ./utils/scsi-rescan	2020-01-23 00:48:53.000000000 +0000
++++ ../../../scsi-rescan	2026-10-10 05:40:11.619039655 +0000
+@@ -1,4 +1,4 @@
+-#/bin/sh
++#!/bin/sh
+ 
+ for host in /sys/class/scsi_host/host*; do
+ 	echo "- - -" > ${host}/scan
