@@ -1,0 +1,56 @@
+From b1fb4a3ce87883704bbde04b4e314f2c0d522438 Mon Sep 17 00:00:00 2001
+From: Nicholas Piggin <npiggin@gmail.com>
+Date: Mon, 5 Feb 2024 23:02:09 +1000
+Subject: [PATCH] ui: Fix curses menu item label leak
+
+When a menu item name is updated, the old label is not freed.
+
+Signed-off-by: Nicholas Piggin <npiggin@gmail.com>
+Signed-off-by: Jeremy Kerr <jk@codeconstruct.com.au>
+---
+ ui/ncurses/nc-menu.c | 4 ++++
+ ui/ncurses/nc-menu.h | 1 +
+ 2 files changed, 5 insertions(+)
+
+diff --git a/ui/ncurses/nc-menu.c b/ui/ncurses/nc-menu.c
+index a1524b5c..70f2210a 100644
+--- a/ui/ncurses/nc-menu.c
++++ b/ui/ncurses/nc-menu.c
+@@ -82,6 +82,7 @@ static void pmenu_resize(struct nc_scr *scr)
+ static int pmenu_item_destructor(void *arg)
+ {
+ 	struct pmenu_item *item = arg;
++	talloc_free((char *)item->label);
+ 	free_item(item->nci);
+ 	return 0;
+ }
+@@ -146,7 +147,9 @@ int pmenu_item_update(struct pmenu_item *item, const char *name)
+ 		talloc_free((char *)label);
+ 		return -1;
+ 	}
++	talloc_free((char *)item->label);
+ 	free_item(item->nci);
++	item->label = label;
+ 	item->nci = i;
+ 
+ 	return 0;
+@@ -168,6 +171,7 @@ struct pmenu_item *pmenu_item_create(struct pmenu *menu, const char *name)
+ 
+ 	item->i_sig = pb_item_sig;
+ 	item->pmenu = menu;
++	item->label = label;
+ 	item->nci = new_item(label, NULL);
+ 
+ 	if (!item->nci) {
+diff --git a/ui/ncurses/nc-menu.h b/ui/ncurses/nc-menu.h
+index 550c7e13..7ba45bf4 100644
+--- a/ui/ncurses/nc-menu.h
++++ b/ui/ncurses/nc-menu.h
+@@ -46,6 +46,7 @@ struct pmenu;
+ 
+ struct pmenu_item {
+ 	enum pb_nc_sig i_sig;
++	const char *label;
+ 	ITEM *nci;
+ 	struct pmenu *pmenu;
+ 	void *data;

@@ -1,0 +1,27 @@
+From 81b719c7d43ef5d9639ecbcdc46fe99869ce5ef8 Mon Sep 17 00:00:00 2001
+From: Jeremy Kerr <jk@codeconstruct.com.au>
+Date: Thu, 8 Jan 2026 08:52:55 +0800
+Subject: [PATCH] ui/ncurses: Add comment to describe item->nci lifetime on
+ pmenu_item_update()
+
+It may not be obvious that the nci pointer will likely be reallocated.
+
+Signed-off-by: Jeremy Kerr <jk@codeconstruct.com.au>
+---
+ ui/ncurses/nc-menu.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/ui/ncurses/nc-menu.c b/ui/ncurses/nc-menu.c
+index 96c25253..99017896 100644
+--- a/ui/ncurses/nc-menu.c
++++ b/ui/ncurses/nc-menu.c
+@@ -127,7 +127,8 @@ static const char *pmenu_item_label(struct pmenu_item *item, const char *name)
+ /**
+  * pmenu_item_update - Update the label of an existing pmenu_item.
+  *
+- * The item array must be disconnected prior to calling.
++ * The item array must be disconnected prior to calling. This will update
++ * item->nci, so any references held there must be updated after calling.
+  */
+ int pmenu_item_update(struct pmenu_item *item, const char *name)
+ {
