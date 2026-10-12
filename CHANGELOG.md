@@ -41,6 +41,13 @@ For changelogs of older material, see the `attic` area of the repo.
 
 # petitboot_mkinitrd_riscv64.bash
 
+## [v0.15] 26-10-12
+
+### Changed
+ - Fixed bugs in invocation of remote (telnet) mode.
+ - Fixed Petitboot compilation errors with newer ncurses (added patch set).
+ - Style and comment cleanup.
+
 ## [v0.13] 26-02-10
 
 ### Changed
