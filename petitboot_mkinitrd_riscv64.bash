@@ -21,7 +21,7 @@
 # For example, on a default installation of Debian 12.8 or Ubuntu Server
 # 22.04.5 all the dependencies should be satisfied by installing the following
 # packages (along with their dependencies):
-# autoconf bison build-essential flex gawk gettext git gperf gpg
+# autoconf bison build-essential cpio flex gawk gettext git gperf gpg
 # libasprintf-dev libblkid-dev libdevmapper-dev libdw-dev libelf-dev
 # libgd-tools libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev
 # libssl-dev libtool libudev-dev pkg-config tree u-boot-tools wget zstd
@@ -40,7 +40,7 @@
 # be created in the same dir as this script; one result dir and one temp file
 # directory hierarchy. (Near the end of this script you will be asked which of
 # the temp dirs you want to delete.) Run time for the script is ~30m in QEMU
-# (on a reasonably modern box) and less than 13m on bare metal (VF2).
+# (4 cores, on a reasonably modern box) and less than 13m on bare metal (VF2).
 
 # Inspiration taken from: https://www.raptorengineering.com/content/kb/1.html
 
@@ -195,7 +195,7 @@ bb_tarball_local_name=busybox-v${busybox_ver}.tar.bz2
 
 iproute2_ver=6.12.0
 iproute2_url_base=https://github.com/iproute2/iproute2/archive/refs/tags
-# iproute2_url_base="https://git.kernel.org/pub/scm/network/iproute2/iproute2.git/snapshot"
+# iproute2_url_base=https://git.kernel.org/pub/scm/network/iproute2/iproute2.git/snapshot
 ipr2_tarball_repo_name=v${iproute2_ver}.tar.gz
 ipr2_tarball_local_name=iproute2-${ipr2_tarball_repo_name}
 
@@ -208,7 +208,7 @@ petitboot_ver=1.15 # Don't change this; PB patches may no longer work.
 petitboot_url_base=https://github.com/open-power/petitboot/releases/download/v${petitboot_ver}
 pb_tarball_repo_name=petitboot-v${petitboot_ver}.tar.gz
 pb_tarball_local_name=${pb_tarball_repo_name}
-pb_patch_dir=petitboot_patches # Relative to dir of this script.
+pb_patch_dir=petitboot_patches # Relative to $bootdisk_dir
 pb_1v13_add_grubcfg_path_patch_fname=pb_1v13_add_grubcfg_path.patch
 pb_1v13_ui_and_bootcfg_patch_fname=pb_1v13_ui_and_bootcfg.patch
 pb_add_riscv64_functionality_patch_fname=pb_add_riscv64_functionality.patch
@@ -258,7 +258,7 @@ fi
 
 # These files are not necessary for Petitboot to start but decompression of
 # kernel/initramfs will not work if file or grep (the complete one) is missing.
-# (The binary for can probably be omitted.)
+# (The binary for gpg can probably be omitted.)
 copy_file_list=("/usr/bin/file" "/usr/bin/grep" "/usr/bin/unzstd" "/usr/bin/gpg")
 
 # Bling? Yes, we like.
@@ -543,7 +543,7 @@ if [ -e /etc/pb-lockdown ] ; then
     echo 1 > /proc/sys/kernel/sysrq
     echo b > /proc/sysrq-trigger
 else
-    echo "[ Dropping to a shell. (No job control on /dev/console.)                ]"
+    echo "[ Dropping to a shell. (No job control on /dev/console.) ]"
     exec sh
 fi
 EOF
@@ -1041,7 +1041,7 @@ fi
 echo -e ${i_msg}" Downloading magic file definitions for kernel and initramfs ..."
 have_all_magic=true
 for file_magic in ${file_magic_arr[@]} ; do
-    wget ${file_magic_url_base}/${file_magic} -O ${temp_dir}/downloads/$file_magic
+    wget ${file_magic_url_base}/${file_magic} -O ${temp_dir}/downloads/${file_magic}
     if [[ $? != 0 ]]; then
         echo -e ${w_msg}" Failed to download magic file ${file_magic}."
         have_all_magic=false
@@ -1366,7 +1366,7 @@ echo "Enter your password to change ownership (root) of files in initramfs tree:
 sudo chown -R root:root ${temp_dir}/initramfs
 sudo find . | cpio -H newc -o | gzip -c > ../${initrd_pb_name}
 sudo chown ${my_username}:${my_username} ../${initrd_pb_name}
-mv ${temp_dir}/${initrd_pb_name} $result_dir
+mv ${temp_dir}/${initrd_pb_name} "$result_dir"
 echo " Done. Resulting initramfs: ${initrd_pb_name}"
 
 # Typically the sudo cache timeout is 5m or so so this is not needed:
