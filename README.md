@@ -44,10 +44,11 @@ utilizing the Linux [`kexec`](https://en.wikipedia.org/wiki/Kexec)
 [system call](https://wiki.archlinux.org/title/Kexec).
 (The repo contains two scripts for building `Petitboot` as well as
 documentation, see below.)
-The two bootloaders provide the same basic functionality but `Petitboot`
-provides a somewhat nicer UI (cf. screenshots below) and can boot
+The two bootloaders provide the same basic functionality and both are
+implemented in the form of an initramfs.
+`Petitboot` provides a somewhat nicer UI (cf. screenshots below) and can boot
 [grub](https://wiki.archlinux.org/title/GRUB) configurations defined in
-`grub.cfg` and works for both ARM64 and RISCV64 (including `bzImage`).
+`grub.cfg`, and works for both ARM64 and RISCV64 (including `bzImage`).
 On the other hand, `u-root` can boot (simple) grub configurations as well as a
 subset of [syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
 configurations,
@@ -58,13 +59,13 @@ Support for RISCV64 was recently added in `u-root`.
 (The bootloader components of `u-root` are known by other names, one of them
 being `Linuxboot`, but for brevity we shall refer to these components
 collectively as `u-root`.)
-Both `Petitboot` and `u-root` are implemented in the form of an initramfs.
 
 __History:__
 The bootdisk concept discussed here was originally developed as an aid for
 booting on ARM64 SBCs/TV-boxes where an older resident/vendor `u-boot` was
-installed that typically did not support booting using `extlinux.conf` but
-needed various scripts for booting.
+installed that typically did not support booting using `extlinux.conf` and
+therefore needed various scripts/tricks (such as `u-boot` chainloading) for
+booting.
 In case a `u-boot` is used which is capable of using `extlinux.conf` it is
 very easy to set up a bootdisk since this essentially amounts to installing
 an appropriate kernel and dtb to work with the initramfs that holds either
