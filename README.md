@@ -1,18 +1,20 @@
 
 # bootdisk
 
-__TL;DR:__ On an SBC or TV-box with working u-boot you can get a versatile
-boot manager+loader by replacing the default Linux initramfs with an initramfs
-containing `Petitboot` or `u-root` (provided your default Linux kernel has
-`kexec`). (For download links, see below.)
+__TL;DR:__
+On an single board computer (SBC) or TV-box with working u-boot you
+can get a versatile boot manager+loader by replacing the default Linux
+initramfs with an initramfs containing `Petitboot` or `u-root` (provided your
+default Linux kernel has `kexec`). (For download links, see below.)
 
-__News:__ `Petitboot` built with our scripts now runs on both on ARM64 and
-RISCV64, e.g. on VisionFive 2 (on serial console, and on HDMI if the kernel
-supports it). For both architectures the ability to boot compressed kernels
-(e.g. recent Fedora) has also been added as well as remote mode (UI over
-telnet). The script `debuntu_dbstrap_riscv64.bash` now also builds Devuan
-images.
+__News:__
+`Petitboot` built with our scripts now runs on both on ARM64 and
+RISCV64, e.g. on VisionFive 2 (on UART/serial console, and on HDMI if the
+kernel supports it). For both architectures the ability to boot compressed
+kernels (e.g. recent Fedora) has also been added as well as an option for
+remote mode (UI over telnet).
 
+__Focus of the repo:__
 This repo contains, mostly, information about some
 [bootloaders](https://en.wikipedia.org/wiki/Bootloader) and
 [bootdisks](https://en.wikipedia.org/wiki/Boot_disk) for
@@ -21,36 +23,44 @@ This repo contains, mostly, information about some
 With a bootdisk using one of these bootloaders you can e.g. boot many
 ("generic") ARM64 or RISCV64 Linux images from major distributions that have
 grub boot configurations, such as Fedora, Ubuntu, Debian and openSuse.
-A good use case for SBCs/TV-boxes is to have a bootdisk installed on SD and
-have several Linux distros installed on USBs to choose from.
-The bootdisk functionality can also be set up on non-removable media such as
-eMMC to boot e.g. several different distros installed on different partitions
+Booting can be done without any EFI (e.g. using old u-boot) capabilities and
+the bootloader offers a menu of bootable configurations found on attached media.
+An example of a use case for SBCs/TV-boxes is to have a bootdisk installed on
+SD and have several Linux distros installed on USBs or to choose from.
+Another example of use case is to set up a bootdisk on non-removable media such
+as eMMC to boot e.g. several different distros installed on different partitions
 on an nvme or SATA SSD.
 The term bootdisk should thus here be interpreted in a generalized sense to
 mean either a bootdisk in the traditional sense or simply a dedicated boot
 partition (used early in the boot chain) that holds one of these bootloaders
 to act as a new intermediate stage in the boot process.
 
-Bootdisks can be built around the two bootloaders
+__Setting up a bootdisk:__
+A bootdisk can be set up using one of the two bootloaders
 [`Petitboot`](https://open-power.github.io/petitboot/)
 and [`u-root`](https://u-root.org/), both of which employ a
 [chainloading](https://en.wikipedia.org/wiki/Chain_loading) mechanism
 utilizing the Linux [`kexec`](https://en.wikipedia.org/wiki/Kexec)
 [system call](https://wiki.archlinux.org/title/Kexec).
-`Petitboot` provides a somewhat nicer UI (cf. screenshots below) and can boot
+(The repo contains two scripts for building `Petitboot` as well as
+documentation, see below.)
+The two bootloaders provide the same basic functionality but `Petitboot`
+provides a somewhat nicer UI (cf. screenshots below) and can boot
 [grub](https://wiki.archlinux.org/title/GRUB) configurations defined in
-`grub.cfg` whereas `u-root` can boot (simple) grub configurations as well as a
-subset of
-[syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
+`grub.cfg` and works for both ARM64 and RISCV64 (including `bzImage`).
+On the other hand, `u-root` can boot (simple) grub configurations as well as a
+subset of [syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
 configurations,
 [including](https://github.com/u-root/u-root/blob/main/pkg/boot/syslinux/syslinux.go)
 the `extlinux.conf` configurations used by
 [`u-boot`](https://en.wikipedia.org/wiki/Das_U-Boot).
+Support for RISCV64 was recently added in `u-root`.
 (The bootloader components of `u-root` are known by other names, one of them
 being `Linuxboot`, but for brevity we shall refer to these components
 collectively as `u-root`.)
 Both `Petitboot` and `u-root` are implemented in the form of an initramfs.
 
+__History:__
 The bootdisk concept discussed here was originally developed as an aid for
 booting on ARM64 SBCs/TV-boxes where an older resident/vendor `u-boot` was
 installed that typically did not support booting using `extlinux.conf` but
@@ -61,6 +71,7 @@ an appropriate kernel and dtb to work with the initramfs that holds either
 `Petitboot` or `u-root`.
 (This is typically all that is needed on a RISCV64 box.)
 
+__Outline of the repo:__
 General info about the bootdisk concept in the script based setting for ARM64
 can be found in the files [`README_petit-bootdisk.md`](README_petit-bootdisk.md)
 and [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), respectively.
@@ -70,7 +81,7 @@ instructions in [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md) for
 [`README_working_distros.md`](attic/README_working_distros.md) of Linux ARM64
 distributions that can be installed and booted with bootdisks.
 
-#### Building Petitboot and u-root
+### Building Petitboot and u-root
 
 An initramfs for `Petitboot` can be built from the C source either manually (see
 e.g. [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md)) or using the
@@ -96,7 +107,7 @@ the standard installer to produce an EFI/Grub setup that can be booted with
 on-board `u-boot`, at least if `u-boot` is a recent upstream/mainline version.
 However, there are situations where such a version of `u-boot` is not available
 (or not desirable) to install (e.g. many TV-boxes).
-For these situations it is useful to have pre made Linux images that can be
+For these situations it is useful to have premade Linux images that can be
 booted with existing `u-boot` and run-as is, only relying on `u-boot`'s ability
 to do do `sysboot` via `extlinux.conf` (either directly or via chainloading of
 another stage of `u-boot`).
@@ -119,7 +130,7 @@ information should be regarded as obsolete and will not be actively maintained.
 A convenient way to create an RISCV64/ARM64 Linux image is to run a native
 ARM64/RISCV64 installer (e.g. in iso file format) in QEMU on e.g. an x86_64
 host and install directly onto an SD/USB attached to the host.
-These images will typically be UEFI images and can be booted on a
+These images will typically be EFI images and can be booted on a
 SBC/TV-box using e.g. `Petitboot`/`u-root`.
 A short description of how use QEMU for image creation like this
 is given in [`README_QEMU_inst.md`](README_QEMU_inst.md).
