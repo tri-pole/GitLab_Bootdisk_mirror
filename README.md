@@ -2,9 +2,9 @@
 # bootdisk
 
 __TL;DR:__
-On an single board computer (SBC) or TV-box with working u-boot you
-can get a versatile boot manager+loader by replacing the default Linux
-initramfs with an initramfs containing `Petitboot` or `u-root` (provided your
+On an single board computer (SBC) or TV-box with working u-boot you can get
+a versatile bootloader by replacing the default Linux initramfs with an
+initramfs containing the `Petitboot` or `u-root` bootloader (provided your
 default Linux kernel has `kexec`). (For download links, see below.)
 
 __News:__
@@ -14,7 +14,7 @@ kernel supports it). For both architectures the ability to boot compressed
 kernels (e.g. recent Fedora) has also been added as well as an option for
 remote mode (UI over telnet).
 
-__Focus of the repo:__
+__Bootloaders with menu driven UI:__
 This repo contains, mostly, information about some
 [bootloaders](https://en.wikipedia.org/wiki/Bootloader) and
 [bootdisks](https://en.wikipedia.org/wiki/Boot_disk) for
@@ -23,7 +23,7 @@ This repo contains, mostly, information about some
 With a bootdisk using one of these bootloaders you can e.g. boot many
 ("generic") ARM64 or RISCV64 Linux images from major distributions that have
 grub boot configurations, such as Fedora, Ubuntu, Debian and openSuse.
-Booting can be done without any EFI (e.g. using old u-boot) capabilities and
+Booting can be done without any EFI capabilities (e.g. using old u-boot) and
 the bootloader offers a menu of bootable configurations found on attached media.
 An example of a use case for SBCs/TV-boxes is to have a bootdisk installed on
 SD and have several Linux distros installed on USBs or to choose from.

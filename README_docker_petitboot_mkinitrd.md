@@ -32,8 +32,8 @@ in this example RISCV64.
 ```
 user@host:bootdisk$ docker run --rm --privileged tonistiigi/binfmt -install riscv64
 ```
-Then, run the docker container with `ubuntu` (Jammy) for the arch, with a bash
-prompt as app
+Then, run the docker container with `ubuntu` (e.g. Jammy, Noble) for the arch, with
+a bash prompt as app
 ```
 user@host:bootdisk$ docker run -it --rm --platform linux/riscv64 -v /home/user/bootdisk:/mnt ubuntu:jammy bash
 ```
@@ -52,6 +52,11 @@ root@d0ffcf6555ea:~# apt install -y \
   libgd-tools libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev \
   libssl-dev libtool libudev-dev pkg-config sudo tree u-boot-tools wget zstd
 ```
+
+Note: The exact set of packages that is needed depends on the Ubuntu version
+(and in practice will be determined only at the time the build script is run).
+For a more updated list, see comments inside the build script
+`petitboot_mkinitrd_riscv64.bash`.
 
 ## Build the Petitboot initramfs
 

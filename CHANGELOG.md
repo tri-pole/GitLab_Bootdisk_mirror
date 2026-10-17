@@ -7,7 +7,7 @@ It also covers some of the tools/codes for building Linux images.
 
 For changelogs of older material, see the `attic` area of the repo.
 
-# petitboot_mkinitrd_aarch64.bash (renamed, was petitboot_mkinitrd.bash):
+# petitboot_mkinitrd_aarch64.bash (was petitboot_mkinitrd.bash)
 
 ## [v0.19] 26-10-14
 
@@ -84,7 +84,7 @@ For changelogs of older material, see the `attic` area of the repo.
 ### Added
  - First commit.
 
-# arm64_kbuild.bash:
+# arm64_kbuild.bash
 
 ## [v0.13] 24-06-02
 
@@ -109,7 +109,7 @@ For changelogs of older material, see the `attic` area of the repo.
 ### Added
  - First commit.
 
-# riscv64_kbuild.bash:
+# riscv64_kbuild.bash
 
 ## [v0.1] 24-11-19
 
