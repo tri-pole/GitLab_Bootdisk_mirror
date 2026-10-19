@@ -86,6 +86,16 @@ For changelogs of older material, see the `attic` area of the repo.
 
 # arm64_kbuild.bash
 
+## [v0.15] 26-10-19
+
+### Added
+ - More robust error handling.
+
+### Changed
+ - Restructured code into functions.
+ - Fixed several bugs relating to (possible) silent failures.
+ - Improved prerequisite checking and parameter handling.
+
 ## [v0.13] 24-06-02
 
 ### Added
