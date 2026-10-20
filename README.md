@@ -101,6 +101,33 @@ version of (the toolchain) `Go` (see e.g.
 Initramfses with `u-root` built like this can be found
 [here](https://mega.nz/folder/SMt1VLSY#VTR2-eZv4jC7PH4hASp0tg).
 
+### RISCV64 Linux kernel
+
+Linux kernels for RISCV64 can be created with the script
+[`riscv64_kbuild.bash`](riscv64_kbuild.bash) on an x86_64 or RISCV64 build
+host.
+The script produces simple gzipped tarballs with boot files (kernel image,
+initramfs etc.), the module tree, header files and dtbs, for the board
+manufacturers selected.
+It can be used to produce the `vf2-3pole` line of kernels (for VisionFive 2)
+which have `kexec()` enabled and can be used to run `Petitboot`.
+Downloads of tarballs of `vf2-3pole` kernels can be found
+[here](https://mega.nz/folder/jJdTCSQQ#he0JD-96HmJIQDow-QC-VQ).
+
+### ARM64 Linux kernel
+
+Kernels for ARM64 can be created with the script
+[`arm64_kbuild.bash`](arm64_kbuild.bash) on an x86_64 or ARM64 build host.
+The script produces gzipped tarballs with boot files (kernel image, initramfs
+etc.), the module tree, header files and dtbs, for the board manufacturers
+selected.
+For instance, it can be used to produce the `3pole` line of ARM64 kernels
+(which have `kexec()` enabled and can be used to run `Petitboot`/`u-root`).
+These kernels are adapted for Amlogic TV-boxes but has support also for
+Rockchip and Allwinner.
+Downloads of the `3pole` series of kernels can be found
+[here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
+
 ### Linux images
 
 Linux, e.g. Ubuntu, Debian or Devuan, can generally be installed to SBCs using
@@ -135,33 +162,6 @@ These images will typically be EFI images and can be booted on a
 SBC/TV-box using e.g. `Petitboot`/`u-root`.
 A short description of how use QEMU for image creation like this
 is given in [`README_QEMU_inst.md`](README_QEMU_inst.md).
-
-### RISCV64 Linux kernel
-
-Linux kernels for RISCV64 can be created with the script
-[`riscv64_kbuild.bash`](riscv64_kbuild.bash) on an x86_64 or RISCV64 build
-host.
-The script produces simple gzipped tarballs with boot files (kernel image,
-initramfs etc.), the module tree, header files and dtbs, for the board
-manufacturers selected.
-It can be used to produce the `vf2-3pole` line of kernels (for VisionFive 2)
-which have `kexec()` enabled and can be used to run `Petitboot`.
-Downloads of tarballs of `vf2-3pole` kernels can be found
-[here](https://mega.nz/folder/jJdTCSQQ#he0JD-96HmJIQDow-QC-VQ).
-
-### ARM64 Linux kernel
-
-Kernels for ARM64 can be created with the script
-[`arm64_kbuild.bash`](arm64_kbuild.bash) on an x86_64 or ARM64 build host.
-The script produces gzipped tarballs with boot files (kernel image, initramfs
-etc.), the module tree, header files and dtbs, for the board manufacturers
-selected.
-For instance, it can be used to produce the `3pole` line of ARM64 kernels
-(which have `kexec()` enabled and can be used to run `Petitboot`/`u-root`).
-These kernels are adapted for Amlogic TV-boxes but has support also for
-Rockchip and Allwinner.
-Downloads of the `3pole` series of kernels can be found
-[here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
 ## Screenshots
 
