@@ -121,6 +121,17 @@ For changelogs of older material, see the `attic` area of the repo.
 
 # riscv64_kbuild.bash
 
+## [v0.15] 26-10-20
+
+### Added
+ - More robust error handling.
+
+### Changed
+ - Restructured code into functions.
+ - Fixed several bugs relating to (possible) silent failures.
+ - Improved prerequisite checking and parameters handling.
+ - Mostly aligned with arm64_kbuild.bash
+
 ## [v0.1] 24-11-19
 
 ### Added

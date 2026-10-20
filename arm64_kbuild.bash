@@ -1,24 +1,27 @@
 #!/bin/bash
 #
 # arm64_kbuild.bash
-# v0.15 - 2026-10-19 - rewrite/fix of v0.13 (by Tripole), mostly by Qwen.
+# v0.15 - 2026-10-19: reference rewrite of v0.13 (by Tripole), mostly by Qwen.
 #
-# Script to compile the Linux kernel for ARM64 and package the result (together
-# with an initramfs) in a tarball. The script must be executed (as root) on an
-# Ubuntu/Debian type machine, either natively on aarch64/ARM64 or virtualized
-# (using qemu-aarch64-static) on x86_64/amd64.
+# Script to compile the ARM64 Linux kernel and package the result in a tarball.
+# The script must be executed (as root) on an Ubuntu/Debian type machine,
+# either natively on aarch64/ARM64 or virtualized (using qemu-aarch64-static)
+# on x86_64/amd64. The output of the script is a set of tarballs containing (1)
+# a kernel image file (uncompressed but called vmlinuz), an initramfs
+# (initrd.img, gzipped, based on an Ubuntu rootfs, as well as u-boot tagged
+# uInitrd), config and System.map files, (2) dtb files for the SoCs specified,
+# (3) header files, (4) a modules tree and (5) any patches applied during the
+# build process. (sha256sums for all tarballs are included.) A standard kernel
+# build environment is required (some of the requirements are checked below,
+# but far from all).
 #
-# Usage: (as root or using sudo) ./arm64_kbuild.bash [path-to-kernel-config]
+# Usage: (as root or w/ sudo) ./arm64_kbuild.bash [path-to-kernel-config]
 #
 # The script is configured to run make menuconfig using the kernel config given
 # on the command line as default config (or using the stock arm64 defconfig, if
 # no config is supplied). If you do edits at the menu, remember to save the
 # config under the name .config before exiting; compilation will then start
-# automatically.
-#
-# As part of the build process an initramfs is produced, based on an official
-# Ubuntu rootfs (e.g. Noble), and u-boot tagged versions of both kernel and
-# initramfs (i.e. uImage and uInitrd) are created as well.
+# automatically. The stdout logs are long, use tee to capture them in a file.
 #
 # It is possible to use both the GNU toolchain and the Clang/LLVM toolchain.
 # (It is assumed that the appropriate one is downloaded and installed, see
@@ -28,6 +31,12 @@
 # For detailed changes relative to previous version (v0.13), see CHANGELOG.md
 # (In summary, a bunch of bugs were fixed, many frail constructions were made
 # robust and the code was grouped into functions making it much more readable.)
+#
+# Inspiration taken from:
+# https://www.kernel.org/doc/html/latest/index.html
+# https://linux-kernel-labs.github.io/refs/heads/master/labs/arm_kernel_development.html
+# https://github.com/ophub/amlogic-s9xxx-armbian/blob/main/rebuild
+
 
 set -Eeuo pipefail
 shopt -s nullglob
@@ -48,11 +57,11 @@ else
     c_reset=""
 fi
 
-log_info() { printf '%s[ Info ]%s %s\n' "$c_info" "$c_reset" "$*"; }
-log_warn() { printf '%s[ Warning ]%s %s\n' "$c_warn" "$c_reset" "$*"; }
-log_err()  { printf '%s[ Error ]%s %s\n' "$c_err" "$c_reset" "$*" >&2; }
-log_ok()   { printf '%s[ OK ]%s %s\n' "$c_ok" "$c_reset" "$*"; }
-banner()   { printf '\n%s-- %s --%s\n' "$c_ok" "$*" "$c_reset"; }
+log_info() { printf '[%s Info %s] %s\n' "$c_info" "$c_reset" "$*"; }
+log_warn() { printf '[%s Warning %s] %s\n' "$c_warn" "$c_reset" "$*"; }
+log_err()  { printf '[%s Error %s] %s\n' "$c_err" "$c_reset" "$*" >&2; }
+log_ok()   { printf '[%s OK %s] %s\n' "$c_ok" "$c_reset" "$*"; }
+banner()   { printf '\n--%s %s %s--\n' "$c_ok" "$*" "$c_reset"; }
 
 die() {
     log_err "$*"
@@ -243,9 +252,11 @@ rootfs_dir=${work_dir}/rootfs_tmp
 # Name of the calling command (used in the README).
 calling_cmd_name=${0##*/}
 
-# Canonical (absolute) path of the patch dir. (readlink -f succeeds even if
-# the final component does not exist; that case is handled in main.)
-patch_src_dir_fpath=$(readlink -f -- "$patch_src_dir") ||
+# Canonical (absolute) path of the patch dir. (realpath -m canonicalises the
+# path without requiring any component to exist, unlike readlink -f which
+# fails when intermediate components are missing; a missing dir is handled in
+# main.)
+patch_src_dir_fpath=$(realpath -m -- "$patch_src_dir") ||
     die "Cannot resolve the patch dir path '$patch_src_dir'."
 
 # --------------------------- here-docs (chroot) -----------------------------
@@ -347,7 +358,7 @@ check_prereqs() {
         aarch64|x86_64) ;;
         *) die "The architecture '$arch_str' is not one of x86_64 or aarch64, exiting." ;;
     esac
-    local reqd_cmdlist=( "systemd-nspawn" "make" "tar" "gzip" "wget" "patch" "sha256sum" "nproc" )
+    local reqd_cmdlist=( "systemd-nspawn" "make" "tar" "gzip" "wget" "patch" "sha256sum" "nproc" "realpath" )
     if [[ $arch_str != "aarch64" ]]; then
         reqd_cmdlist+=( "qemu-aarch64-static" )
     fi
@@ -435,6 +446,26 @@ prepare_kernel_src() {
     kern_tree="$want"
     cd "$kern_tree" || die "Cannot cd into $kern_tree."
     log_ok "Kernel source ready: $kern_tree"
+}
+
+# ----------------------------------- timer ----------------------------------
+
+run_time () {
+local epoch_secs_now=$(date +"%s")
+case "$#" in
+    "1" ) # $1 is a dummy argument.
+        local result=$epoch_secs_now
+    ;;
+    "2" )
+        local run_time_secs=$(($epoch_secs_now -$2))
+        local result=$(date -d@$run_time_secs -u +"%H:%M:%S")
+    ;;
+    * )
+        echo "Error in function run_time(), exiting."
+        exit 1
+    ;;
+esac
+echo $result
 }
 
 # ---------------------------------- patches ---------------------------------
@@ -660,7 +691,7 @@ build_initramfs() {
         log_ok "Done."
     fi
     log_info "Entering chroot jail. Installing some pkgs., running some scripts ..."
-    # systemd-nspawn does not inherits the caller's environment so the
+    # systemd-nspawn does not inherit the caller's environment so the
     # variables for the chroot script are passed as environment variables here.
         systemd-nspawn \
         --setenv KERN_OUT_STR="$kern_out_str" \
@@ -779,8 +810,8 @@ main() {
         log_info "Patches directory: $patch_src_dir_fpath (${#patch_files[@]} patch file(s))"
     fi
 
-    prepare_workdirs
     space_prompt
+    prepare_workdirs
 
     download_rootfs
     extract_rootfs
@@ -789,6 +820,7 @@ main() {
 
     banner "Starting the compilation process"
     configure_kernel
+    run_time_start=$(run_time "start") # We measure only the actual build.
     build_kernel
 
     package_modules
@@ -804,6 +836,8 @@ main() {
 
     build_ok=true
     log_ok "Kernel package build complete!"
+    tot_run_time=$(run_time "stop" $run_time_start)
+    log_info "Run time (excl. src d/l, unpack and configuration) [h:m:s]: "$tot_run_time
 }
 
 main "$@"
