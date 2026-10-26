@@ -78,9 +78,7 @@ can be found in the files [`README_petit-bootdisk.md`](README_petit-bootdisk.md)
 and [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), respectively.
 In the [attic](attic) area there is some more older information, such as
 instructions in [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md) for
-(manually) recreating or adapting bootdisks and an annotated list in
-[`README_working_distros.md`](attic/README_working_distros.md) of Linux ARM64
-distributions that can be installed and booted with bootdisks.
+(manually) recreating or adapting bootdisks.
 
 ### Building Petitboot and u-root
 
@@ -146,12 +144,6 @@ Linux images with Debian, Devuan or Ubuntu for RISCV64 can be created with the
 script [`debuntu_dbstrap_riscv64.bash`](debuntu_dbstrap_riscv64.bash).
 Images built with this script can be downloaded from
 [here](https://mega.nz/folder/PAtXyRgA#SI9z7Hgz2n-S7BLk2SuM2A).
-
-#### ARM64 Linux images
-
-A collection of READMEs and scripts about creation of Linux images for ARM64
-can be found in the [`attic`](attic/Creating_Linux_images_ARM64) area but this
-information should be regarded as obsolete and will not be actively maintained.
 
 ### Image creation using QEMU
 
