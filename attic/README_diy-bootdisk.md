@@ -4,11 +4,11 @@
 
   The bootdisk concept was developed to set up bootdisks for devices based on
   the Amlogic s922x SoC but there is nothing that is critically dependent on
-  this SoC.
+  this SoC; the bootdisk idea only needs a functioning `u-boot` (on EMMC or SD).
   In order to facilitate do-it-yourself versions of bootdisks, and to encourage
   porting/adapting of the concept to other TV-boxes/SBCs, we give here a
   breakdown of the structure of a typical bootdisk and instructions for how to
-  (re)produce such a disk.
+  (re)produce such a disk, on SD or USB, with Amlogic SoCs asn an example.
 
 ## Scope
 
@@ -31,7 +31,7 @@
   In the older versions of `u-boot` the boot method "Standard boot" (where the
   boot configuration is specified in `exlinux.conf`) was not available and
   boot configurations, options and procedures had to be specified using boot
-  scripts.
+  scripts (cf. below).
   If a modern version of `u-boot` is used (either installed on eMMC or as a
   "hidden" bootloader on the "gap" on a SD/USB, see below) then creation of a
   bootdisk essentially amounts to setting up a kernel, initramfs and a tailored
@@ -39,7 +39,7 @@
 
   All the binaries needed to produce bootdisks (including the optional
   chainloader) can be compiled or downloaded from sources available at Github
-  or other public git repos (see below), or   downloaded from the locations
+  or other public git repos (see below), or downloaded from the locations
   indicated in
   [`README_petit-bootdisk.md`](README_petit-bootdisk.md)
   and [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md).
@@ -122,6 +122,12 @@
   to be called by the resident/vendor `u-boot` where the second `u-boot` is
   capable of doing a "Standard boot" with `extlinux.conf`.
   (The case of a "hidden" bootloader on the disk is also discussed below.)
+  In the chainloading method the Linux kernel (to run either `Petitboot` or
+  `u-root`) is loaded by (the last stage of) a recent `u-boot` (the
+  chainloader) and therefore this method is more likely to be able to load the
+  chosen kernel successfully.
+  The price to be paid however, compared to direct loading via boot scripts, is
+  a slightly longer boot time.
 
   In case of a chainloaded disk, the bootloader binary required (i.e. the
   chainloader) is a version of `u-boot.bin` which is renamed to `u-boot.ext`
@@ -136,7 +142,8 @@
   bootloaders (see below) which he refers to simply as "bootloaders".
   More info about `u-boot` can be found further down in this document.)
   Note, however, that some of the older versions of `u-boot.bin` may not be
-  able to boot newer kernels.
+  able to boot newer kernels (even though they are of a more recent date than
+  the resident `u-boot`).
 
   - *Only for chainloaded disk*
 
@@ -184,7 +191,7 @@ and for a direct booted (non chainloaded) disk it could look like this
 
   The files `aml_autoscript` and `s905_autoscript` are the two main script
   files that control the boot sequence of `u-boot` (i.e. how resident/vendor
-  `u-boot` scan devices for bootable configurations), for Amlogic devices.
+ `u-boot` scan devices for bootable configurations), for Amlogic devices.
   We use slightly different versions of these file on the chainloaded and non
   chainloaded (direct booted) bootdisks, however.
   For the non chainloaded disks we use scripts from
@@ -212,7 +219,7 @@ and for a direct booted (non chainloaded) disk it could look like this
   internally on the TV-box during a "user reset" or "update".)
 
   The zero-length file `aml_autoscript.zip` is just a placeholder file.
-  (My understanding is that the presence of this file is required on some
+  (Our understanding is that the presence of this file is required on some
   TV-boxes to trigger the board resident/vendor boot recovery code to read and
   parse `aml_autoscript` when enabling "multiboot".)
 
@@ -333,8 +340,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   see below.
 
   For the non chainloaded disk, the gzipped cpio archive containing the
-  initramfs has been converted to `u-boot` format by adding a small header to
-  the file.
+  initramfs (with `Petitboot` or `u-root`) has been converted to `u-boot` format
+  by adding a small header to the file.
   The resulting file is called `uInitrd` (as in the listing above).
   This conversion operation has been done using the `mkimage` command
   (details are given below).
@@ -419,8 +426,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
 
   This concept has been tested as working on Ugoos AM6 plus with a recent
   `u-boot.ext` compiled for Beelink GTK pro together with a recent `Petitboot`
-  initramfs (e.g. initramfs-petitboot-0v25.cpio.gz) and a recent `koop-3pole`
-  kernel.
+  initramfs and a recent `koop-3pole` kernel.
   (The Linux image used was Fedora 38 minimal.)
   The procedure is easy to adapt for the non chainloaded case (i.e. when not
   using `u-boot.ext`, only boot scripts).
@@ -444,7 +450,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
 
   With either `Petitboot` or `u-boot` on eMMC you can boot an installation
   image of a Linux distribution on SD/USB and install to available space on
-  eMMC or you can just transfer (e.g. using the `rsync` command) the contents
+  eMMC or you can just transfer (e.g. using the `cp -a` command) the contents
   of the rootfs of a working Linux image on SD/USB (e.g. made with the scripts
   we provide).
   In the latter case, the only adaptations likely needed after transfer to
@@ -453,9 +459,13 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   Possibly the file `/etc/initramfs-tools/conf.d/resume` needs as well.
   (To be sure you can search for files under `/etc` that contain the string
   "UUID".)
+  For an Amlogic box there is no risk of bricking the box here since if the
+  boot setup using `u-boot` on eMMC is not working properly you can always
+  boot via bootdisk on SD (which will override the eMMC setup) and thus
+  do repair.
 
-  Note that Amlogic boxes typically come with a proprietary partitioning
-  scheme on eMMC and this scheme must be left intact for the vendor/resident
+  Note that Amlogic boxes typically come with a proprietary partitioning scheme
+  on eMMC and this scheme may have to be left intact for the vendor/resident
   u-boot to work properly.
   Mainline `u-boot`, on the other hand, can in general be fitted into a
   standard 4M gap before the first partition, see below and the `u-boot`

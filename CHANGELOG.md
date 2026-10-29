@@ -139,6 +139,16 @@ For changelogs of older material, see the `attic` area of the repo.
 
 # debuntu_dbstrap_riscv64.bash
 
+## [v0.18]
+
+### Changed
+ - Restructured code into functions.
+ - Bug fixes.
+ - Improved error handling.
+
+### Added
+ - Switch (conditional) to nspawn so that tee (of script stdout/stderr) works.
+
 ## [v0.16] 26-02-10
 
 ### Added
