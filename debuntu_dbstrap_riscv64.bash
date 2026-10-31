@@ -117,6 +117,9 @@
 #  *  There is some confusion (stemming from Starfive) about naming regarding
 #     uEnv.txt/vf2_uEnv.txt so you might see warnings about it during boot.
 #
+# - ToDo: Perhaps pass rootPARTUUID via a file on the image (before jail) in
+#   order to make in-jail kernel install not depend on hook ordering at all.
+#
 # For a summary of the changes relative to the previous version (v0.16), see
 # CHAMGELOG.md
 
@@ -231,7 +234,7 @@ ubuntu_extra_packages=("nano" "aptitude" "man-db" "openssh-server")
 debian_extra_packages=("aptitude" "man-db" "firmware-linux-free" "openssh-server")
 devuan_extra_packages=("aptitude" "man-db" "firmware-linux-free" "openssh-server")
 
-# For running in QEMU the user mode emulation binary qemu-static-<arch> is reqd.
+# For running in QEMU the user mode emulation binary qemu-<arch>-static is reqd.
 reqd_cmdlist_virt=("qemu-riscv64-static")
 
 # Bling (color in stdout)? Yes, we like. (Colors are only used when this
@@ -783,7 +786,7 @@ dpkg-reconfigure tzdata
 dpkg-reconfigure locales
 dpkg-reconfigure keyboard-configuration
 
-echo "--- Set password for root. ---"
+printf 'Set password for \033[91mroot:\033[0m\n'
 until passwd; do echo "Try again."; done
 EOF
     )
@@ -796,7 +799,7 @@ Components: main non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 
 Types: deb
-URIs: https://security.debian.org/debian-security
+URIs: http://security.debian.org/debian-security
 Suites: ${distro_release}-security
 Components: main non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
@@ -827,6 +830,7 @@ EOF
 set -Eeuo pipefail
 
 apt-get update
+
 # The linux-headers-riscv64 package can be added if desired.
 DEBIAN_FRONTEND=noninteractive apt -y install linux-image-riscv64
 echo "Setting FSTYPE to $rootfs_type in /etc/initramfs-tools/initramfs.conf"
@@ -839,7 +843,7 @@ dpkg-reconfigure locales
 apt -y install console-setup
 # dpkg-reconfigure keyboard-configuration
 
-echo "--- Set password for root. ---"
+printf 'Set password for \033[91mroot:\033[0m\n'
 until passwd; do echo "Try again."; done
 EOF
     )
@@ -851,6 +855,7 @@ EOF
 set -Eeuo pipefail
 
 apt-get update
+
 # The linux-headers-riscv64 package can be added if desired.
 DEBIAN_FRONTEND=noninteractive apt -y install linux-image-riscv64
 echo "Setting FSTYPE to $rootfs_type in /etc/initramfs-tools/initramfs.conf"
@@ -948,8 +953,12 @@ else
 fi
 
 if [[ -z ${rootfsPARTUUID:-} ]]; then
-    rootfs_dev=$(findmnt -n -o SOURCE /)
-    rootfs_partuuid=$(blkid -s PARTUUID -o value "$rootfs_dev")
+    # (The '|| var=' guards keep set -e from aborting on a failed findmnt or
+    # blkid (e.g. in a chroot jail whose /dev lacks the device node) so that
+    # the explicit check below can report a useful error instead of a bare
+    # non-zero exit code.)
+    rootfs_dev=$(findmnt -n -o SOURCE / 2>/dev/null) || rootfs_dev=""
+    rootfs_partuuid=$(blkid -s PARTUUID -o value "$rootfs_dev" 2>/dev/null) || rootfs_partuuid=""
     [[ -n $rootfs_partuuid ]] || {
         echo "Could not determine the PARTUUID of the root device ($rootfs_dev), exiting."
         exit 1
@@ -1214,8 +1223,12 @@ distro_name="$(tr '[:lower:]' '[:upper:]' <<< "${distro_name_lc:0:1}")""${distro
 distro_edition="$(tr '[:lower:]' '[:upper:]' <<< "${distro_edition_lc:0:1}")""${distro_edition_lc:1}"
 
 if [[ -z ${rootfsPARTUUID:-} ]]; then
-    rootfs_dev=$(findmnt -n -o SOURCE /)
-    rootfs_partuuid=$(blkid -s PARTUUID -o value "$rootfs_dev")
+    # (The '|| var=' guards keep set -e from aborting on a failed findmnt or
+    # blkid (e.g. in a chroot jail whose /dev lacks the device node) so that
+    # the explicit check below can report a useful error instead of a bare
+    # non-zero exit code.)
+    rootfs_dev=$(findmnt -n -o SOURCE / 2>/dev/null) || rootfs_dev=""
+    rootfs_partuuid=$(blkid -s PARTUUID -o value "$rootfs_dev" 2>/dev/null) || rootfs_partuuid=""
     [[ -n $rootfs_partuuid ]] || {
         echo "Could not determine the PARTUUID of the root device ($rootfs_dev), exiting."
         exit 1
@@ -1605,6 +1618,13 @@ remove_riscv64_qemu_binary() {
     fi
 }
 
+# Note: this hook must be installed AFTER the chroot jail run (cf. the order
+# in main()). If it is present inside the jail, dpkg runs it during the kernel
+# install there, but then the rootfs PARTUUID cannot be discovered (the
+# jail's default /dev has no block device nodes, so blkid fails) and the
+# kernel package configuration is aborted. After the jail, the hook is run
+# explicitly by create_extlinux_conf() with the PARTUUID passed via the
+# environment variable rootfs_PARTUUID_.
 create_extlinux_upd_hook() {
     log_info "Creating extlinux.conf update hook after kernel install/removal ..."
     local hook_dir hook_file
@@ -1625,6 +1645,13 @@ create_extlinux_conf() {
     log_ok "Done."
 }
 
+# Note: this hook must be installed AFTER the chroot jail run (cf. the order
+# in main()). If it is present inside the jail, dpkg runs it during the kernel
+# install there, but then the rootfs PARTUUID cannot be discovered (the
+# jail's default /dev has no block device nodes, so blkid fails) and the
+# kernel package configuration is aborted. After the jail, the hook is run
+# explicitly by create_grubcfg() with the PARTUUID passed via the environment
+# variable rootfs_PARTUUID_.
 create_grub_upd_hook() {
     log_info "Creating grub.cfg (simple version) update hook after kernel install/removal ..."
     local hook_dir hook_file
@@ -1803,6 +1830,15 @@ main() {
     log_ok "Done."
 
     make_image_file
+    # Note: create_partitions() runs sfdisk on the loop device (not on the
+    # container file), which makes the kernel re-read the loop device's
+    # partition table, so attaching the loop device first is fine here. If
+    # this is ever changed to sfdisk/parted on the container file, the
+    # partitioning must happen before setup_loop_device (or a partition
+    # re-read must be forced afterwards, e.g. with blockdev --rereadpt),
+    # otherwise the <loop_dev>pN device nodes are never created and the later
+    # mkfs of the loop device partitions fails with "No such file or
+    # directory".
     setup_loop_device
     create_partitions
     format_partitions
@@ -1830,6 +1866,11 @@ main() {
     do_chroot_jail_tasks
     setup_dtb_file
     remove_riscv64_qemu_binary
+    # (The two update hooks below must be installed after the chroot jail
+    # run; cf. the comments above create_extlinux_upd_hook() and
+    # create_grub_upd_hook(). They must also come after setup_dtb_file so
+    # that the dtb file exists (and the /etc/default/dtb symlink resolves)
+    # when the hooks are run by create_extlinux_conf() and create_grubcfg().)
     create_extlinux_upd_hook
     create_extlinux_conf
     create_grub_upd_hook
