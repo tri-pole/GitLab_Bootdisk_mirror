@@ -126,7 +126,7 @@ Rockchip and Allwinner.
 Downloads of the `3pole` series of kernels can be found
 [here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
-### Linux images
+### Linux images for RISCV64, AARCH64
 
 Linux, e.g. Ubuntu, Debian or Devuan, can generally be installed to SBCs using
 the standard installer to produce an EFI/Grub setup that can be booted with
@@ -138,12 +138,12 @@ booted with existing `u-boot` and run-as is, only relying on `u-boot`'s ability
 to do do `sysboot` via `extlinux.conf` (either directly or via chainloading of
 another stage of `u-boot`).
 
-#### RISCV64 Linux images
-
-Linux images with Debian, Devuan or Ubuntu for RISCV64 can be created with the
-script [`debuntu_dbstrap_riscv64.bash`](debuntu_dbstrap_riscv64.bash).
-Images built with this script can be downloaded from
-[here](https://mega.nz/folder/PAtXyRgA#SI9z7Hgz2n-S7BLk2SuM2A).
+Linux images with Debian, Devuan or Ubuntu for RISCV64/AARCH64 can be created
+with the scripts [`debuntu_dbstrap_aarch64.bash`](debuntu_dbstrap_aarch64.bash)
+and [`debuntu_dbstrap_riscv64.bash`](debuntu_dbstrap_riscv64.bash).
+Images built with these script can be downloaded from
+[here (aarch64)](https://mega.nz/folder/CBM0hCTD#GDw2iXQpfeoqgWJ45E2Seg) and
+[here (riscv64)](https://mega.nz/folder/PAtXyRgA#SI9z7Hgz2n-S7BLk2SuM2A).
 
 ### Image creation using QEMU
 
