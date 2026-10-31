@@ -1,8 +1,8 @@
 # Changelog
 
 This is the changelog for the codes in the `Bootdisk` repository.
-It covers the scripts `petitboot_mkinitrd_aarch64.bash` and
-`petitboot_mkinitrd_riscv64.bash` for building the initramfs for `Petitboot`.
+It covers the scripts `petitboot_mkinitrd_{aarch,riscv}64.bash` for
+building the initramfs for `Petitboot`.
 It also covers some of the tools/codes for building Linux images.
 
 For changelogs of older material, see the `attic` area of the repo.
@@ -133,6 +133,46 @@ For changelogs of older material, see the `attic` area of the repo.
  - Mostly aligned with arm64_kbuild.bash
 
 ## [v0.1] 24-11-19
+
+### Added
+ - First version.
+
+# debuntu_dbstrap_aarch64.bash (reinstated):
+
+## [v0.18] 26-10-31
+
+### Added
+ - Option to build Devuan.
+
+## [v0.17] 26-10-30
+
+### Changed
+ - Restructured code into functions.
+ - Bug fixes.
+ - Improved error handling
+.
+## [v0.15] 25-12-08
+
+### Changed
+ - Reorg, cleanup, bugfixes.
+
+## [v0.13] 23-06-12
+
+### Changed
+ - Names of wired network interfaces and non-free repos.
+
+## [v0.12] 22-11-22
+
+### Changed
+ - More available editions/releases.
+ - Fixed sources.list for multiple eds./rels.
+
+## [v0.11] 22-10-10
+
+### Changed
+ - Better sources.list for Debian.
+
+## [v0.1] 22-10-09
 
 ### Added
  - First commit.
