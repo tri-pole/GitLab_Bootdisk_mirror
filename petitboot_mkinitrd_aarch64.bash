@@ -12,10 +12,11 @@
 # where the user running the script must be in the sudo group. (At the end
 # of the build proper ownership of files in the initramfs needs to be set.)
 
-# Tested on: Ubuntu 22.04.5 and Debian 12.12 build hosts running in QEMU
-# (qemu-system-aarch64) and in docker container on x86_64. (Cross compilation
-# is not possible since some libs/utils are copied from the build host, see
-# below.) The initramfs has been tested on Ugoos AM6 plus and on Le Potato.
+# Tested on: Ubuntu 2{2,4,6}.04 and Debian 12.12 build hosts (note terminfo
+# def. below) running in QEMU (qemu-system-aarch64) and in docker container
+# on x86_64. (Cross compilation is not possible since some libs/utils are
+# copied from the build host, see below.) The initramfs has been tested on
+# Ugoos AM6 plus and on Le Potato.
 
 # Dependencies: GNU build tools w/ compiler suite, installed dependencies for
 # the packages kexec, busybox, iproute2, e2fsprogs, petitboot and eudev.
@@ -213,7 +214,7 @@ eudev_udev_rules_list=("50-udev-default.rules" "60-autosuspend.rules"
 # in the script ${pb_build}/utils/pb-console which is copied to the initramfs
 # at the location /usr/sbin/pb-console). The standard location for the terminfo
 # files is typically /usr/share/terminfo but it can also be /lib/terminfo.
-terminfo_dir=/usr/lib/terminfo # /usr/{lib,share}/terminfo {jammy,noble}
+terminfo_dir=/usr/share/terminfo # /usr/{lib,share}/terminfo {jammy,noble-resolute}
 pb_term_list="ansi dumb linux vt220"
 
 # Libraries used by these executables will be copied from the host.
