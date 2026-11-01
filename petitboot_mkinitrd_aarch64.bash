@@ -1339,8 +1339,18 @@ else
     initramfs_tree_name=initramfs_file_tree.txt
 fi
 tree initramfs >${result_dir}/${initramfs_tree_name}
-compgen -v | while read line; do echo $line=${!line}; done \
-    | gzip -c >${result_dir}/pb_build_vars.txt.gz
+# Save the script-defined (non-exported) shell variables for build
+# forensics. Exported (environment) variables are deliberately excluded:
+# in a CI/CD environment they include tokens/secrets (e.g. CI_JOB_TOKEN,
+# GITHUB_TOKEN) which must not end up in the result dir or artifacts.
+env_var_list=$(compgen -e)
+compgen -v | while read line; do
+    # Skip the bookkeeping variable below, then skip all exported vars.
+    if [[ $line == env_var_list ]]; then continue; fi
+    if ! grep -qxF "$line" <<< "$env_var_list"; then
+        echo $line=${!line}
+    fi
+done | gzip -c >${result_dir}/pb_build_vars.txt.gz
 echo " Done."
 
 echo -e -n ${ok_msg}" Adding timestamp tag to result and temporary dirs ..."
