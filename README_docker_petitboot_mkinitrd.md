@@ -47,8 +47,8 @@ build dependencies in the container
 ```
 root@d0ffcf6555ea:~# apt update && apt upgrade -y
 root@d0ffcf6555ea:~# apt install -y \
-  autoconf bison build-essential cpio flex gawk gettext git gperf \
-  libasprintf-dev libblkid-dev libdevmapper-dev libdw-dev libelf-dev \
+  autoconf bison build-essential ca-certificates cpio flex gawk gettext git \
+  gperf libasprintf-dev libblkid-dev libdevmapper-dev libdw-dev libelf-dev \
   libgd-tools libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev \
   libssl-dev libtool libudev-dev pkg-config sudo tree u-boot-tools wget zstd
 ```
