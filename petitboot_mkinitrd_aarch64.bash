@@ -845,7 +845,7 @@ else
 fi
 
 echo -e -n ${i_msg}" Setting up initramfs directory structure ..."
-result_dir=${PWD}/result
+result_dir=${PWD}/result_aarch64
 if [[ -d "$result_dir" ]]; then
     echo -e ${e_msg}" The result dir $result_dir already exists, exiting."
     exit 1
