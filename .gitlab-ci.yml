@@ -1,0 +1,158 @@
+# 26-11-06: v0.1, Qwen
+#
+# Build the Petitboot initramfs (aarch64) on demand.
+#
+# Runners:
+#   - GitLab.com hosted arm64 runner (saas-linux-small-arm64)
+# The job runs natively as root in a fresh ubuntu:26.04 (Resolute) container;
+# no qemu/binfmt is needed on an aarch64 runner.
+#
+# Trigger: manual only (CI/CD -> Pipelines -> "Play"), never on push.
+#
+# Outputs (per build, stored permanently in the project's generic package
+# registry under package name 'petitboot-initrd', version <tag>):
+#   - initrd-pb-<tag>, uInitrd-pb-<tag>, RELEASE_NOTES_<tag>.md
+# where <tag> is e.g. v1.15-aarch64-3p-261102 (the arch appears once).
+# petitboot_gen_relnotes.bash (in this repo) generates the release notes;
+# it can also be run standalone against any result dir for local/manual builds.
+#
+# Note: the apt-get install command uses a folded block scalar (>-) so the
+# multi-line command folds into ONE line. (Backslash line-breaks in YAML
+# plain scalars do NOT work: the newline folds to a space, leaving "\ "
+# which bash reads as an escaped space -> " autoconf" etc.)
+
+build-petitboot-initramfs-aarch64:
+  stage: build
+  image: ubuntu:26.04
+  tags:
+    - saas-linux-small-arm64
+  when: manual
+  script:
+    - apt-get update
+    - >-
+      DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends
+      autoconf bison build-essential ca-certificates cpio curl flex gawk gettext git gperf
+      libasprintf-dev libblkid-dev libdevmapper-dev libdw-dev libelf-dev
+      libgd-tools libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev
+      libssl-dev libtool libudev-dev pkg-config sudo tree u-boot-tools
+      wget zstd file gpg
+    - ./petitboot_mkinitrd_aarch64.bash </dev/null
+    # (Invoked with 'bash' rather than './' so it works regardless of the
+    # executable bit, e.g. if the file was added via the GitLab Web UI.)
+    - bash petitboot_gen_relnotes.bash "$(ls -d result_aarch64_*/ | head -1)"
+    - |
+      # --- Upload build outputs to the generic package registry ---------------
+      # The CI job token has upload access to this project's registry; the
+      # package URLs are permanent (unlike job artifacts) and are what the
+      # release's "Provide link" entries point to.
+      rd=$(ls -d result_aarch64_*/)
+      initrd=$(basename "$(ls ${rd}initrd-pb-* | head -1)")
+      ver=${initrd#initrd-pb-}; ver=${ver#v}
+      for f in "${rd}"initrd-pb-* "${rd}"uInitrd-pb-* "${rd}"RELEASE_NOTES_*.md; do
+        [ -f "$f" ] || continue
+        curl --fail --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$f" \
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/petitboot-initrd/${ver}/$(basename "$f")" \
+          && echo "Uploaded to package registry: petitboot-initrd/${ver}/$(basename "$f")"
+      done
+  artifacts:
+    when: on_success
+    paths:
+      - result_aarch64_*/initrd-pb-*
+      - result_aarch64_*/uInitrd-pb-*
+      - result_aarch64_*/RELEASE_NOTES_*.md
+    expire_in: 1 year
+
+# Build the Petitboot initramfs (riscv64) on demand.
+#
+# GitLab.com has no hosted riscv64 runner, so the build runs in an
+# emulated riscv64 container (qemu-user via binfmt) on a hosted x86-64
+# runner, using Docker-in-Docker (the docker:27-dind service; the daemon
+# is reached at tcp://docker:2375, NOT localhost; DOCKER_TLS_CERTDIR=""
+# because the dind daemon listens on PLAIN TCP, no TLS).
+# The build container is ubuntu:24.04 (Noble) deliberately: from Resolute
+# (26.04) on, Ubuntu's riscv64 port mandates the RVA23S64 profile, which
+# pre-RVA23 hardware (e.g. the Vision Five 2) does not implement.
+# Note: the docker:27 job image is ALPINE-based (apk, not apt).
+#
+# WHY THE "binfmt keepalive" (do not remove):
+# The binfmt handler registered by tonistiigi/binfmt points at
+# /usr/bin/qemu-riscv64, a file that only exists inside the registering
+# container's rootfs. On a fresh node (no pre-registered handler, which
+# is the case e.g. right after a binfmt "installing: riscv64 OK" line),
+# letting that container exit makes the riscv64 execs flaky: observed
+# "exec /usr/bin/bash: exec format error" (exit 255) in exactly that
+# situation. Nodes that already carry a handler ("already registered")
+# work fine. Keeping a live container with the same rootfs that performs
+# the registration makes the flow deterministic (verified end-to-end on a
+# fresh dind daemon, 2026-11-06). The keepalive image is built in-job:
+# the tonistiigi/binfmt image (scratch-based, no shell/sleep) + a static
+# busybox (alpine's /bin/busybox is DYNAMICALLY linked and cannot run in
+# the scratch-based image).
+
+build-petitboot-initramfs-riscv64:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  tags:
+    - saas-linux-small-amd64
+  when: manual
+  script:
+    - apk add --no-cache ca-certificates curl busybox-static
+    # --- binfmt keepalive: image with the qemu binaries that STAYS ALIVE ---
+    - |
+      mkdir -p /buildctx
+      cp /bin/busybox.static /buildctx/busybox
+      printf 'FROM tonistiigi/binfmt\nCOPY busybox /usr/bin/busybox\n' > /buildctx/Dockerfile
+    - docker build -t bfm-keepalive /buildctx
+    # Registers the riscv64 binfmt handler (no-op if the node already has
+    # one) and then stays alive for the whole job, so the handler's
+    # interpreter path remains resolvable.
+    - docker run -d --name bfmkeep --privileged --entrypoint /usr/bin/busybox bfm-keepalive sh -c '/usr/bin/binfmt --install riscv64 && sleep 86400'
+    - |
+      # Canary: prove riscv64 exec works BEFORE spending ~50 min on the
+      # build. (With the keepalive this should pass on the first try; the
+      # loop is a safety net, and the job fails hard if it never passes.)
+      ok=0
+      for i in 1 2 3 4 5; do
+        if docker run --rm --platform linux/riscv64 alpine uname -m; then ok=1; break; fi
+        sleep 3
+      done
+      [ "$ok" = 1 ] || { echo "ERROR: riscv64 exec failed 5 times in a row; aborting."; exit 1; }
+    - |
+      docker run --rm --platform linux/riscv64 -v "$CI_PROJECT_DIR":/mnt -w /mnt ubuntu:24.04 bash -c '
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update -qq
+      # (Backslash continuations: this entry is a | literal block, so newlines
+      # are preserved and bash joins the lines into one apt-get command.)
+      apt-get install -y -qq --no-install-recommends \
+      autoconf automake bison build-essential ca-certificates cpio flex gawk gettext git gperf \
+      libasprintf-dev libblkid-dev libdevmapper-dev libdw-dev libelf-dev \
+      libgd-tools libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev \
+      libssl-dev libtool libudev-dev pkg-config sudo tree wget zstd file gpg
+      ./petitboot_mkinitrd_riscv64.bash </dev/null
+      bash petitboot_gen_relnotes.bash "$(ls -d result_riscv64_*/ | head -1)"
+      '
+    - docker rm -f bfmkeep
+    - |
+      # --- Upload build outputs to the generic package registry ---------------
+      # (Same package as aarch64; the version carries the arch, so no
+      # collision: v1.15-riscv64-3p-<date> vs v1.15-aarch64-3p-<date>.)
+      rd=$(ls -d result_riscv64_*/ | head -1)
+      initrd=$(basename "$(ls ${rd}initrd-pb-* | head -1)")
+      ver=${initrd#initrd-pb-}; ver=${ver#v}
+      for f in "${rd}"initrd-pb-* "${rd}"RELEASE_NOTES_*.md; do
+        [ -f "$f" ] || continue
+        curl --fail --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$f" \
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/petitboot-initrd/${ver}/$(basename "$f")" \
+          && echo "Uploaded to package registry: petitboot-initrd/${ver}/$(basename "$f")"
+      done
+  artifacts:
+    when: on_success
+    paths:
+      - result_riscv64_*/initrd-pb-*
+      - result_riscv64_*/RELEASE_NOTES_*.md
+    expire_in: 1 year

@@ -125,7 +125,10 @@
 # (ramdisk). However, in bootloader contexts (e.g. u-boot) the two (initramfs
 # and initrd) are often collectively referred to as "initrd" (lame excuse).
 
-# set -e # If this is the behavior you prefer.
+# set -e # Not used. Instead, the build steps below are checked explicitly
+#         with check_rc (Functions section), so that a failed configure/make
+#         aborts the build with a clear error. (set -e would also abort on
+#         benign non-zero exits, e.g. the cleanup 'read' prompts at EOF in CI.)
 
 # --------------------------------- Parameters -------------------------------
 
@@ -255,11 +258,11 @@ this_script_dir=$(dirname "$(readlink -f "$0")")
 this_script=$(basename $0)
 
 no_comp_cores=$(nproc)
-if [[ $no_comp_cores -gt 1 ]]; then
+if [[ $no_comp_cores -gt 2 ]]; then
     # We leave one core for other work (typically no_comp_cores = 4 or more).
     no_comp_cores=$(($no_comp_cores -1))
-else
-    no_comp_cores=1
+    # (On a 1- or 2-core machine, e.g. a small CI runner VM, all cores are
+    # used; leaving one idle would waste half the machine.)
 fi
 
 # ---------------------------------- Here docs -------------------------------
@@ -776,6 +779,17 @@ EOF
 
 # --------------------------------- Functions -------------------------------
 
+check_rc () {
+    # Usage: check_rc <rc> <description>
+    # Exits the script if <rc> is non-zero. (This script does not use
+    # 'set -e', so build steps must be checked explicitly; a failed
+    # configure/make must not be allowed to slip through unnoticed.)
+    if [[ $1 -ne 0 ]]; then
+        echo -e ${e_msg}" $2 failed (exit code $1), exiting."
+        exit 1
+    fi
+}
+
 run_time () {
 local epoch_secs_now=$(date +"%s")
 case "$#" in
@@ -1023,7 +1037,10 @@ cd ${temp_dir}/kexectools/kexec-tools-${kexectools_ver}
 autoupdate
 ./bootstrap
 ./configure --prefix=/usr
+check_rc $? "kexec-tools configure"
 make -j $no_comp_cores
+check_rc $? "kexec-tools make"
+[[ -f ./build/sbin/kexec ]] || { echo -e ${e_msg}" kexec binary not found after build, exiting."; exit 1; }
 tar -czf ${temp_dir}/initramfs/usr/share/kexectools/build.tgz config.log configure.ac Makefile
 echo -e ${i_msg}" Installing kexec binary to initramfs tree ..."
 strip ./build/sbin/kexec -o ${temp_dir}/initramfs/sbin/kexec_bin
@@ -1062,6 +1079,8 @@ sed -i 's/CONFIG_FEATURE_GREP_CONTEXT=y/\# CONFIG_FEATURE_GREP_CONTEXT is not se
 
 # make menuconfig
 LDFLAGS=--static make -j $no_comp_cores
+check_rc $? "busybox make"
+[[ -f ./busybox ]] || { echo -e ${e_msg}" busybox binary not found after build, exiting."; exit 1; }
 cp .config dot_config
 tar -czf ${temp_dir}/initramfs/usr/share/busybox/build.tgz dot_config Makefile
 echo -e -n ${i_msg}" Installing Busybox binary to initramfs tree ..."
@@ -1087,7 +1106,10 @@ echo -e ${i_msg}" Building iproute2 (ip command) ..."
 tar -xf ${temp_dir}/downloads/${ipr2_tarball_local_name} -C ${temp_dir}/iproute2
 cd ${temp_dir}/iproute2/iproute2-${iproute2_ver}
 ./configure --prefix=/usr
+check_rc $? "iproute2 configure"
 make -j $no_comp_cores
+check_rc $? "iproute2 make"
+[[ -f ./ip/ip ]] || { echo -e ${e_msg}" ip binary not found after build, exiting."; exit 1; }
 tar -czf ${temp_dir}/initramfs/usr/share/iproute2/build.tgz config.mk Makefile
 echo -e -n ${i_msg}" Installing iproute2 (ip) binary to initramfs tree ..."
 strip ./ip/ip -o ${temp_dir}/initramfs/bin/ip
@@ -1101,7 +1123,10 @@ if [[ $no_e2fsprogs != true ]]; then
     mkdir build
     cd ./build
     ../configure --prefix=/usr
+    check_rc $? "e2fsprogs configure"
     make -j $no_comp_cores
+    check_rc $? "e2fsprogs make"
+    [[ -f ./misc/mke2fs ]] || { echo -e ${e_msg}" mke2fs binary not found after build, exiting."; exit 1; }
     tar -czf ${temp_dir}/initramfs/usr/share/e2fsprogs/build.tgz config.log Makefile
     echo -e -n ${i_msg}" Installing e2fsprogs binaries to initramfs tree ..."
     strip ./misc/badblocks -o ${temp_dir}/initramfs/sbin/badblocks
@@ -1169,7 +1194,10 @@ else
     ./configure --prefix=/usr --enable-busybox --with-ncurses --without-twin-x11 \
       --without-twin-fbdev --with-signed-boot --enable-platform-arm64
 fi
+check_rc $? "petitboot configure"
 make -j $no_comp_cores
+check_rc $? "petitboot make"
+[[ -f ./ui/ncurses/petitboot-nc ]] || { echo -e ${e_msg}" petitboot-nc binary not found after build, exiting."; exit 1; }
 tar -czf ${temp_dir}/initramfs/usr/share/petitboot/build.tgz config.log Makefile
 echo -e -n ${i_msg}" Installing Petitboot executable files to initramfs tree ..."
 strip ./utils/pb-config -o ${temp_dir}/initramfs/usr/sbin/pb-config
@@ -1200,7 +1228,10 @@ cd ${temp_dir}/eudev/eudev-${eudev_ver}
 mkdir build
 cd ./build
 ../configure --prefix=/usr --enable-blkid --disable-kmod
+check_rc $? "eudev configure"
 make -j $no_comp_cores
+check_rc $? "eudev make"
+[[ -f ./src/udev/udevd ]] || { echo -e ${e_msg}" udevd binary not found after build, exiting."; exit 1; }
 tar -czf ${temp_dir}/initramfs/usr/share/eudev/build.tgz config.log Makefile
 echo -e ${i_msg}" Installing eudev binaries and udev rules to initramfs tree ..."
 strip ./src/udev/udevadm -o ${temp_dir}/initramfs/usr/bin/udevadm
