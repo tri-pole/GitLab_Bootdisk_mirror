@@ -39,7 +39,7 @@ build-petitboot-initramfs-aarch64:
     - ./petitboot_mkinitrd_aarch64.bash </dev/null
     # (Invoked with 'bash' rather than './' so it works regardless of the
     # executable bit, e.g. if the file was added via the GitLab Web UI.)
-    - bash petitboot_gen_relnotes.bash "$(ls -d result_aarch64_*/ | head -1)"
+    - bash petitboot_gen_relnotes.bash "$(ls -d result_aarch64_*/ | sort -r | head -1)"
     - |
       # --- Upload build outputs to the generic package registry ---------------
       # The CI job token has upload access to this project's registry; the
@@ -134,7 +134,7 @@ build-petitboot-initramfs-riscv64:
       libgd-tools libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev \
       libssl-dev libtool libudev-dev pkg-config sudo tree wget zstd file gpg
       ./petitboot_mkinitrd_riscv64.bash </dev/null
-      bash petitboot_gen_relnotes.bash "$(ls -d result_riscv64_*/ | head -1)"
+      bash petitboot_gen_relnotes.bash "$(ls -d result_riscv64_*/ | sort -r | head -1)"
       '
     - docker rm -f bfmkeep
     - |

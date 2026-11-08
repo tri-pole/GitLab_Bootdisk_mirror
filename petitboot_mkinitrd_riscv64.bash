@@ -220,6 +220,14 @@ pb_menu_ncurses_struct_patch_fname=pb_menu_ncurses_struct.patch
 pb_fix_ncurses_leak_patch_fname=pb_fix_ncurses_leak.patch
 pb_fix_ncurses_items_patch_fname=pb_fix_ncurses_items.patch
 pb_fix_ncurses_comment_patch_fname=pb_fix_ncurses_comment.patch
+pb_patch_list=(${pb_1v13_add_grubcfg_path_patch_fname}
+               ${pb_1v13_ui_and_bootcfg_patch_fname}
+               ${pb_add_riscv64_functionality_patch_fname}
+               ${pb_scsi_rescan_patch_fname}
+               ${pb_menu_ncurses_struct_patch_fname}
+               ${pb_fix_ncurses_leak_patch_fname}
+               ${pb_fix_ncurses_items_patch_fname}
+               ${pb_fix_ncurses_comment_patch_fname})
 
 eudev_ver=3.2.14
 eudev_url_base=https://github.com/eudev-project/eudev/releases/download/v${eudev_ver}
@@ -833,6 +841,11 @@ echo $result
 }
 
 do_download() {
+    # Usage: do_download <name> <url> <local_path>
+    # Returns 0 on success, 1 on failure (does not exit; the caller decides
+    # the message context). Verifies that the resulting file is a readable
+    # tarball (guards against truncated files left by an interrupted earlier
+    # run); on a bad file it re-downloads once before giving up.
     local bundle_name=$1
     local bundle_pkg_url=$2
     local bundle_pkg_loc=$3
@@ -841,16 +854,30 @@ do_download() {
         echo "         $bundle_pkg_url"
         echo "         to local directory/name"
         echo "         $bundle_pkg_loc"
-        wget "$bundle_pkg_url" -O "$bundle_pkg_loc"
-        if [[ $? == 0 ]]; then
+        if wget "$bundle_pkg_url" -O "$bundle_pkg_loc"; then
             echo -e ${ok_msg}" Done. $bundle_name source tarball successfully downloaded."
         else
             echo -e ${e_msg}" Failed to download $bundle_name source, exiting."
-            exit 1
+            return 1
         fi
     else
         echo -e ${ok_msg}" Skipping download of ${bundle_name}; file already exists."
     fi
+    if ! tar -tf "$bundle_pkg_loc" >/dev/null 2>&1; then
+        echo -e ${w_msg}" $bundle_name tarball at $bundle_pkg_loc is not a"
+        echo "         readable tarball; deleting and re-downloading once."
+        rm -f "$bundle_pkg_loc"
+        if ! wget "$bundle_pkg_url" -O "$bundle_pkg_loc"; then
+            echo -e ${e_msg}" Failed to re-download $bundle_name source, exiting."
+            return 1
+        fi
+        if ! tar -tf "$bundle_pkg_loc" >/dev/null 2>&1; then
+            echo -e ${e_msg}" Re-downloaded $bundle_name tarball is still"
+            echo "         not readable, exiting."
+            return 1
+        fi
+    fi
+    return 0
 }
 
 # ------------------------------- Preliminaries -----------------------------
@@ -888,6 +915,11 @@ if [[ -d "$result_dir" ]]; then
 fi
 mkdir -p ${result_dir}
 temp_dir=${PWD}/temp_files
+if [[ -e "$temp_dir" ]]; then
+    echo -e ${e_msg}" The temp dir $temp_dir already exists (stale state from"
+    echo "         a previous run?), exiting. Delete it and re-run."
+    exit 1
+fi
 mkdir -p ${temp_dir}
 mkdir ${temp_dir}/downloads
 mkdir ${temp_dir}/kexectools
@@ -1049,7 +1081,9 @@ wget "$extract_vmlinux_url" -O ${temp_dir}/downloads/extract-vmlinux
 if [[ $? == 0 ]]; then
     echo -e ${ok_msg}" Done. The script 'extract-vmlinux' successfully downloaded."
 else
-    echo -e ${w_msg}" Failed to download 'extract-vmlinux', kernel decompr. will not work."
+    echo -e ${e_msg}" Failed to download 'extract-vmlinux'; kernel"
+    echo "         decompression in the initramfs would not work, exiting."
+    exit 1
 fi
 
 echo -e ${i_msg}" Downloading magic file definitions for kernel and initramfs ..."
@@ -1071,20 +1105,18 @@ fi
 
 echo -e ${i_msg}" Building kexec-tools ..."
 cd  ${temp_dir}/${kexectools_loc_build_dir}
-echo -e ${i_msg}" Applying kexec-tools patches ..."
-kt_patches_applied_ok=true
-
-patch -N -p1 <\
-    ${temp_dir}/${bootdisk_dir}/${kt_patch_dir}/${kt_fix_initrd_in_mem_pos_patch_name}
-if [[ $? != 0 ]]; then
-    kt_patches_applied_ok=false
+echo -e ${i_msg}" Applying kexec-tools patches (a failed patch is fatal; the"
+echo "         resulting initramfs would be suspect and must not be used) ..."
+if ! patch -N -p1 <\
+    ${temp_dir}/${bootdisk_dir}/${kt_patch_dir}/${kt_fix_initrd_in_mem_pos_patch_name}; then
+    echo -e ${e_msg}" kexec-tools patch ${kt_fix_initrd_in_mem_pos_patch_name}"
+    echo "         failed to apply, exiting."
+    exit 1
 fi
-
-if [[ $kt_patches_applied_ok == true ]]; then
-    echo -e ${ok_msg}" All kexec-tools patches applied successfully."
-else
-    echo -e ${w_msg}" Not all kexec-tools patches applied successfully, check messages."
-fi
+echo -e ${ok_msg}" All kexec-tools patches applied successfully."
+# NB: 'autoupdate' may not exist in the kexec-tools (fork) source; if it
+# fails silently (e.g. rc 127) the build relies on './bootstrap' (autoconf)
+# to generate ./configure. Left unchecked on purpose (see check below).
 autoupdate
 ./bootstrap
 check_rc $? "kexec-tools bootstrap"
@@ -1128,6 +1160,10 @@ sed -i 's/CONFIG_EGREP=y/\# CONFIG_EGREP is not set/g' .config
 sed -i 's/CONFIG_FGREP=y/\# CONFIG_FGREP is not set/g' .config
 sed -i 's/CONFIG_PGREP=y/\# CONFIG_PGREP is not set/g' .config
 sed -i 's/CONFIG_FEATURE_GREP_CONTEXT=y/\# CONFIG_FEATURE_GREP_CONTEXT is not set/g' .config
+
+# Verify that the .config exists and is non-empty (make defconfig or one of
+# the seds above may have failed silently).
+[[ -s .config ]] || { echo -e ${e_msg}" Busybox .config missing/empty, exiting."; exit 1; }
 
 # make menuconfig
 LDFLAGS=--static make -j $no_comp_cores
@@ -1195,53 +1231,16 @@ echo -e ${i_msg}" Building Petitboot ..."
 tar -xf ${temp_dir}/downloads/${pb_tarball_local_name} -C ${temp_dir}/petitboot
 cd ${temp_dir}/petitboot/petitboot-v${petitboot_ver}
 
-echo -e ${i_msg}" Applying Petitboot patches ..."
-pb_patches_applied_ok=true
-patch -N -p1 --ignore-whitespace <\
-  ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_1v13_add_grubcfg_path_patch_fname}
-if [[ $? != 0 ]]; then
-    pb_patches_applied_ok=false
-fi
-patch -N -p1 --ignore-whitespace <\
-  ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_1v13_ui_and_bootcfg_patch_fname}
-if [[ $? != 0 ]]; then
-    pb_patches_applied_ok=false
-fi
-patch -N -p1 --ignore-whitespace <\
-  ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_add_riscv64_functionality_patch_fname}
-if [[ $? != 0 ]]; then
-    pb_patches_applied_ok=false
-fi
-patch -N -p1 --ignore-whitespace <\
-  ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_scsi_rescan_patch_fname}
-if [[ $? != 0 ]]; then
-    pb_patches_applied_ok=false
-fi
-patch -N -p1 --ignore-whitespace <\
-  ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_menu_ncurses_struct_patch_fname}
-if [[ $? != 0 ]]; then
-    pb_patches_applied_ok=false
-fi
-patch -N -p1 --ignore-whitespace <\
-  ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_fix_ncurses_leak_patch_fname}
-if [[ $? != 0 ]]; then
-    pb_patches_applied_ok=false
-fi
-patch -N -p1 --ignore-whitespace <\
-  ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_fix_ncurses_items_patch_fname}
-if [[ $? != 0 ]]; then
-    pb_patches_applied_ok=false
-fi
-patch -N -p1 --ignore-whitespace <\
-  ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_fix_ncurses_comment_patch_fname}
-if [[ $? != 0 ]]; then
-    pb_patches_applied_ok=false
-fi
-if [[ $pb_patches_applied_ok == true ]]; then
-    echo -e ${ok_msg}" All Petitboot patches applied successfully."
-else
-    echo -e ${w_msg}" Not all Petitboot patches applied successfully, check messages."
-fi
+echo -e ${i_msg}" Applying Petitboot patches (a failed patch is fatal; the"
+echo "         resulting initramfs would be suspect and must not be used) ..."
+for pb_patch in ${pb_patch_list[@]}; do
+    if ! patch -N -p1 --ignore-whitespace <\
+      ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_patch}; then
+        echo -e ${e_msg}" Petitboot patch ${pb_patch} failed to apply, exiting."
+        exit 1
+    fi
+done
+echo -e ${ok_msg}" All Petitboot patches applied successfully."
 
 if [[ $use_build_ver_tag == true ]]; then
     ./configure PACKAGE_VERSION="${petitboot_ver} [${build_ver_tag}]" \
@@ -1306,10 +1305,11 @@ echo -e ${ok_msg}" Finished building and installing eudev."
 
 cd ${temp_dir}/downloads
 echo -e ${i_msg}" Patching the script 'extract-vmlinux' ..."
-patch -N -p1 --ignore-whitespace <\
-        ${temp_dir}/${bootdisk_dir}/${misc_patch_dir}/extract-vmlinux.patch
-if [[ $? != 0 ]]; then
-    echo -e ${w_msg}"\n The patch on 'extract-vmlinux' was not successfully applied."
+if ! patch -N -p1 --ignore-whitespace <\
+        ${temp_dir}/${bootdisk_dir}/${misc_patch_dir}/extract-vmlinux.patch; then
+    echo -e ${e_msg}" The patch on 'extract-vmlinux' was not successfully"
+    echo "         applied, exiting."
+    exit 1
 else
     echo " Done."
 fi
@@ -1397,6 +1397,27 @@ echo "Enter your password to change ownership (root) of files in initramfs tree:
 # The sudo grace period is often several mins so you only enter the p/w once.
 sudo chown -R root:root ${temp_dir}/initramfs
 sudo find . | cpio -H newc -o | gzip -c > ../${initrd_pb_name}
+pack_rc=(${PIPESTATUS[@]})
+if [[ ${pack_rc[0]} -ne 0 || ${pack_rc[1]} -ne 0 || ${pack_rc[2]} -ne 0 ]]; then
+    echo -e ${e_msg}" Packing the initramfs failed (find|cpio|gzip rc:"
+    echo "         ${pack_rc[*]}), exiting."
+    exit 1
+fi
+initrd_full=${temp_dir}/${initrd_pb_name}
+# Verify the packed initramfs. Note: a failed find/cpio can still leave a
+# *valid* gzip of an empty/partial cpio stream, so gzip -t alone is not
+# enough; the archive must also contain the expected entries.
+[[ -s $initrd_full ]] || { echo -e ${e_msg}" Packed initramfs ${initrd_pb_name} is missing or empty, exiting."; exit 1; }
+gzip -t "$initrd_full" || { echo -e ${e_msg}" Packed initramfs ${initrd_pb_name} failed gzip integrity check, exiting."; exit 1; }
+# (cpio -t lists entries without a leading './', e.g. 'init'.)
+initrd_cpio_list=$(gzip -dc "$initrd_full" | cpio -t 2>/dev/null)
+initrd_entries=$(grep -c . <<< "$initrd_cpio_list")
+if [[ $initrd_entries -lt 30 ]] || ! grep -qE '^\.?/?init$' <<< "$initrd_cpio_list"; then
+    echo -e ${e_msg}" Packed initramfs ${initrd_pb_name} looks incomplete"
+    echo "            ($initrd_entries entries; 'init' entry: $(grep -qE '^\.?/?init$' <<< "$initrd_cpio_list" && echo present || echo MISSING)), exiting."
+    exit 1
+fi
+echo -e ${ok_msg}" Packed initramfs verified ($initrd_entries entries, 'init' present)."
 sudo chown ${my_username}:${my_username} ../${initrd_pb_name}
 mv ${temp_dir}/${initrd_pb_name} "$result_dir"
 echo " Done. Resulting initramfs: ${initrd_pb_name}"
@@ -1417,15 +1438,36 @@ else
     initramfs_tree_name=initramfs_file_tree.txt
 fi
 tree initramfs >${result_dir}/${initramfs_tree_name}
-compgen -v | while read line; do echo $line=${!line}; done \
-    | gzip -c >${result_dir}/pb_build_vars.txt.gz
+# Save the script-defined (non-exported) shell variables for build
+# forensics. Exported (environment) variables are deliberately excluded:
+# in a CI/CD environment they include tokens/secrets (e.g. CI_JOB_TOKEN,
+# GITHUB_TOKEN) which must not end up in the result dir or artifacts.
+env_var_list=$(compgen -e)
+compgen -v | while read line; do
+    # Skip the bookkeeping variable below, then skip all exported vars.
+    if [[ $line == env_var_list ]]; then continue; fi
+    if ! grep -qxF "$line" <<< "$env_var_list"; then
+        echo $line=${!line}
+    fi
+done | gzip -c >${result_dir}/pb_build_vars.txt.gz
 echo " Done."
 
 echo -e -n ${ok_msg}" Adding timestamp tag to result and temporary dirs ..."
 timestamp_iso=$(date +%y%m%dT%H%M)
-result_dir_tstamped=${result_dir}_${timestamp_iso}
+# Guard against a same-minute re-run: mv-ing a dir into an *existing* dir
+# would nest it inside, and later steps (release notes) would pick the old
+# dir. If the target name is taken, append a numeric suffix instead.
+tstamp_suffix=
+while [[ -e "${result_dir}_${timestamp_iso}${tstamp_suffix}" || -e "${temp_dir}_${timestamp_iso}${tstamp_suffix}" ]]; do
+    if [[ -z $tstamp_suffix ]]; then
+        tstamp_suffix=2
+    else
+        tstamp_suffix=$(($tstamp_suffix + 1))
+    fi
+done
+result_dir_tstamped=${result_dir}_${timestamp_iso}${tstamp_suffix}
 mv "$result_dir" "$result_dir_tstamped"
-temp_dir_tstamped=${temp_dir}_${timestamp_iso}
+temp_dir_tstamped=${temp_dir}_${timestamp_iso}${tstamp_suffix}
 mv "$temp_dir" "$temp_dir_tstamped"
 echo " Done."
 
