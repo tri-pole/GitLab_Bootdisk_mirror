@@ -31,7 +31,7 @@ build-petitboot-initramfs-aarch64:
     - apt-get update
     - >-
       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends
-      autoconf bison build-essential ca-certificates cpio curl flex gawk gettext git gperf
+      autoconf automake bison build-essential ca-certificates cpio curl flex gawk gettext git gperf
       libasprintf-dev libblkid-dev libdevmapper-dev libdw-dev libelf-dev
       libgd-tools libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev
       libssl-dev libtool libudev-dev pkg-config sudo tree u-boot-tools

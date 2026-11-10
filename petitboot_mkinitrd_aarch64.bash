@@ -23,7 +23,7 @@
 # For example, on a default installation of debian-12.8.0-arm64-netinst.iso
 # or Ubuntu Server 22.04.5 all the dependencies could be satisfied by
 # installing the following packages (along with their dependencies):
-# autoconf bison build-essential cpio flex gawk gettext git gperf gpg
+# autoconf automake bison build-essential cpio flex gawk gettext git gperf gpg
 # libasprintf-dev libblkid-dev libdevmapper-dev libdw-dev libelf-dev
 # libgd-tools libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev
 # libssl-dev libtool libudev-dev pkg-config tree u-boot-tools wget
@@ -125,10 +125,18 @@
 # (ramdisk). However, in bootloader contexts (e.g. u-boot) the two (initramfs
 # and initrd) are often collectively referred to as "initrd" (lame excuse).
 
-# set -e # Not used. Instead, the build steps below are checked explicitly
-#         with check_rc (Functions section), so that a failed configure/make
-#         aborts the build with a clear error. (set -e would also abort on
-#         benign non-zero exits, e.g. the cleanup 'read' prompts at EOF in CI.)
+# set -Eeuo pipefail is enabled below (right after the message color
+# definitions), together with an ERR trap (reports the failing line and exit
+# code) and an EXIT trap (on failure: keep the work dirs for inspection; it
+# never deletes anything). The build steps are also checked explicitly with
+# check_rc (Functions section). Benign non-zero exits (e.g. the cleanup
+# 'read' prompts on a non-tty stdin) are handled explicitly where they occur,
+# so that 'set -e' does not abort on them.
+# NOTE: 'shopt -s nullglob' is deliberately NOT used: this script's message
+# idiom 'echo -e ${msg_var}"text"' (unquoted var) relies on the closing
+# "\033[0m]" of the color tag surviving as literal text; with nullglob that
+# word becomes an unmatched glob ("[0m]" is a bracket expression) and the
+# message text would be silently dropped.
 
 # --------------------------------- Parameters -------------------------------
 
@@ -256,6 +264,30 @@ i_msg="[\033[94m Info \033[0m]"
 w_msg="[\033[93m Warning \033[0m]"
 e_msg="[\033[91m Error \033[0m]"
 ok_msg="[\033[92m OK \033[0m]"
+
+# --- Global error handling (kbuild style) -----------------------------------
+# set -e: abort on any unhandled command failure; -E: the ERR trap is
+# inherited by functions and subshells; -u: abort on unset variables;
+# pipefail: a failing command anywhere in a pipeline fails the pipeline.
+# The ERR trap reports the failing line; the EXIT trap reports on failure
+# and keeps the work dirs for inspection (it never deletes anything).
+set -Eeuo pipefail
+build_ok=false
+on_error() {
+    local rc=$?
+    echo -e ${e_msg}" Command failed at line $1 (exit code $rc)."
+    exit "$rc"
+}
+cleanup() {
+    local rc=$?
+    if [[ $build_ok == true ]]; then return 0; fi
+    echo -e ${w_msg}" Build did not complete (exit $rc). Work dirs"
+    echo "            kept for inspection: ${result_dir:-?} /"
+    echo "            ${temp_dir:-?} (if created)."
+    return 0
+}
+trap 'on_error $LINENO' ERR
+trap cleanup EXIT
 
 # ---------------------------------- Host info -------------------------------
 
@@ -788,9 +820,10 @@ EOF
 
 check_rc () {
     # Usage: check_rc <rc> <description>
-    # Exits the script if <rc> is non-zero. (This script does not use
-    # 'set -e', so build steps must be checked explicitly; a failed
-    # configure/make must not be allowed to slip through unnoticed.)
+    # Exits the script if <rc> is non-zero. (With 'set -e' active, a failing
+    # command usually trips the ERR trap - a line-numbered report - before
+    # reaching this check; the check is kept so that every build step is
+    # checked explicitly and labelled, as per the original design.)
     if [[ $1 -ne 0 ]]; then
         echo -e ${e_msg}" $2 failed (exit code $1), exiting."
         exit 1
@@ -855,6 +888,20 @@ do_download() {
     return 0
 }
 
+check_prereqs() {
+    # Abort early (with a clear message) if any required command is missing,
+    # rather than dying mid-build at the first use of it.
+    local missing=() cmd
+    for cmd in git wget tar patch strip ldd ldconfig cpio gzip tree file \
+               sudo realpath autoupdate; do
+        command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
+    done
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        echo -e ${e_msg}" Missing required commands: ${missing[*]}, exiting."
+        exit 1
+    fi
+}
+
 # ------------------------------- Preliminaries -----------------------------
 
 run_time_start=$(run_time "start")
@@ -868,6 +915,12 @@ if [[ $this_arch != aarch64 ]]; then
     echo -e ${e_msg}" -- Unsupported arch: ${this_arch}, exiting. --"
     exit 1
 fi
+
+check_prereqs
+# mkimage (u-boot-tools) is optional: without it the plain initrd is still
+# produced, just not the u-boot tagged uInitrd.
+command -v mkimage >/dev/null 2>&1 || \
+    echo -e ${w_msg}" mkimage not found; no uInitrd will be produced (u-boot-tools)."
 
 # Tag to be applied to the name of the resulting initrd (and the uInitrd).
 if [[ $use_build_ver_tag == true ]]; then
@@ -1003,8 +1056,7 @@ done
 # This is small so we always clone it.
 echo -e ${i_msg}" Cloning the bootdisk repo $bootdisk_url"
 echo            "         to the local dir ${temp_dir}/${bootdisk_dir}"
-git clone --depth=1 "$bootdisk_url" "${temp_dir}/${bootdisk_dir}"
-if [[ $? == 0 ]]; then
+if git clone --depth=1 "$bootdisk_url" "${temp_dir}/${bootdisk_dir}"; then
     echo -e ${ok_msg}" Done. bootdisk repo successfully cloned."
 else
     echo -e ${e_msg}" Failed to clone bootdisk repo, exiting."
@@ -1038,8 +1090,7 @@ eudev_pkg_loc=${temp_dir}/downloads/${eudev_tarball_local_name}
 do_download "eudev" "$eudev_pkg_url" "$eudev_pkg_loc"
 
 echo -e ${i_msg}" Downloading the script 'extract-vmlinux' from Linux src ..."
-wget "$extract_vmlinux_url" -O ${temp_dir}/downloads/extract-vmlinux
-if [[ $? == 0 ]]; then
+if wget "$extract_vmlinux_url" -O ${temp_dir}/downloads/extract-vmlinux; then
     echo -e ${ok_msg}" Done. The script 'extract-vmlinux' successfully downloaded."
 else
     echo -e ${e_msg}" Failed to download 'extract-vmlinux'; kernel"
@@ -1050,8 +1101,7 @@ fi
 echo -e ${i_msg}" Downloading magic file definitions for kernel and initramfs ..."
 have_all_magic=true
 for file_magic in ${file_magic_arr[@]} ; do
-    wget ${file_magic_url_base}/${file_magic} -O ${temp_dir}/downloads/${file_magic}
-    if [[ $? != 0 ]]; then
+    if ! wget ${file_magic_url_base}/${file_magic} -O ${temp_dir}/downloads/${file_magic}; then
         echo -e ${w_msg}" Failed to download magic file ${file_magic}."
         have_all_magic=false
     fi
@@ -1067,11 +1117,15 @@ fi
 echo -e ${i_msg}" Building kexec-tools ..."
 tar -xf ${temp_dir}/downloads/${kxt_tarball_local_name} -C ${temp_dir}/kexectools
 cd ${temp_dir}/kexectools/kexec-tools-${kexectools_ver}
-# NB: 'autoupdate' does not exist in the kexec-tools release tarball (nor as
-# a system command); it has always failed silently here (rc 127) and the
-# build relies on './bootstrap' (autoconf) to generate ./configure. Left
-# unchecked on purpose (see ./bootstrap check below).
-autoupdate
+# 'autoupdate' (shipped with the autoconf package) rewrites obsolete
+# autoconf macros in configure.ac in place: the riscv64 fork's
+# configure.ac uses some (e.g. AC_HELP_STRING); the aarch64 tarball's
+# is already clean, so this is a no-op there. Run it explicitly so
+# that ./bootstrap (autoconf, which generates ./configure; the
+# committed Makefile.in files mean no automake is needed) runs
+# without obsolescence warnings.
+autoupdate configure.ac
+check_rc $? "kexec-tools autoupdate"
 ./bootstrap
 check_rc $? "kexec-tools bootstrap"
 ./configure --prefix=/usr
@@ -1099,6 +1153,7 @@ echo -e ${i_msg}" Building Busybox ..."
 tar -xjf ${temp_dir}/downloads/${bb_tarball_local_name} -C ${temp_dir}/busybox
 cd ${temp_dir}/busybox/busybox-${busybox_ver}
 make defconfig
+check_rc $? "busybox make defconfig"
 
 # We will compile a separate iproute2.
 sed -i 's/CONFIG_IPROUTE=y/\# CONFIG_IPROUTE is not set/g' .config
@@ -1279,14 +1334,13 @@ if [[ $have_all_magic == true ]]; then
     for idx in "${!file_magic_arr[@]}" ; do
         cat ${temp_dir}/downloads/"${file_magic_arr[idx]}" | sed -n "${file_magic_cut[idx]}" >>magic
     done
-    file -m magic -C
-    if [[ ! -f "magic.mgc" ]]; then
-        echo -e ${w_msg}" The 'file' command failed to compile the magic file."
-        echo "            Kernel decompression will not work."
-    else
+    if file -m magic -C && [[ -f "magic.mgc" ]]; then
         chmod 0755 magic.mgc
         mv magic magic.txt
         echo " Done."
+    else
+        echo -e ${w_msg}" The 'file' command failed to compile the magic file."
+        echo "            Kernel decompression will not work."
     fi
 fi
 
@@ -1299,7 +1353,7 @@ for exe_name in ${dyn_linked_exe_list[@]}; do
     exe_name_full=${pre_path}${exe_name}
     # The virtual (kernel) file linux-vdso.so.1 and the interpreter
     # ld-linux-aarch64.so.1 are omitted from the list.
-    ldd_out=$(ldd "$exe_name_full" 2>&1)
+    ldd_out=$(ldd "$exe_name_full" 2>&1) || true
     libs_this_exe=$(grep -vE "linux-vdso.so.1|ld-linux-aarch64.so.1" <<< "$ldd_out" | cut -d "(" -f1 | cut -d ">" -f2 | tr -d ' ')
     if grep -q "not found" <<< "$ldd_out"; then
         echo -e ${e_msg}" Not all libraries for ${exe_name} found, exiting. \nRequired:\n ${libs_this_exe}"
@@ -1347,8 +1401,11 @@ tot_run_time=$(run_time "stop" $run_time_start)
 echo -e ${i_msg}" Preparing to pack up the initramfs tree into a gzipped cpio archive ..."
 cd ${temp_dir}/initramfs
 my_username=$(whoami)
-echo "Enter your password to change ownership (root) of files in initramfs tree:"
 # The sudo grace period is often several mins so you only enter the p/w once.
+# (No prompt when already root, e.g. in a CI container.)
+if [[ $(id -u) -ne 0 ]]; then
+    echo "Enter your password to change ownership (root) of files in initramfs tree:"
+fi
 sudo chown -R root:root ${temp_dir}/initramfs
 sudo find . | cpio -H newc -o | gzip -c > ../${initrd_pb_name}
 pack_rc=(${PIPESTATUS[@]})
@@ -1365,7 +1422,7 @@ initrd_full=${temp_dir}/${initrd_pb_name}
 gzip -t "$initrd_full" || { echo -e ${e_msg}" Packed initramfs ${initrd_pb_name} failed gzip integrity check, exiting."; exit 1; }
 # (cpio -t lists entries without a leading './', e.g. 'init'.)
 initrd_cpio_list=$(gzip -dc "$initrd_full" | cpio -t 2>/dev/null)
-initrd_entries=$(grep -c . <<< "$initrd_cpio_list")
+initrd_entries=$(grep -c . <<< "$initrd_cpio_list") || true
 if [[ $initrd_entries -lt 30 ]] || ! grep -qE '^\.?/?init$' <<< "$initrd_cpio_list"; then
     echo -e ${e_msg}" Packed initramfs ${initrd_pb_name} looks incomplete"
     echo "            ($initrd_entries entries; 'init' entry: $(grep -qE '^\.?/?init$' <<< "$initrd_cpio_list" && echo present || echo MISSING)), exiting."
@@ -1412,7 +1469,11 @@ compgen -v | while read line; do
     # Skip the bookkeeping variable below, then skip all exported vars.
     if [[ $line == env_var_list ]]; then continue; fi
     if ! grep -qxF "$line" <<< "$env_var_list"; then
-        echo $line=${!line}
+        # (${!line-} rather than ${!line}: under 'set -u' an indirect
+        # expansion of bash's automatic empty arrays, e.g. BASH_ALIASES,
+        # is an unbound-variable error; the '-' guard yields the same
+        # empty value as before.)
+        echo $line=${!line-}
     fi
 done | gzip -c >${result_dir}/pb_build_vars.txt.gz
 echo " Done."
@@ -1438,31 +1499,49 @@ echo " Done."
 
 echo -e ${i_msg}" The finished initramfs and other output files can be found in"
 echo -e "         "${result_dir_tstamped}
+build_ok=true
 
 # ---------------------------------- Cleanup ---------------------------------
 
 echo -e ${i_msg}" Cleanup of build area:"
 
-echo -n "Do you want to delete the build directories?    [n/Y] >"
-read do_del_pkgblddirs
-if [[ "$do_del_pkgblddirs" != "n" ]]; then
-    rm -rf ${temp_dir_tstamped}/{bootdisk,kexectools,busybox,iproute2,e2fsprogs,petitboot,eudev}
+if [[ -t 0 ]]; then
+    echo -n "Do you want to delete the build directories?    [n/Y] >"
+    read do_del_pkgblddirs || do_del_pkgblddirs=""
+    if [[ "$do_del_pkgblddirs" != "n" ]]; then
+        rm -rf ${temp_dir_tstamped}/{bootdisk,kexectools,busybox,iproute2,e2fsprogs,petitboot,eudev}
+    fi
+else
+    echo "Non-interactive run: keeping the build directories."
 fi
 
-echo -n "Do you want to delete the download directory?   [n/Y] >"
-read do_del_downloads
-if [[ "$do_del_downloads" != "n" ]]; then
-    rm -rf ${temp_dir_tstamped}/downloads
+if [[ -t 0 ]]; then
+    echo -n "Do you want to delete the download directory?   [n/Y] >"
+    read do_del_downloads || do_del_downloads=""
+    if [[ "$do_del_downloads" != "n" ]]; then
+        rm -rf ${temp_dir_tstamped}/downloads
+    fi
+else
+    echo "Non-interactive run: keeping the download directory."
 fi
 
-echo -n "Do you want to delete the initramfs build tree? [n/Y] >"
-read do_del_initramfsdir
-if [[ "$do_del_initramfsdir" != "n" ]]; then
-    echo "Enter your password to delete the initramfs dir (owned by root):"
-    sudo rm -rf ${temp_dir_tstamped}/initramfs
+if [[ -t 0 ]]; then
+    echo -n "Do you want to delete the initramfs build tree? [n/Y] >"
+    read do_del_initramfsdir || do_del_initramfsdir=""
+    if [[ "$do_del_initramfsdir" != "n" ]]; then
+        if [[ $(id -u) -ne 0 ]]; then
+            echo "Enter your password to delete the initramfs dir (owned by root):"
+        fi
+        sudo rm -rf ${temp_dir_tstamped}/initramfs
+    fi
+else
+    echo "Non-interactive run: keeping the initramfs build tree."
 fi
 
-test_empty_temp=$(ls -A ${temp_dir_tstamped})
+test_empty_temp=""
+if [[ -d ${temp_dir_tstamped} ]]; then
+    test_empty_temp=$(ls -A ${temp_dir_tstamped})
+fi
 if [[ -z "$test_empty_temp" ]]; then
     echo -e "Removing the empty directory for temporary files (${temp_dir_tstamped}) ..."
     rmdir "$temp_dir_tstamped"
