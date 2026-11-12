@@ -38,7 +38,7 @@ cd "$this_dir" || exit 1
 
 if [[ "$#" -ne 1 || ("$1" != "aarch64" && "$1" != "riscv64") ]]; then
    echo -e ${e_msg}" Usage: $0 <arch>"
-   echo -e ${e_msg}"   where <arch> is one of aarch64 or riscv6"
+   echo -e ${e_msg}"   where <arch> is one of aarch64 or riscv64"
    exit 1
 else
    build_arch=$1
@@ -74,7 +74,7 @@ else
 fi
 
 # --- Run the build -------------------------------------------------------------
-log_file=build_${build_arch}_$(date '+%y%m%dT%H%MZ').log
+log_file=build_${build_arch}_$(date -u '+%y%m%dT%H%M')Z.log
 echo -e ${i_msg}" Running the build; this takes a while. Log: $log_file"
 case $build_arch in
     "aarch64")

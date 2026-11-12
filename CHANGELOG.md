@@ -1,13 +1,27 @@
 # Changelog
 
-This is the changelog for the codes in the `Bootdisk` repository.
+This is the changelog for the main codes in the `Bootdisk` repository.
 It covers the scripts `petitboot_mkinitrd_{aarch,riscv}64.bash` for
-building the initramfs for `Petitboot`.
-It also covers some of the tools/codes for building Linux images.
+building the initramfs for `Petitboot` as well as the scripts
+`{arm,riscv}64_kbuild.bash` for building Linux kernels and the scripts
+`debuntu_dbstrap_{aarch,riscv}64.bash` building Linux images.
+(Some small helper scripts are not documented here; see inside the scripts.)
+The author is Tripole unless otherwise noted.
 
-For changelogs of older material, see the `attic` area of the repo.
+# petitboot_mkinitrd_aarch64.bash
 
-# petitboot_mkinitrd_aarch64.bash (was petitboot_mkinitrd.bash)
+## [v0.21] 26-11-12
+
+### Changed (Qwen3.8, some assistance by Tripole)
+ - Reference rewrite to improve code quality:
+ - Eliminated silent failures (missing files, failed downloads/patches, etc.).
+ - Per-step exit code checks.
+ - Global safety net w/ `set -Eeuo pipefail` + `shopt -s nullglob`
+   + ERR trap (line number) + EXIT trap.
+ - Clearer time stamping of results/dirs., no dir. collision.
+ - Fixed autoupdate call bug (kexec-tools).
+ - ARCH normalized parity with the riscv64 version (i.e. only necessary
+   ARCH differences).
 
 ## [v0.19] 26-10-14
 
@@ -34,7 +48,8 @@ For changelogs of older material, see the `attic` area of the repo.
 ## [v0.14] 24-12-18
 
 ### Removed
- - Support for RISCV64 (moved to separate file).
+ - Support for RISCV64
+   (moved to separate file; petitboot_mkinitrd_riscv64.bash).
 
 ### Changed
  - Renamed
@@ -56,6 +71,19 @@ For changelogs of older material, see the `attic` area of the repo.
  - First commit.
 
 # petitboot_mkinitrd_riscv64.bash
+
+## [v0.17] 26-11-12
+
+### Changed (Qwen3.8, some assistance by Tripole)
+ - Reference rewrite to improve code quality:
+ - Eliminated silent failures (missing files, failed downloads/patches, etc.).
+ - Per-step exit code checks.
+ - Global safety net w/ `set -Eeuo pipefail` + `shopt -s nullglob`
+   + ERR trap (line number) + EXIT trap.
+ - Clearer time stamping of results/dirs., no dir. collision.
+ - Fixed autoupdate call bug (kexec-tools).
+ - ARCH normalized parity with the aarch64 version (i.e. only necessary
+   ARCH differences).
 
 ## [v0.15] 26-10-12
 
@@ -137,7 +165,7 @@ For changelogs of older material, see the `attic` area of the repo.
 ### Added
  - First version.
 
-# debuntu_dbstrap_aarch64.bash (reinstated):
+# debuntu_dbstrap_aarch64.bash
 
 ## [v0.18] 26-10-31
 

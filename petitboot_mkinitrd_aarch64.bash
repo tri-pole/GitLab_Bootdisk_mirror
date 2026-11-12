@@ -1,10 +1,13 @@
 #!/bin/bash
 
 # petitboot_mkinitrd_aarch64.bash
-# 24-12-18: v0.14, Tripole
-# 26-01-11: v0.16, Tripole
-# 26-02-10: v0.17, Tripole
+#
+# 26-11-12: v0.21, Qwen3.8
 # 26-10-14: v0.19, Tripole and Qwen3.8
+# 26-02-10: v0.17, Tripole
+# ...
+# 23-10-08; v0.1, Tripole
+# for complete log, see CHANGELOG.md
 
 # Script to build and pack Petitboot for ARM64 in an initramfs (cpio+gzip).
 
@@ -26,11 +29,11 @@
 # autoconf automake bison build-essential cpio flex gawk gettext git gperf gpg
 # libasprintf-dev libblkid-dev libdevmapper-dev libdw-dev libelf-dev
 # libgd-tools libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev
-# libssl-dev libtool libudev-dev pkg-config tree u-boot-tools wget
+# libssl-dev libtool libudev-dev pkg-config tree u-boot-tools wget zstd
 # The build host must also have installed some commands that are copied (along
 # with some conf files), namely file, grep, unzstd (see copy_*_list below).
 
-# Patches: Some patches are appled to Petitboot to adjust functionality and to
+# Patches: Some patches are applied to Petitboot to adjust functionality and to
 # fix some compatibility issues with recent ncurses. These patches are 
 # downloaded and applied as part of the build. The script extract-vmlinux from
 # Linux src script is downloaded and patched at build time as well.
@@ -125,25 +128,23 @@
 # (ramdisk). However, in bootloader contexts (e.g. u-boot) the two (initramfs
 # and initrd) are often collectively referred to as "initrd" (lame excuse).
 
-# set -Eeuo pipefail is enabled below (right after the message color
-# definitions), together with an ERR trap (reports the failing line and exit
-# code) and an EXIT trap (on failure: keep the work dirs for inspection; it
-# never deletes anything). The build steps are also checked explicitly with
-# check_rc (Functions section). Benign non-zero exits (e.g. the cleanup
-# 'read' prompts on a non-tty stdin) are handled explicitly where they occur,
-# so that 'set -e' does not abort on them.
-# NOTE: 'shopt -s nullglob' is deliberately NOT used: this script's message
-# idiom 'echo -e ${msg_var}"text"' (unquoted var) relies on the closing
-# "\033[0m]" of the color tag surviving as literal text; with nullglob that
-# word becomes an unmatched glob ("[0m]" is a bracket expression) and the
-# message text would be silently dropped.
+# set -Eeuo pipefail is enabled below (right after the logging helpers),
+# together with an ERR trap (reports the failing line and exit code) and an
+# EXIT trap (on failure: keep the work dirs for inspection; it never deletes
+# anything). The build steps are also checked explicitly with check_rc
+# (Functions section). Benign non-zero exits (e.g. the cleanup 'read' prompts
+# on a non-tty stdin) are handled explicitly where they occur, so that
+# 'set -e' does not abort on them.
+# NOTE: 'shopt -s nullglob' is deliberately NOT used: the only glob in the
+# script (the Petitboot hooks copy, ./utils/hooks/{01,20,90}-*) should fail
+# loudly if it matches nothing, which the default glob behavior gives us.
 
 # --------------------------------- Parameters -------------------------------
 
 # If used, this tag is inserted inside the header in the Petitboot main menu
 # where it normally says e.g. Petitboot (v1.15) so that instead it will say
 # something like Petitboot (v1.15 (mytaglinehere))
-build_date=$(date +"%y%m%d")
+build_date=$(date -u +"%y%m%d")
 build_ver_tag=3p-${build_date}
 # If the next line is set to true, the build_ver_tag is shown in the top
 # margin in the Petitboot main menu (after the Petitboot version number)
@@ -163,7 +164,7 @@ bootdisk_url=https://gitlab.com/tripole-inc/bootdisk.git
 bootdisk_dir=bootdisk # Clone into dir, relative to $temp_dir
 
 # Script to decompress the Linux kernel.
-extract_vmlinux_url=https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/plain/scripts/extract-vmlinux?h=v6.18.2
+extract_vmlinux_url="https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/plain/scripts/extract-vmlinux?h=v6.18.2"
 misc_patch_dir=misc_patches # Relative to $bootdisk_dir
 
 # Definitions for categories 'linux', 'archive' and 'compress' for 'file' cmd.
@@ -208,13 +209,13 @@ pb_menu_ncurses_struct_patch_fname=pb_menu_ncurses_struct.patch
 pb_fix_ncurses_leak_patch_fname=pb_fix_ncurses_leak.patch
 pb_fix_ncurses_items_patch_fname=pb_fix_ncurses_items.patch
 pb_fix_ncurses_comment_patch_fname=pb_fix_ncurses_comment.patch
-pb_patch_list=(${pb_1v13_add_grubcfg_path_patch_fname}
-               ${pb_1v13_ui_and_bootcfg_patch_fname}
-               ${pb_scsi_rescan_patch_fname}
-               ${pb_menu_ncurses_struct_patch_fname}
-               ${pb_fix_ncurses_leak_patch_fname}
-               ${pb_fix_ncurses_items_patch_fname}
-               ${pb_fix_ncurses_comment_patch_fname})
+pb_patch_list=("${pb_1v13_add_grubcfg_path_patch_fname}"
+               "${pb_1v13_ui_and_bootcfg_patch_fname}"
+               "${pb_scsi_rescan_patch_fname}"
+               "${pb_menu_ncurses_struct_patch_fname}"
+               "${pb_fix_ncurses_leak_patch_fname}"
+               "${pb_fix_ncurses_items_patch_fname}"
+               "${pb_fix_ncurses_comment_patch_fname}")
 
 eudev_ver=3.2.14
 eudev_url_base=https://github.com/eudev-project/eudev/releases/download/v${eudev_ver}
@@ -233,7 +234,7 @@ eudev_udev_rules_list=("50-udev-default.rules" "60-autosuspend.rules"
 # at the location /usr/sbin/pb-console). The standard location for the terminfo
 # files is typically /usr/share/terminfo but it can also be /lib/terminfo.
 terminfo_dir=/usr/share/terminfo # /usr/{lib,share}/terminfo {jammy,noble-resolute}
-pb_term_list="ansi dumb linux vt220"
+pb_term_list=("ansi" "dumb" "linux" "vt220")
 
 # Libraries used by these executables will be copied from the host.
 dyn_linked_exe_list_noe2fs=("/sbin/kexec_bin" "/usr/bin/file" "/usr/bin/grep"
@@ -248,10 +249,14 @@ dyn_linked_exe_list_e2fs=("/sbin/mke2fs" "/sbin/e2fsck" "/sbin/badblocks"
                           "/sbin/tune2fs" "/sbin/resize2fs" "/sbin/dumpe2fs"
 )
 if [[ $no_e2fsprogs == true ]]; then
-    dyn_linked_exe_list=${dyn_linked_exe_list_noe2fs[@]}
+    dyn_linked_exe_list=("${dyn_linked_exe_list_noe2fs[@]}")
+    # Suffix for the embedded build README (heredoc below); empty in the
+    # default build, where e2fsprogs IS included.
+    e2fsprogs_build_info=" (not included in this build; use Busybox applets)"
 else
-    dyn_linked_exe_list=(${dyn_linked_exe_list_noe2fs[@]}
-                         ${dyn_linked_exe_list_e2fs[@]})
+    dyn_linked_exe_list=("${dyn_linked_exe_list_noe2fs[@]}"
+                         "${dyn_linked_exe_list_e2fs[@]}")
+    e2fsprogs_build_info=""
 fi
 
 # These files are not necessary for Petitboot to start but decompression of
@@ -259,11 +264,31 @@ fi
 # (The binary for gpg can probably be omitted.)
 copy_file_list=("/usr/bin/file" "/usr/bin/grep" "/usr/bin/unzstd" "/usr/bin/gpg")
 
-# Bling? Yes, we like.
-i_msg="[\033[94m Info \033[0m]"
-w_msg="[\033[93m Warning \033[0m]"
-e_msg="[\033[91m Error \033[0m]"
-ok_msg="[\033[92m OK \033[0m]"
+# Bling? Yes, we like. (Only on a tty; logs stay clean when piped/redirected,
+# e.g. in CI or via the build wrapper.)
+if [[ -t 1 ]]; then
+    c_info=$'\033[94m'
+    c_warn=$'\033[93m'
+    c_err=$'\033[91m'
+    c_ok=$'\033[92m'
+    c_reset=$'\033[0m'
+else
+    c_info=""
+    c_warn=""
+    c_err=""
+    c_ok=""
+    c_reset=""
+fi
+
+# Logging helpers (kbuild style; see arm64_kbuild.bash). log_err goes to
+# stderr, the rest to stdout. The _n variants print no newline (the " Done."
+# line completes the message).
+log_info() { printf '[%s Info %s] %s\n' "$c_info" "$c_reset" "$*"; }
+log_warn() { printf '[%s Warning %s] %s\n' "$c_warn" "$c_reset" "$*"; }
+log_err()  { printf '[%s Error %s] %s\n' "$c_err" "$c_reset" "$*" >&2; }
+log_ok()   { printf '[%s OK %s] %s\n' "$c_ok" "$c_reset" "$*"; }
+log_info_n() { printf '[%s Info %s] %s' "$c_info" "$c_reset" "$*"; }
+log_ok_n()   { printf '[%s OK %s] %s' "$c_ok" "$c_reset" "$*"; }
 
 # --- Global error handling (kbuild style) -----------------------------------
 # set -e: abort on any unhandled command failure; -E: the ERR trap is
@@ -275,13 +300,13 @@ set -Eeuo pipefail
 build_ok=false
 on_error() {
     local rc=$?
-    echo -e ${e_msg}" Command failed at line $1 (exit code $rc)."
+    log_err " Command failed at line $1 (exit code $rc)."
     exit "$rc"
 }
 cleanup() {
     local rc=$?
     if [[ $build_ok == true ]]; then return 0; fi
-    echo -e ${w_msg}" Build did not complete (exit $rc). Work dirs"
+    log_warn " Build did not complete (exit $rc). Work dirs"
     echo "            kept for inspection: ${result_dir:-?} /"
     echo "            ${temp_dir:-?} (if created)."
     return 0
@@ -294,12 +319,12 @@ trap cleanup EXIT
 host_info=$(uname -rsm)
 os_info=$(cat /etc/os-release)
 this_script_dir=$(dirname "$(readlink -f "$0")")
-this_script=$(basename $0)
+this_script=$(basename "$0")
 
 no_comp_cores=$(nproc)
 if [[ $no_comp_cores -gt 2 ]]; then
     # We leave one core for other work (typically no_comp_cores = 4 or more).
-    no_comp_cores=$(($no_comp_cores -1))
+    no_comp_cores=$((no_comp_cores -1))
     # (On a 1- or 2-core machine, e.g. a small CI runner VM, all cores are
     # used; leaving one idle would waste half the machine.)
 fi
@@ -317,7 +342,7 @@ The following source versions have been used
 kexec-tools: $kexectools_ver
 Busybox:     $busybox_ver
 iproute2:    $iproute2_ver
-e2fsprogs:   $e2fsprogs_ver (optional)
+e2fsprogs:   $e2fsprogs_ver$e2fsprogs_build_info
 Petitboot:   $petitboot_ver
 eudev:       $eudev_ver
 
@@ -825,27 +850,30 @@ check_rc () {
     # reaching this check; the check is kept so that every build step is
     # checked explicitly and labelled, as per the original design.)
     if [[ $1 -ne 0 ]]; then
-        echo -e ${e_msg}" $2 failed (exit code $1), exiting."
+        log_err " $2 failed (exit code $1), exiting."
         exit 1
     fi
 }
 
 run_time () {
-local epoch_secs_now=$(date +"%s")
+local epoch_secs_now
+epoch_secs_now=$(date +"%s")
 case "$#" in
     "1" ) # $1 is a dummy argument.
         local result=$epoch_secs_now
     ;;
     "2" )
-        local run_time_secs=$(($epoch_secs_now -$2))
-        local result=$(date -d@$run_time_secs -u +"%H:%M:%S")
+        local run_time_secs
+        run_time_secs=$((epoch_secs_now - $2))
+        local result
+        result=$(date -d@$run_time_secs -u +"%H:%M:%S")
     ;;
     * )
         echo "Error in function run_time(), exiting."
         exit 1
     ;;
 esac
-echo $result
+echo "$result"
 }
 
 do_download() {
@@ -858,29 +886,29 @@ do_download() {
     local bundle_pkg_url=$2
     local bundle_pkg_loc=$3
     if [[ ! -f "$bundle_pkg_loc" ]]; then
-        echo -e ${i_msg}" Downloading $bundle_name tarball from"
+        log_info " Downloading $bundle_name tarball from"
         echo "         $bundle_pkg_url"
         echo "         to local directory/name"
         echo "         $bundle_pkg_loc"
         if wget "$bundle_pkg_url" -O "$bundle_pkg_loc"; then
-            echo -e ${ok_msg}" Done. $bundle_name source tarball successfully downloaded."
+            log_ok " Done. $bundle_name source tarball successfully downloaded."
         else
-            echo -e ${e_msg}" Failed to download $bundle_name source, exiting."
+            log_err " Failed to download $bundle_name source, exiting."
             return 1
         fi
     else
-        echo -e ${ok_msg}" Skipping download of ${bundle_name}; file already exists."
+        log_ok " Skipping download of ${bundle_name}; file already exists."
     fi
     if ! tar -tf "$bundle_pkg_loc" >/dev/null 2>&1; then
-        echo -e ${w_msg}" $bundle_name tarball at $bundle_pkg_loc is not a"
+        log_warn " $bundle_name tarball at $bundle_pkg_loc is not a"
         echo "         readable tarball; deleting and re-downloading once."
         rm -f "$bundle_pkg_loc"
         if ! wget "$bundle_pkg_url" -O "$bundle_pkg_loc"; then
-            echo -e ${e_msg}" Failed to re-download $bundle_name source, exiting."
+            log_err " Failed to re-download $bundle_name source, exiting."
             return 1
         fi
         if ! tar -tf "$bundle_pkg_loc" >/dev/null 2>&1; then
-            echo -e ${e_msg}" Re-downloaded $bundle_name tarball is still"
+            log_err " Re-downloaded $bundle_name tarball is still"
             echo "         not readable, exiting."
             return 1
         fi
@@ -897,7 +925,7 @@ check_prereqs() {
         command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
     done
     if [[ ${#missing[@]} -gt 0 ]]; then
-        echo -e ${e_msg}" Missing required commands: ${missing[*]}, exiting."
+        log_err " Missing required commands: ${missing[*]}, exiting."
         exit 1
     fi
 }
@@ -912,7 +940,7 @@ this_arch=$(arch)
 
 uboot_arch=arm64
 if [[ $this_arch != aarch64 ]]; then
-    echo -e ${e_msg}" -- Unsupported arch: ${this_arch}, exiting. --"
+    log_err " -- Unsupported arch: ${this_arch}, exiting. --"
     exit 1
 fi
 
@@ -920,7 +948,7 @@ check_prereqs
 # mkimage (u-boot-tools) is optional: without it the plain initrd is still
 # produced, just not the u-boot tagged uInitrd.
 command -v mkimage >/dev/null 2>&1 || \
-    echo -e ${w_msg}" mkimage not found; no uInitrd will be produced (u-boot-tools)."
+    log_warn " mkimage not found; no uInitrd will be produced (u-boot-tools)."
 
 # Tag to be applied to the name of the resulting initrd (and the uInitrd).
 if [[ $use_build_ver_tag == true ]]; then
@@ -932,88 +960,88 @@ initrd_pb_name=initrd-pb-${initrd_pb_tag}
 uInitrd_pb_name=uInitrd-pb-${initrd_pb_tag}
 
 if [[ $no_e2fsprogs != true ]]; then
-    echo -e ${i_msg}" -- Building the Petitboot initramfs for $this_arch (with e2fsprogs) --"
+    log_info " -- Building the Petitboot initramfs for $this_arch (with e2fsprogs) --"
 else
-    echo -e ${i_msg}" -- Building the Petitboot initramfs for $this_arch (without e2fsprogs) --"
+    log_info " -- Building the Petitboot initramfs for $this_arch (without e2fsprogs) --"
 fi
 
-echo -e -n ${i_msg}" Setting up initramfs directory structure ..."
+log_info_n " Setting up initramfs directory structure ..."
 result_dir=${PWD}/result_aarch64
 if [[ -d "$result_dir" ]]; then
-    echo -e ${e_msg}" The result dir $result_dir already exists, exiting."
+    log_err " The result dir $result_dir already exists, exiting."
     exit 1
 fi
-mkdir -p ${result_dir}
+mkdir -p "${result_dir}"
 temp_dir=${PWD}/temp_files
 if [[ -e "$temp_dir" ]]; then
-    echo -e ${e_msg}" The temp dir $temp_dir already exists (stale state from"
+    log_err " The temp dir $temp_dir already exists (stale state from"
     echo "         a previous run?), exiting. Delete it and re-run."
     exit 1
 fi
-mkdir -p ${temp_dir}
-mkdir ${temp_dir}/downloads
-mkdir ${temp_dir}/kexectools
-mkdir ${temp_dir}/busybox
-mkdir ${temp_dir}/iproute2
-mkdir ${temp_dir}/e2fsprogs
-mkdir ${temp_dir}/petitboot
-mkdir ${temp_dir}/eudev
-mkdir ${temp_dir}/initramfs
-mkdir ${temp_dir}/initramfs/bin
-mkdir ${temp_dir}/initramfs/etc
-mkdir ${temp_dir}/initramfs/etc/netns
-mkdir ${temp_dir}/initramfs/etc/netns/mininet
-mkdir ${temp_dir}/initramfs/newroot
-mkdir ${temp_dir}/initramfs/proc
-mkdir ${temp_dir}/initramfs/run
-mkdir ${temp_dir}/initramfs/run/udev
-mkdir ${temp_dir}/initramfs/sbin
-mkdir ${temp_dir}/initramfs/sys
-mkdir ${temp_dir}/initramfs/tmp
-mkdir ${temp_dir}/initramfs/usr
-mkdir ${temp_dir}/initramfs/usr/bin
-mkdir ${temp_dir}/initramfs/usr/lib
-mkdir ${temp_dir}/initramfs/usr/lib/${this_arch}-linux-gnu
-mkdir ${temp_dir}/initramfs/usr/lib/udev
-mkdir ${temp_dir}/initramfs/usr/lib/udev/rules.d
-mkdir ${temp_dir}/initramfs/usr/lib/terminfo
-mkdir ${temp_dir}/initramfs/usr/sbin
-mkdir ${temp_dir}/initramfs/usr/share
-mkdir ${temp_dir}/initramfs/usr/share/kexectools
-mkdir ${temp_dir}/initramfs/usr/share/busybox
-mkdir ${temp_dir}/initramfs/usr/share/iproute2
-mkdir ${temp_dir}/initramfs/usr/share/e2fsprogs
-mkdir ${temp_dir}/initramfs/usr/share/petitboot
-mkdir ${temp_dir}/initramfs/usr/share/eudev
-mkdir ${temp_dir}/initramfs/usr/share/udhcpc
-mkdir ${temp_dir}/initramfs/usr/share/misc
-mkdir ${temp_dir}/initramfs/var
-mkdir ${temp_dir}/initramfs/var/log
-mkdir ${temp_dir}/initramfs/var/log/petitboot
-mkdir ${temp_dir}/initramfs/var/run
-mkdir ${temp_dir}/initramfs/var/run/netns
-cd ${temp_dir}/initramfs
+mkdir -p "${temp_dir}"
+mkdir "${temp_dir}/downloads"
+mkdir "${temp_dir}/kexectools"
+mkdir "${temp_dir}/busybox"
+mkdir "${temp_dir}/iproute2"
+mkdir "${temp_dir}/e2fsprogs"
+mkdir "${temp_dir}/petitboot"
+mkdir "${temp_dir}/eudev"
+mkdir "${temp_dir}/initramfs"
+mkdir "${temp_dir}/initramfs/bin"
+mkdir "${temp_dir}/initramfs/etc"
+mkdir "${temp_dir}/initramfs/etc/netns"
+mkdir "${temp_dir}/initramfs/etc/netns/mininet"
+mkdir "${temp_dir}/initramfs/newroot"
+mkdir "${temp_dir}/initramfs/proc"
+mkdir "${temp_dir}/initramfs/run"
+mkdir "${temp_dir}/initramfs/run/udev"
+mkdir "${temp_dir}/initramfs/sbin"
+mkdir "${temp_dir}/initramfs/sys"
+mkdir "${temp_dir}/initramfs/tmp"
+mkdir "${temp_dir}/initramfs/usr"
+mkdir "${temp_dir}/initramfs/usr/bin"
+mkdir "${temp_dir}/initramfs/usr/lib"
+mkdir "${temp_dir}/initramfs/usr/lib/${this_arch}-linux-gnu"
+mkdir "${temp_dir}/initramfs/usr/lib/udev"
+mkdir "${temp_dir}/initramfs/usr/lib/udev/rules.d"
+mkdir "${temp_dir}/initramfs/usr/lib/terminfo"
+mkdir "${temp_dir}/initramfs/usr/sbin"
+mkdir "${temp_dir}/initramfs/usr/share"
+mkdir "${temp_dir}/initramfs/usr/share/kexectools"
+mkdir "${temp_dir}/initramfs/usr/share/busybox"
+mkdir "${temp_dir}/initramfs/usr/share/iproute2"
+mkdir "${temp_dir}/initramfs/usr/share/e2fsprogs"
+mkdir "${temp_dir}/initramfs/usr/share/petitboot"
+mkdir "${temp_dir}/initramfs/usr/share/eudev"
+mkdir "${temp_dir}/initramfs/usr/share/udhcpc"
+mkdir "${temp_dir}/initramfs/usr/share/misc"
+mkdir "${temp_dir}/initramfs/var"
+mkdir "${temp_dir}/initramfs/var/log"
+mkdir "${temp_dir}/initramfs/var/log/petitboot"
+mkdir "${temp_dir}/initramfs/var/run"
+mkdir "${temp_dir}/initramfs/var/run/netns"
+cd "${temp_dir}/initramfs"
 ln -s usr/lib lib
 echo " Done."
 
-echo -e -n ${i_msg}" Setting up 'init' script in initramfs ..."
-echo -e "$init_script" >${temp_dir}/initramfs/init
-chmod +x ${temp_dir}/initramfs/init
+log_info_n " Setting up 'init' script in initramfs ..."
+echo -e "$init_script" > "${temp_dir}/initramfs/init"
+chmod +x "${temp_dir}/initramfs/init"
 echo " Done."
 
-echo -e ${i_msg}" Setting up basic configuration files in initramfs tree ..."
+log_info " Setting up basic configuration files in initramfs tree ..."
 echo    "         /etc/{group,mdev.conf,nsswitch.conf}"
-echo -e "$etc_group" >${temp_dir}/initramfs/etc/group
-touch ${temp_dir}/initramfs/etc/mdev.conf
-echo -e "$etc_nsswitch_conf" >${temp_dir}/initramfs/etc/nsswitch.conf
+echo -e "$etc_group" > "${temp_dir}/initramfs/etc/group"
+touch "${temp_dir}/initramfs/etc/mdev.conf"
+echo -e "$etc_nsswitch_conf" > "${temp_dir}/initramfs/etc/nsswitch.conf"
 echo    "         /usr/share/udhcpc/default.script"
 echo -e "$usr_share_udhcpc_default_script" \
->${temp_dir}/initramfs/usr/share/udhcpc/default.script
-chmod 0755 ${temp_dir}/initramfs/usr/share/udhcpc/default.script
+> "${temp_dir}/initramfs/usr/share/udhcpc/default.script"
+chmod 0755 "${temp_dir}/initramfs/usr/share/udhcpc/default.script"
 echo " Done."
 
-echo -e -n ${i_msg}" Setting up 'sysinfo' script in initramfs tree ..."
-cd ${temp_dir}/initramfs/sbin
+log_info_n " Setting up 'sysinfo' script in initramfs tree ..."
+cd "${temp_dir}/initramfs/sbin"
 echo -e "$sbin_sysinfo" >sysinfo
 chmod +x sysinfo
 ln -s sysinfo dmidecode
@@ -1022,44 +1050,44 @@ echo " Done."
 # The terminal used by Petitboot is defined in ${pb_build}/utils/pb-console
 # as TERM=linux which is often defined in /lib/terminfo/l/linux (but note
 # that we have symlinked /lib to /usr/lib above).
-echo -e -n ${i_msg}" Copying terminfo files from host to initramfs ..."
-for terminfo_file in $pb_term_list ; do
+log_info_n " Copying terminfo files from host to initramfs ..."
+for terminfo_file in "${pb_term_list[@]}"; do
     terminfo_dir_lett=${terminfo_file:0:1}
     terminfo_file_path=${terminfo_dir}/${terminfo_dir_lett}/${terminfo_file}
     if [[ -f "$terminfo_file_path" ]]; then # We do not resolve symlinks here.
         # echo "Found terminfo file ${terminfo_file}, copying."
-        mkdir -p ${temp_dir}/initramfs/usr/lib/terminfo/${terminfo_dir_lett}
-        cp $terminfo_file_path \
-          ${temp_dir}/initramfs/usr/lib/terminfo/${terminfo_dir_lett}
+        mkdir -p "${temp_dir}/initramfs/usr/lib/terminfo/${terminfo_dir_lett}"
+        cp "$terminfo_file_path" \
+          "${temp_dir}/initramfs/usr/lib/terminfo/${terminfo_dir_lett}"
     else
-        echo -e ${e_msg}" Cannot find the terminfo file ${terminfo_file}, exiting."
+        log_err " Cannot find the terminfo file ${terminfo_file}, exiting."
         exit 1
     fi
 done
 echo " Done."
 
 # Petitboot will start without these files, but it may not function properly.
-for loc_file in ${copy_file_list[@]}; do
-    mkdir -p $(dirname $loc_file)
-    echo -e -n ${i_msg}" Copying the file $loc_file to initramfs tree ..."
+for loc_file in "${copy_file_list[@]}"; do
+    mkdir -p "$(dirname "$loc_file")"
+    log_info_n " Copying the file $loc_file to initramfs tree ..."
     if [[ -f "$loc_file" ]]; then
-        cp $loc_file ${temp_dir}/initramfs${loc_file}
-        chmod 0755 ${temp_dir}/initramfs${loc_file}
+        cp "$loc_file" "${temp_dir}/initramfs${loc_file}"
+        chmod 0755 "${temp_dir}/initramfs${loc_file}"
         echo " Done."
     else
-        echo -e ${w_msg}" Could not find the file ${loc_file}."
+        log_warn " Could not find the file ${loc_file}."
     fi
 done
 
 # -------------------------------- Downloads --------------------------------
 
 # This is small so we always clone it.
-echo -e ${i_msg}" Cloning the bootdisk repo $bootdisk_url"
+log_info " Cloning the bootdisk repo $bootdisk_url"
 echo            "         to the local dir ${temp_dir}/${bootdisk_dir}"
 if git clone --depth=1 "$bootdisk_url" "${temp_dir}/${bootdisk_dir}"; then
-    echo -e ${ok_msg}" Done. bootdisk repo successfully cloned."
+    log_ok " Done. bootdisk repo successfully cloned."
 else
-    echo -e ${e_msg}" Failed to clone bootdisk repo, exiting."
+    log_err " Failed to clone bootdisk repo, exiting."
     exit 1
 fi
 
@@ -1089,34 +1117,34 @@ eudev_pkg_url=${eudev_url_base}/${eudev_tarball_repo_name}
 eudev_pkg_loc=${temp_dir}/downloads/${eudev_tarball_local_name}
 do_download "eudev" "$eudev_pkg_url" "$eudev_pkg_loc"
 
-echo -e ${i_msg}" Downloading the script 'extract-vmlinux' from Linux src ..."
-if wget "$extract_vmlinux_url" -O ${temp_dir}/downloads/extract-vmlinux; then
-    echo -e ${ok_msg}" Done. The script 'extract-vmlinux' successfully downloaded."
+log_info " Downloading the script 'extract-vmlinux' from Linux src ..."
+if wget "$extract_vmlinux_url" -O "${temp_dir}/downloads/extract-vmlinux"; then
+    log_ok " Done. The script 'extract-vmlinux' successfully downloaded."
 else
-    echo -e ${e_msg}" Failed to download 'extract-vmlinux'; kernel"
+    log_err " Failed to download 'extract-vmlinux'; kernel"
     echo "         decompression in the initramfs would not work, exiting."
     exit 1
 fi
 
-echo -e ${i_msg}" Downloading magic file definitions for kernel and initramfs ..."
+log_info " Downloading magic file definitions for kernel and initramfs ..."
 have_all_magic=true
-for file_magic in ${file_magic_arr[@]} ; do
-    if ! wget ${file_magic_url_base}/${file_magic} -O ${temp_dir}/downloads/${file_magic}; then
-        echo -e ${w_msg}" Failed to download magic file ${file_magic}."
+for file_magic in "${file_magic_arr[@]}"; do
+    if ! wget "${file_magic_url_base}/${file_magic}" -O "${temp_dir}/downloads/${file_magic}"; then
+        log_warn " Failed to download magic file ${file_magic}."
         have_all_magic=false
     fi
 done
 if [[ $have_all_magic == true ]]; then
-    echo -e ${ok_msg}" Done. All magic file definitions successfully downloaded."
+    log_ok " Done. All magic file definitions successfully downloaded."
 else
     echo " Kernel decompression will not work due to failed downloads."
 fi
 
 # ---------------------------------- Build ---------------------------------
 
-echo -e ${i_msg}" Building kexec-tools ..."
-tar -xf ${temp_dir}/downloads/${kxt_tarball_local_name} -C ${temp_dir}/kexectools
-cd ${temp_dir}/kexectools/kexec-tools-${kexectools_ver}
+log_info " Building kexec-tools ..."
+tar -xf "${temp_dir}/downloads/${kxt_tarball_local_name}" -C "${temp_dir}/kexectools"
+cd "${temp_dir}/kexectools/kexec-tools-${kexectools_ver}"
 # 'autoupdate' (shipped with the autoconf package) rewrites obsolete
 # autoconf macros in configure.ac in place: the riscv64 fork's
 # configure.ac uses some (e.g. AC_HELP_STRING); the aarch64 tarball's
@@ -1130,28 +1158,28 @@ check_rc $? "kexec-tools autoupdate"
 check_rc $? "kexec-tools bootstrap"
 ./configure --prefix=/usr
 check_rc $? "kexec-tools configure"
-make -j $no_comp_cores
+make -j "$no_comp_cores"
 check_rc $? "kexec-tools make"
-[[ -f ./build/sbin/kexec ]] || { echo -e ${e_msg}" kexec binary not found after build, exiting."; exit 1; }
-tar -czf ${temp_dir}/initramfs/usr/share/kexectools/build.tgz config.log configure.ac Makefile
-echo -e ${i_msg}" Installing kexec binary to initramfs tree ..."
-strip ./build/sbin/kexec -o ${temp_dir}/initramfs/sbin/kexec_bin
-cd ${temp_dir}/initramfs/sbin
-echo -e -n ${i_msg}" Installing kexec wrapper script (and symlink) ..."
+[[ -f ./build/sbin/kexec ]] || { log_err " kexec binary not found after build, exiting."; exit 1; }
+tar -czf "${temp_dir}/initramfs/usr/share/kexectools/build.tgz" config.log configure.ac Makefile
+log_info " Installing kexec binary to initramfs tree ..."
+strip "./build/sbin/kexec" -o "${temp_dir}/initramfs/sbin/kexec_bin"
+cd "${temp_dir}/initramfs/sbin"
+log_info_n " Installing kexec wrapper script (and symlink) ..."
 echo -e "$kexec_wrapper" >kexec_wrapper.sh
 chmod 0755 kexec_wrapper.sh
 ln -s kexec_wrapper.sh kexec
 echo " Done."
-echo -e ${ok_msg}" Finished building and installing kexec-tools."
+log_ok " Finished building and installing kexec-tools."
 
-echo -e -n ${i_msg}" Writing some notes on kexectools to /usr/share/kexectools ..."
+log_info_n " Writing some notes on kexectools to /usr/share/kexectools ..."
 echo -e "$README_memmax" \
-    >${temp_dir}/initramfs/usr/share/kexectools/README_memmax.txt
+    > "${temp_dir}/initramfs/usr/share/kexectools/README_memmax.txt"
 echo " Done."
 
-echo -e ${i_msg}" Building Busybox ..."
-tar -xjf ${temp_dir}/downloads/${bb_tarball_local_name} -C ${temp_dir}/busybox
-cd ${temp_dir}/busybox/busybox-${busybox_ver}
+log_info " Building Busybox ..."
+tar -xjf "${temp_dir}/downloads/${bb_tarball_local_name}" -C "${temp_dir}/busybox"
+cd "${temp_dir}/busybox/busybox-${busybox_ver}"
 make defconfig
 check_rc $? "busybox make defconfig"
 
@@ -1172,84 +1200,84 @@ sed -i 's/CONFIG_FEATURE_GREP_CONTEXT=y/\# CONFIG_FEATURE_GREP_CONTEXT is not se
 
 # Verify that the .config exists and is non-empty (make defconfig or one of
 # the seds above may have failed silently).
-[[ -s .config ]] || { echo -e ${e_msg}" Busybox .config missing/empty, exiting."; exit 1; }
+[[ -s .config ]] || { log_err " Busybox .config missing/empty, exiting."; exit 1; }
 
 # make menuconfig
-LDFLAGS=--static make -j $no_comp_cores
+LDFLAGS=--static make -j "$no_comp_cores"
 check_rc $? "busybox make"
-[[ -f ./busybox ]] || { echo -e ${e_msg}" busybox binary not found after build, exiting."; exit 1; }
+[[ -f ./busybox ]] || { log_err " busybox binary not found after build, exiting."; exit 1; }
 cp .config dot_config
-tar -czf ${temp_dir}/initramfs/usr/share/busybox/build.tgz dot_config Makefile
-echo -e -n ${i_msg}" Installing Busybox binary to initramfs tree ..."
-cp ./busybox ${temp_dir}/initramfs/bin # This is the stripped version.
-cp ./examples/udhcp/simple.script ${temp_dir}/initramfs/usr/share/udhcpc/
-cd ${temp_dir}/initramfs/bin
+tar -czf "${temp_dir}/initramfs/usr/share/busybox/build.tgz" dot_config Makefile
+log_info_n " Installing Busybox binary to initramfs tree ..."
+cp "./busybox" "${temp_dir}/initramfs/bin" # This is the stripped version.
+cp "./examples/udhcp/simple.script" "${temp_dir}/initramfs/usr/share/udhcpc/"
+cd "${temp_dir}/initramfs/bin"
 ln -s busybox sh
-cd ${temp_dir}/initramfs/sbin
+cd "${temp_dir}/initramfs/sbin"
 ln -s /bin/ip ip # Petitboot (in default config.h) expects this.
 echo " Done."
-echo -e ${ok_msg}" Finished building and installing Busybox."
+log_ok " Finished building and installing Busybox."
 
-echo -e -n ${i_msg}" Writing Busybox notes/README to /usr/share/busybox ..."
+log_info_n " Writing Busybox notes/README to /usr/share/busybox ..."
 echo -e "$README_PB_Busybox" \
-    >${temp_dir}/initramfs/usr/share/busybox/README_PB_Busybox.txt
+    > "${temp_dir}/initramfs/usr/share/busybox/README_PB_Busybox.txt"
 echo " Done."
-echo -e -n ${i_msg}" Writing /etc/motd ..."
-echo -e "$etc_motd" >${temp_dir}/initramfs/etc/motd
-chmod 0644 ${temp_dir}/initramfs/etc/motd
+log_info_n " Writing /etc/motd ..."
+echo -e "$etc_motd" > "${temp_dir}/initramfs/etc/motd"
+chmod 0644 "${temp_dir}/initramfs/etc/motd"
 echo " Done."
 
-echo -e ${i_msg}" Building iproute2 (ip command) ..."
-tar -xf ${temp_dir}/downloads/${ipr2_tarball_local_name} -C ${temp_dir}/iproute2
-cd ${temp_dir}/iproute2/iproute2-${iproute2_ver}
+log_info " Building iproute2 (ip command) ..."
+tar -xf "${temp_dir}/downloads/${ipr2_tarball_local_name}" -C "${temp_dir}/iproute2"
+cd "${temp_dir}/iproute2/iproute2-${iproute2_ver}"
 ./configure --prefix=/usr
 check_rc $? "iproute2 configure"
-make -j $no_comp_cores
+make -j "$no_comp_cores"
 check_rc $? "iproute2 make"
-[[ -f ./ip/ip ]] || { echo -e ${e_msg}" ip binary not found after build, exiting."; exit 1; }
-tar -czf ${temp_dir}/initramfs/usr/share/iproute2/build.tgz config.mk Makefile
-echo -e -n ${i_msg}" Installing iproute2 (ip) binary to initramfs tree ..."
-strip ./ip/ip -o ${temp_dir}/initramfs/bin/ip
+[[ -f ./ip/ip ]] || { log_err " ip binary not found after build, exiting."; exit 1; }
+tar -czf "${temp_dir}/initramfs/usr/share/iproute2/build.tgz" config.mk Makefile
+log_info_n " Installing iproute2 (ip) binary to initramfs tree ..."
+strip "./ip/ip" -o "${temp_dir}/initramfs/bin/ip"
 echo " Done."
-echo -e ${ok_msg}" Finished building and installing iproute2 (ip command)."
+log_ok " Finished building and installing iproute2 (ip command)."
 
 if [[ $no_e2fsprogs != true ]]; then
-    echo -e ${i_msg}" Building e2fsprogs ..."
-    tar -xf ${temp_dir}/downloads/${e2fs_tarball_local_name} -C ${temp_dir}/e2fsprogs
-    cd ${temp_dir}/e2fsprogs/e2fsprogs-${e2fsprogs_ver}
+    log_info " Building e2fsprogs ..."
+    tar -xf "${temp_dir}/downloads/${e2fs_tarball_local_name}" -C "${temp_dir}/e2fsprogs"
+    cd "${temp_dir}/e2fsprogs/e2fsprogs-${e2fsprogs_ver}"
     mkdir build
     cd ./build
     ../configure --prefix=/usr
     check_rc $? "e2fsprogs configure"
-    make -j $no_comp_cores
+    make -j "$no_comp_cores"
     check_rc $? "e2fsprogs make"
-    [[ -f ./misc/mke2fs ]] || { echo -e ${e_msg}" mke2fs binary not found after build, exiting."; exit 1; }
-    tar -czf ${temp_dir}/initramfs/usr/share/e2fsprogs/build.tgz config.log Makefile
-    echo -e -n ${i_msg}" Installing e2fsprogs binaries to initramfs tree ..."
-    strip ./misc/badblocks -o ${temp_dir}/initramfs/sbin/badblocks
-    strip ./misc/dumpe2fs -o ${temp_dir}/initramfs/sbin/dumpe2fs
-    strip ./misc/tune2fs -o ${temp_dir}/initramfs/sbin/tune2fs
-    strip ./misc/mke2fs -o ${temp_dir}/initramfs/sbin/mke2fs
-    strip ./e2fsck/e2fsck -o ${temp_dir}/initramfs/sbin/e2fsck
-    strip ./resize/resize2fs -o ${temp_dir}/initramfs/sbin/resize2fs
+    [[ -f ./misc/mke2fs ]] || { log_err " mke2fs binary not found after build, exiting."; exit 1; }
+    tar -czf "${temp_dir}/initramfs/usr/share/e2fsprogs/build.tgz" config.log Makefile
+    log_info_n " Installing e2fsprogs binaries to initramfs tree ..."
+    strip "./misc/badblocks" -o "${temp_dir}/initramfs/sbin/badblocks"
+    strip "./misc/dumpe2fs" -o "${temp_dir}/initramfs/sbin/dumpe2fs"
+    strip "./misc/tune2fs" -o "${temp_dir}/initramfs/sbin/tune2fs"
+    strip "./misc/mke2fs" -o "${temp_dir}/initramfs/sbin/mke2fs"
+    strip "./e2fsck/e2fsck" -o "${temp_dir}/initramfs/sbin/e2fsck"
+    strip "./resize/resize2fs" -o "${temp_dir}/initramfs/sbin/resize2fs"
     echo " Done."
-    echo -e ${ok_msg}" Finished building and installing e2fsprogs."
+    log_ok " Finished building and installing e2fsprogs."
 fi
 
-echo -e ${i_msg}" Building Petitboot ..."
-tar -xf ${temp_dir}/downloads/${pb_tarball_local_name} -C ${temp_dir}/petitboot
-cd ${temp_dir}/petitboot/petitboot-v${petitboot_ver}
+log_info " Building Petitboot ..."
+tar -xf "${temp_dir}/downloads/${pb_tarball_local_name}" -C "${temp_dir}/petitboot"
+cd "${temp_dir}/petitboot/petitboot-v${petitboot_ver}"
 
-echo -e ${i_msg}" Applying Petitboot patches (a failed patch is fatal; the"
+log_info " Applying Petitboot patches (a failed patch is fatal; the"
 echo "         resulting initramfs would be suspect and must not be used) ..."
-for pb_patch in ${pb_patch_list[@]}; do
+for pb_patch in "${pb_patch_list[@]}"; do
     if ! patch -N -p1 --ignore-whitespace <\
-      ${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_patch}; then
-        echo -e ${e_msg}" Petitboot patch ${pb_patch} failed to apply, exiting."
+      "${temp_dir}/${bootdisk_dir}/${pb_patch_dir}/${pb_patch}"; then
+        log_err " Petitboot patch ${pb_patch} failed to apply, exiting."
         exit 1
     fi
 done
-echo -e ${ok_msg}" All Petitboot patches applied successfully."
+log_ok " All Petitboot patches applied successfully."
 
 if [[ $use_build_ver_tag == true ]]; then
     ./configure PACKAGE_VERSION="${petitboot_ver} [${build_ver_tag}]" \
@@ -1260,157 +1288,162 @@ else
       --without-twin-fbdev --with-signed-boot --enable-platform-arm64
 fi
 check_rc $? "petitboot configure"
-make -j $no_comp_cores
+make -j "$no_comp_cores"
 check_rc $? "petitboot make"
-[[ -f ./ui/ncurses/petitboot-nc ]] || { echo -e ${e_msg}" petitboot-nc binary not found after build, exiting."; exit 1; }
-tar -czf ${temp_dir}/initramfs/usr/share/petitboot/build.tgz config.log Makefile
-echo -e -n ${i_msg}" Installing Petitboot executable files to initramfs tree ..."
-strip ./utils/pb-config -o ${temp_dir}/initramfs/usr/sbin/pb-config
-cp ./utils/pb-console ${temp_dir}/initramfs/usr/sbin
-chmod +x ${temp_dir}/initramfs/usr/sbin/pb-console
-strip ./discover/pb-discover -o ${temp_dir}/initramfs/usr/sbin/pb-discover
-strip ./utils/pb-event -o ${temp_dir}/initramfs/usr/sbin/pb-event
-cp ./utils/pb-exec ${temp_dir}/initramfs/usr/sbin
-cp ./utils/pb-plugin ${temp_dir}/initramfs/usr/sbin
-cp ./utils/pb-sos ${temp_dir}/initramfs/usr/sbin
-cp ./utils/pb-udhcpc ${temp_dir}/initramfs/usr/sbin
-chmod +x ${temp_dir}/initramfs/usr/sbin/pb-udhcpc
-strip ./ui/ncurses/petitboot-nc -o ${temp_dir}/initramfs/usr/sbin/petitboot-nc
-cp ./utils/scsi-rescan ${temp_dir}/initramfs/usr/sbin
-cp ./utils/bb-kexec-reboot ${temp_dir}/initramfs/usr/share/petitboot
-cp ./utils/hooks/{01,20,90}-* ${temp_dir}/initramfs/usr/share/petitboot
+[[ -f ./ui/ncurses/petitboot-nc ]] || { log_err " petitboot-nc binary not found after build, exiting."; exit 1; }
+tar -czf "${temp_dir}/initramfs/usr/share/petitboot/build.tgz" config.log Makefile
+log_info_n " Installing Petitboot executable files to initramfs tree ..."
+strip "./utils/pb-config" -o "${temp_dir}/initramfs/usr/sbin/pb-config"
+cp "./utils/pb-console" "${temp_dir}/initramfs/usr/sbin"
+chmod +x "${temp_dir}/initramfs/usr/sbin/pb-console"
+strip "./discover/pb-discover" -o "${temp_dir}/initramfs/usr/sbin/pb-discover"
+strip "./utils/pb-event" -o "${temp_dir}/initramfs/usr/sbin/pb-event"
+cp "./utils/pb-exec" "${temp_dir}/initramfs/usr/sbin"
+cp "./utils/pb-plugin" "${temp_dir}/initramfs/usr/sbin"
+cp "./utils/pb-sos" "${temp_dir}/initramfs/usr/sbin"
+cp "./utils/pb-udhcpc" "${temp_dir}/initramfs/usr/sbin"
+chmod +x "${temp_dir}/initramfs/usr/sbin/pb-udhcpc"
+strip "./ui/ncurses/petitboot-nc" -o "${temp_dir}/initramfs/usr/sbin/petitboot-nc"
+cp "./utils/scsi-rescan" "${temp_dir}/initramfs/usr/sbin"
+cp "./utils/bb-kexec-reboot" "${temp_dir}/initramfs/usr/share/petitboot"
+cp ./utils/hooks/{01,20,90}-* "${temp_dir}/initramfs/usr/share/petitboot"
 echo " Done."
-echo -e ${ok_msg}" Finished building and installing Petitboot."
+log_ok " Finished building and installing Petitboot."
 
-echo -e -n ${i_msg}" Writing buildinfo README to /usr/share/petitboot ..."
+log_info_n " Writing buildinfo README to /usr/share/petitboot ..."
 echo -e "$README_petitboot_initrd" \
-  >${temp_dir}/initramfs/usr/share/petitboot/README_petitboot_initrd.txt
+  > "${temp_dir}/initramfs/usr/share/petitboot/README_petitboot_initrd.txt"
 echo " Done."
 
-echo -e ${i_msg}" Building eudev ..."
-tar -xf ${temp_dir}/downloads/${eudev_tarball_local_name} -C ${temp_dir}/eudev
-cd ${temp_dir}/eudev/eudev-${eudev_ver}
+log_info " Building eudev ..."
+tar -xf "${temp_dir}/downloads/${eudev_tarball_local_name}" -C "${temp_dir}/eudev"
+cd "${temp_dir}/eudev/eudev-${eudev_ver}"
 mkdir build
 cd ./build
 ../configure --prefix=/usr --enable-blkid --disable-kmod
 check_rc $? "eudev configure"
-make -j $no_comp_cores
+make -j "$no_comp_cores"
 check_rc $? "eudev make"
-[[ -f ./src/udev/udevd ]] || { echo -e ${e_msg}" udevd binary not found after build, exiting."; exit 1; }
-tar -czf ${temp_dir}/initramfs/usr/share/eudev/build.tgz config.log Makefile
-echo -e ${i_msg}" Installing eudev binaries and udev rules to initramfs tree ..."
-strip ./src/udev/udevadm -o ${temp_dir}/initramfs/usr/bin/udevadm
-strip ./src/udev/udevd -o ${temp_dir}/initramfs/usr/bin/udevd
-strip ./src/collect/collect -o ${temp_dir}/initramfs/usr/bin/collect
+[[ -f ./src/udev/udevd ]] || { log_err " udevd binary not found after build, exiting."; exit 1; }
+tar -czf "${temp_dir}/initramfs/usr/share/eudev/build.tgz" config.log Makefile
+log_info " Installing eudev binaries and udev rules to initramfs tree ..."
+strip "./src/udev/udevadm" -o "${temp_dir}/initramfs/usr/bin/udevadm"
+strip "./src/udev/udevd" -o "${temp_dir}/initramfs/usr/bin/udevd"
+strip "./src/collect/collect" -o "${temp_dir}/initramfs/usr/bin/collect"
 for id_item in ata_id cdrom_id dmi_memory_id fido_id scsi_id; do
-    strip ./src/${id_item}/${id_item} -o ${temp_dir}/initramfs/usr/lib/udev/${id_item}
+    strip "./src/${id_item}/${id_item}" -o "${temp_dir}/initramfs/usr/lib/udev/${id_item}"
 done
-for udev_rule_item in ${eudev_udev_rules_list[@]}; do
-    cp -v ../rules/${udev_rule_item} \
-        ${temp_dir}/initramfs/usr/lib/udev/rules.d
+for udev_rule_item in "${eudev_udev_rules_list[@]}"; do
+    cp -v "../rules/${udev_rule_item}" \
+        "${temp_dir}/initramfs/usr/lib/udev/rules.d"
 done
 echo " Done."
-echo -e ${ok_msg}" Finished building and installing eudev."
+log_ok " Finished building and installing eudev."
 
-cd ${temp_dir}/downloads
-echo -e ${i_msg}" Patching the script 'extract-vmlinux' ..."
+cd "${temp_dir}/downloads"
+log_info " Patching the script 'extract-vmlinux' ..."
 if ! patch -N -p1 --ignore-whitespace <\
-        ${temp_dir}/${bootdisk_dir}/${misc_patch_dir}/extract-vmlinux.patch; then
-    echo -e ${e_msg}" The patch on 'extract-vmlinux' was not successfully"
+        "${temp_dir}/${bootdisk_dir}/${misc_patch_dir}/extract-vmlinux.patch"; then
+    log_err " The patch on 'extract-vmlinux' was not successfully"
     echo "         applied, exiting."
     exit 1
 else
     echo " Done."
 fi
 
-echo -e -n ${i_msg}" Installing the script 'extract-vmlinux-pb' ..."
-cp extract-vmlinux ${temp_dir}/initramfs/usr/sbin/extract-vmlinux-pb
-chmod 0755 ${temp_dir}/initramfs/usr/sbin/extract-vmlinux-pb
+log_info_n " Installing the script 'extract-vmlinux-pb' ..."
+cp extract-vmlinux "${temp_dir}/initramfs/usr/sbin/extract-vmlinux-pb"
+chmod 0755 "${temp_dir}/initramfs/usr/sbin/extract-vmlinux-pb"
 echo " Done."
 
 if [[ $have_all_magic == true ]]; then
-    echo -e -n ${i_msg}" Generating the file 'magic.mgc' for the 'file' command ..."
-    cd ${temp_dir}/initramfs/usr/share/misc
+    log_info_n " Generating the file 'magic.mgc' for the 'file' command ..."
+    cd "${temp_dir}/initramfs/usr/share/misc"
     for idx in "${!file_magic_arr[@]}" ; do
-        cat ${temp_dir}/downloads/"${file_magic_arr[idx]}" | sed -n "${file_magic_cut[idx]}" >>magic
+        cat "${temp_dir}/downloads/${file_magic_arr[idx]}" | sed -n "${file_magic_cut[idx]}" >>magic
     done
     if file -m magic -C && [[ -f "magic.mgc" ]]; then
         chmod 0755 magic.mgc
         mv magic magic.txt
         echo " Done."
     else
-        echo -e ${w_msg}" The 'file' command failed to compile the magic file."
+        log_warn " The 'file' command failed to compile the magic file."
         echo "            Kernel decompression will not work."
     fi
 fi
 
 # ----------------------------- Find and copy libs ---------------------------
 
-echo -e ${i_msg}" Finding and listing all libraries required by the executables:"
+log_info "Finding and listing all libraries required by the executables:"
 lib_file_list=()
 pre_path=${temp_dir}/initramfs
-for exe_name in ${dyn_linked_exe_list[@]}; do
+for exe_name in "${dyn_linked_exe_list[@]}"; do
     exe_name_full=${pre_path}${exe_name}
     # The virtual (kernel) file linux-vdso.so.1 and the interpreter
     # ld-linux-aarch64.so.1 are omitted from the list.
     ldd_out=$(ldd "$exe_name_full" 2>&1) || true
     libs_this_exe=$(grep -vE "linux-vdso.so.1|ld-linux-aarch64.so.1" <<< "$ldd_out" | cut -d "(" -f1 | cut -d ">" -f2 | tr -d ' ')
     if grep -q "not found" <<< "$ldd_out"; then
-        echo -e ${e_msg}" Not all libraries for ${exe_name} found, exiting. \nRequired:\n ${libs_this_exe}"
+        log_err "Not all libraries for ${exe_name} found, exiting.
+              Required:
+               ${libs_this_exe}"
         exit 1
     else
-    echo "Libs (except virtual) required by ${exe_name}:"
+        echo "Libs (except virtual) required by ${exe_name}:"
         echo "$libs_this_exe"
-        lib_file_list+=($libs_this_exe)
+        if [[ -n $libs_this_exe ]]; then
+            # (One library path per line; append each as an array element.)
+            mapfile -t _libs_this_exe <<< "$libs_this_exe"
+            lib_file_list+=("${_libs_this_exe[@]}")
+        fi
     fi
 done
 
-lib_file_list_sorted=$(echo "${lib_file_list[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')
-echo -e ${i_msg}" Libraries needed by the executables (as per ldd):"
-for list_item in ${lib_file_list_sorted[@]}; do
+mapfile -t lib_file_list_sorted < <(printf '%s\n' "${lib_file_list[@]}" | sort -u)
+log_info "Libraries needed by the executables (as per ldd):"
+for list_item in "${lib_file_list_sorted[@]}"; do
     echo "$list_item"
 done
 
-echo -e ${i_msg}" Libraries (actual installed name/version) provided to the executables:"
+log_info "Libraries (actual installed name/version) provided to the executables:"
 lib_file_inst_list=()
-for list_item in ${lib_file_list_sorted[@]}; do
-    lib_file_inst_full=$(realpath $list_item)
-    lib_file_inst_list+=($lib_file_inst_full)
+for list_item in "${lib_file_list_sorted[@]}"; do
+    lib_file_inst_full=$(realpath "$list_item")
+    lib_file_inst_list+=("$lib_file_inst_full")
     echo "$lib_file_inst_full"
 done
 
-echo -e ${i_msg}" Copying interpreter and libraries from host to initramfs tree ..."
+log_info "Copying interpreter and libraries from host to initramfs tree ..."
 # Copy the interpreter and set up the soft link.
-cp -v /usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 ${temp_dir}/initramfs/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1
-cd ${temp_dir}/initramfs/usr/lib
+cp -v /usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 "${temp_dir}/initramfs/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1"
+cd "${temp_dir}/initramfs/usr/lib"
 ln -s aarch64-linux-gnu/ld-linux-aarch64.so.1 ld-linux-aarch64.so.1
-for list_item in ${lib_file_inst_list[@]}; do # in ${temp_dir}/initramfs/usr/lib
-    lib_file_inst_full=$(realpath $list_item)
-    cp -v ${lib_file_inst_full} ${temp_dir}/initramfs${lib_file_inst_full}
+for list_item in "${lib_file_inst_list[@]}"; do # in ${temp_dir}/initramfs/usr/lib
+    cp -v "$list_item" "${temp_dir}/initramfs${list_item}"
 done
 echo " Done."
 
-echo -e ${i_msg}" Running ldconfig for the libraries in the initramfs tree."
-ldconfig -vr ${temp_dir}/initramfs
-echo -e ${ok_msg}" Finished with libraries."
+log_info " Running ldconfig for the libraries in the initramfs tree."
+ldconfig -vr "${temp_dir}/initramfs"
+log_ok " Finished with libraries."
 
-tot_run_time=$(run_time "stop" $run_time_start)
+tot_run_time=$(run_time "stop" "$run_time_start")
 
 # ------------------------------- Packing it up ------------------------------
 
-echo -e ${i_msg}" Preparing to pack up the initramfs tree into a gzipped cpio archive ..."
-cd ${temp_dir}/initramfs
+log_info " Preparing to pack up the initramfs tree into a gzipped cpio archive ..."
+cd "${temp_dir}/initramfs"
 my_username=$(whoami)
 # The sudo grace period is often several mins so you only enter the p/w once.
 # (No prompt when already root, e.g. in a CI container.)
 if [[ $(id -u) -ne 0 ]]; then
     echo "Enter your password to change ownership (root) of files in initramfs tree:"
 fi
-sudo chown -R root:root ${temp_dir}/initramfs
-sudo find . | cpio -H newc -o | gzip -c > ../${initrd_pb_name}
-pack_rc=(${PIPESTATUS[@]})
+sudo chown -R root:root "${temp_dir}/initramfs"
+sudo find . | cpio -H newc -o | gzip -c > "../${initrd_pb_name}"
+pack_rc=("${PIPESTATUS[@]}")
 if [[ ${pack_rc[0]} -ne 0 || ${pack_rc[1]} -ne 0 || ${pack_rc[2]} -ne 0 ]]; then
-    echo -e ${e_msg}" Packing the initramfs failed (find|cpio|gzip rc:"
+    log_err " Packing the initramfs failed (find|cpio|gzip rc:"
     echo "         ${pack_rc[*]}), exiting."
     exit 1
 fi
@@ -1418,54 +1451,54 @@ initrd_full=${temp_dir}/${initrd_pb_name}
 # Verify the packed initramfs. Note: a failed find/cpio can still leave a
 # *valid* gzip of an empty/partial cpio stream, so gzip -t alone is not
 # enough; the archive must also contain the expected entries.
-[[ -s $initrd_full ]] || { echo -e ${e_msg}" Packed initramfs ${initrd_pb_name} is missing or empty, exiting."; exit 1; }
-gzip -t "$initrd_full" || { echo -e ${e_msg}" Packed initramfs ${initrd_pb_name} failed gzip integrity check, exiting."; exit 1; }
+[[ -s $initrd_full ]] || { log_err " Packed initramfs ${initrd_pb_name} is missing or empty, exiting."; exit 1; }
+gzip -t "$initrd_full" || { log_err " Packed initramfs ${initrd_pb_name} failed gzip integrity check, exiting."; exit 1; }
 # (cpio -t lists entries without a leading './', e.g. 'init'.)
 initrd_cpio_list=$(gzip -dc "$initrd_full" | cpio -t 2>/dev/null)
 initrd_entries=$(grep -c . <<< "$initrd_cpio_list") || true
 if [[ $initrd_entries -lt 30 ]] || ! grep -qE '^\.?/?init$' <<< "$initrd_cpio_list"; then
-    echo -e ${e_msg}" Packed initramfs ${initrd_pb_name} looks incomplete"
+    log_err " Packed initramfs ${initrd_pb_name} looks incomplete"
     echo "            ($initrd_entries entries; 'init' entry: $(grep -qE '^\.?/?init$' <<< "$initrd_cpio_list" && echo present || echo MISSING)), exiting."
     exit 1
 fi
-echo -e ${ok_msg}" Packed initramfs verified ($initrd_entries entries, 'init' present)."
-sudo chown ${my_username}:${my_username} ../${initrd_pb_name}
-mv ${temp_dir}/${initrd_pb_name} "$result_dir"
+log_ok " Packed initramfs verified ($initrd_entries entries, 'init' present)."
+sudo chown "${my_username}:${my_username}" "../${initrd_pb_name}"
+mv "${temp_dir}/${initrd_pb_name}" "$result_dir"
 echo " Done. Resulting initramfs: ${initrd_pb_name}"
 
 if command -v mkimage >/dev/null 2>&1; then
-    echo -e "Making also a u-boot tagged version of the initramfs ..."
-    mkimage -n "Petitboot-v${petitboot_ver}" -A $uboot_arch -O linux -T ramdisk \
-      -C gzip -d ${result_dir}/${initrd_pb_name} ${result_dir}/${uInitrd_pb_name}
+    echo "Making also a u-boot tagged version of the initramfs ..."
+    mkimage -n "Petitboot-v${petitboot_ver}" -A "$uboot_arch" -O linux -T ramdisk \
+      -C gzip -d "${result_dir}/${initrd_pb_name}" "${result_dir}/${uInitrd_pb_name}"
     echo " Done."
     echo "Result: ${uInitrd_pb_name}"
 else
-    echo -e ${w_msg}" mkimage not found; no u-boot tagged (uInitrd) version"
+    log_warn " mkimage not found; no u-boot tagged (uInitrd) version"
     echo "            of the initramfs will be produced."
 fi
 
 # Typically the sudo cache timeout is 5m or so so this is not needed:
 # echo "Enter your password to change back ownership (you) of initramfs tree:"
 my_user=$(whoami)
-sudo chown -R ${my_user}:${my_user} ${temp_dir}/initramfs
+sudo chown -R "${my_user}:${my_user}" "${temp_dir}/initramfs"
 
 cd "$this_script_dir"
-echo -e ${ok_msg}" Finished building and packing the Petitboot initramfs."
+log_ok " Finished building and packing the Petitboot initramfs."
 
-echo -e -n ${ok_msg}" Saving some build info to result dir ..."
-cd ${temp_dir}/
+log_ok_n " Saving some build info to result dir ..."
+cd "${temp_dir}/"
 if [[ $no_e2fsprogs == true ]]; then
     initramfs_tree_name=initramfs_file_tree_noe2fs.txt
 else
     initramfs_tree_name=initramfs_file_tree.txt
 fi
-tree initramfs >${result_dir}/${initramfs_tree_name}
+tree initramfs > "${result_dir}/${initramfs_tree_name}"
 # Save the script-defined (non-exported) shell variables for build
 # forensics. Exported (environment) variables are deliberately excluded:
 # in a CI/CD environment they include tokens/secrets (e.g. CI_JOB_TOKEN,
 # GITHUB_TOKEN) which must not end up in the result dir or artifacts.
 env_var_list=$(compgen -e)
-compgen -v | while read line; do
+compgen -v | while read -r line; do
     # Skip the bookkeeping variable below, then skip all exported vars.
     if [[ $line == env_var_list ]]; then continue; fi
     if ! grep -qxF "$line" <<< "$env_var_list"; then
@@ -1473,13 +1506,13 @@ compgen -v | while read line; do
         # expansion of bash's automatic empty arrays, e.g. BASH_ALIASES,
         # is an unbound-variable error; the '-' guard yields the same
         # empty value as before.)
-        echo $line=${!line-}
+        echo "$line=${!line-}"
     fi
-done | gzip -c >${result_dir}/pb_build_vars.txt.gz
+done | gzip -c > "${result_dir}/pb_build_vars.txt.gz"
 echo " Done."
 
-echo -e -n ${ok_msg}" Adding timestamp tag to result and temporary dirs ..."
-timestamp_iso=$(date +%y%m%dT%H%M)
+log_ok_n " Adding timestamp tag to result and temporary dirs ..."
+timestamp_iso=$(date -u +"%y%m%dT%H%M"Z)
 # Guard against a same-minute re-run: mv-ing a dir into an *existing* dir
 # would nest it inside, and later steps (release notes) would pick the old
 # dir. If the target name is taken, append a numeric suffix instead.
@@ -1488,7 +1521,7 @@ while [[ -e "${result_dir}_${timestamp_iso}${tstamp_suffix}" || -e "${temp_dir}_
     if [[ -z $tstamp_suffix ]]; then
         tstamp_suffix=2
     else
-        tstamp_suffix=$(($tstamp_suffix + 1))
+        tstamp_suffix=$((tstamp_suffix + 1))
     fi
 done
 result_dir_tstamped=${result_dir}_${timestamp_iso}${tstamp_suffix}
@@ -1497,19 +1530,19 @@ temp_dir_tstamped=${temp_dir}_${timestamp_iso}${tstamp_suffix}
 mv "$temp_dir" "$temp_dir_tstamped"
 echo " Done."
 
-echo -e ${i_msg}" The finished initramfs and other output files can be found in"
-echo -e "         "${result_dir_tstamped}
+log_info " The finished initramfs and other output files can be found in"
+echo "         ${result_dir_tstamped}"
 build_ok=true
 
 # ---------------------------------- Cleanup ---------------------------------
 
-echo -e ${i_msg}" Cleanup of build area:"
+log_info " Cleanup of build area:"
 
 if [[ -t 0 ]]; then
     echo -n "Do you want to delete the build directories?    [n/Y] >"
-    read do_del_pkgblddirs || do_del_pkgblddirs=""
+    read -r do_del_pkgblddirs || do_del_pkgblddirs=""
     if [[ "$do_del_pkgblddirs" != "n" ]]; then
-        rm -rf ${temp_dir_tstamped}/{bootdisk,kexectools,busybox,iproute2,e2fsprogs,petitboot,eudev}
+        rm -rf "${temp_dir_tstamped}"/{bootdisk,kexectools,busybox,iproute2,e2fsprogs,petitboot,eudev}
     fi
 else
     echo "Non-interactive run: keeping the build directories."
@@ -1517,9 +1550,9 @@ fi
 
 if [[ -t 0 ]]; then
     echo -n "Do you want to delete the download directory?   [n/Y] >"
-    read do_del_downloads || do_del_downloads=""
+    read -r do_del_downloads || do_del_downloads=""
     if [[ "$do_del_downloads" != "n" ]]; then
-        rm -rf ${temp_dir_tstamped}/downloads
+        rm -rf "${temp_dir_tstamped}/downloads"
     fi
 else
     echo "Non-interactive run: keeping the download directory."
@@ -1527,12 +1560,12 @@ fi
 
 if [[ -t 0 ]]; then
     echo -n "Do you want to delete the initramfs build tree? [n/Y] >"
-    read do_del_initramfsdir || do_del_initramfsdir=""
+    read -r do_del_initramfsdir || do_del_initramfsdir=""
     if [[ "$do_del_initramfsdir" != "n" ]]; then
         if [[ $(id -u) -ne 0 ]]; then
             echo "Enter your password to delete the initramfs dir (owned by root):"
         fi
-        sudo rm -rf ${temp_dir_tstamped}/initramfs
+        sudo rm -rf "${temp_dir_tstamped}/initramfs"
     fi
 else
     echo "Non-interactive run: keeping the initramfs build tree."
@@ -1540,13 +1573,13 @@ fi
 
 test_empty_temp=""
 if [[ -d ${temp_dir_tstamped} ]]; then
-    test_empty_temp=$(ls -A ${temp_dir_tstamped})
+    test_empty_temp=$(ls -A "${temp_dir_tstamped}")
 fi
 if [[ -z "$test_empty_temp" ]]; then
-    echo -e "Removing the empty directory for temporary files (${temp_dir_tstamped}) ..."
+    echo "Removing the empty directory for temporary files (${temp_dir_tstamped}) ..."
     rmdir "$temp_dir_tstamped"
     echo " Done."
 fi
 
-echo -e ${ok_msg}" Finished executing ${this_script}"
-echo -e ${i_msg}" Run time (excl. user dialogue) [h:m:s]: "$tot_run_time
+log_ok " Finished executing ${this_script}"
+log_info "Run time (excl. user dialogue) [h:m:s]: $tot_run_time"
