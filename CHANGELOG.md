@@ -17,7 +17,7 @@ The author is Tripole unless otherwise noted.
  - Eliminated silent failures (missing files, failed downloads/patches, etc.).
  - Per-step exit code checks.
  - Global safety net w/ `set -Eeuo pipefail` + `shopt -s nullglob`
-   + ERR trap (line number) + EXIT trap.
+   and ERR trap (line number) with EXIT trap.
  - Clearer time stamping of results/dirs., no dir. collision.
  - Fixed autoupdate call bug (kexec-tools).
  - ARCH normalized parity with the riscv64 version (i.e. only necessary
@@ -79,7 +79,7 @@ The author is Tripole unless otherwise noted.
  - Eliminated silent failures (missing files, failed downloads/patches, etc.).
  - Per-step exit code checks.
  - Global safety net w/ `set -Eeuo pipefail` + `shopt -s nullglob`
-   + ERR trap (line number) + EXIT trap.
+   and ERR trap (line number) with EXIT trap.
  - Clearer time stamping of results/dirs., no dir. collision.
  - Fixed autoupdate call bug (kexec-tools).
  - ARCH normalized parity with the aarch64 version (i.e. only necessary

@@ -1,18 +1,19 @@
 
 # bootdisk
 
-__TL;DR:__
-On an single board computer (SBC) or TV-box with working u-boot you can get
-a versatile bootloader by replacing the default Linux initramfs with an
-initramfs containing the `Petitboot` or `u-root` bootloader (provided your
-default Linux kernel has `kexec`). (For download links, see below.)
-
 __News:__
-`Petitboot` built with our scripts now runs on both on ARM64 and
+`Petitboot` built with our scripts now runs on both on ARM64/AARCH64 and
 RISCV64, e.g. on VisionFive 2 (on UART/serial console, and on HDMI if the
 kernel supports it). For both architectures the ability to boot compressed
 kernels (e.g. recent Fedora) has also been added as well as an option for
-remote mode (UI over telnet).
+remote mode (Petitboot UI over telnet).
+
+__TL;DR:__
+On an single board computer (SBC) or TV-box with working u-boot you can get
+a versatile menu driven bootloader by replacing the default Linux initramfs
+with an initramfs containing the `Petitboot` or `u-root` bootloader (provided
+your default Linux kernel has `kexec`). (Releases of Petitboot for AARCH64
+and RISCV64 are provided here and more download options are given below.)
 
 __Bootloaders with menu driven UI:__
 This repo contains, mostly, information about some
@@ -42,23 +43,22 @@ and [`u-root`](https://u-root.org/), both of which employ a
 [chainloading](https://en.wikipedia.org/wiki/Chain_loading) mechanism
 utilizing the Linux [`kexec`](https://en.wikipedia.org/wiki/Kexec)
 [system call](https://wiki.archlinux.org/title/Kexec).
-(The repo contains two scripts for building `Petitboot` as well as
-documentation, see below.)
+(The repo contains two main scripts for building `Petitboot` as well as
+helper scripts and documentation, see below.)
 The two bootloaders provide the same basic functionality and both are
 implemented in the form of an initramfs.
 `Petitboot` provides a somewhat nicer UI (cf. screenshots below) and can boot
 [grub](https://wiki.archlinux.org/title/GRUB) configurations defined in
 `grub.cfg`, and works for both ARM64 and RISCV64 (including `bzImage`).
-On the other hand, `u-root` can boot (simple) grub configurations as well as a
-subset of [syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
+On the other hand, `u-root` (which recently got support for RISCV64) can boot
+(simple) grub configurations as well as a subset of
+[syslinux](https://wiki.syslinux.org/wiki/index.php?title=SYSLINUX)
 configurations,
 [including](https://github.com/u-root/u-root/blob/main/pkg/boot/syslinux/syslinux.go)
 the `extlinux.conf` configurations used by
 [`u-boot`](https://en.wikipedia.org/wiki/Das_U-Boot).
-Support for RISCV64 was recently added in `u-root`.
 (The bootloader components of `u-root` are known by other names, one of them
-being `Linuxboot`, but for brevity we shall refer to these components
-collectively as `u-root`.)
+being `Linuxboot`; we call these components collectively `u-root`.)
 
 __History:__
 The bootdisk concept discussed here was originally developed as an aid for
@@ -72,7 +72,7 @@ an appropriate kernel and dtb to work with the initramfs that holds either
 `Petitboot` or `u-root`.
 (This is typically all that is needed on a RISCV64 box.)
 
-__Outline of the repo:__
+__Other contents in the repo:__
 General info about the bootdisk concept in the script based setting for ARM64
 can be found in the files [`README_petit-bootdisk.md`](README_petit-bootdisk.md)
 and [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), respectively.
@@ -88,10 +88,14 @@ scripts [`petitboot_mkinird_riscv64.bash`](petitboot_mkinitrd_riscv64.bash) and
 [`petitboot_mkinird_aarch64.bash`](petitboot_mkinitrd_aarch64.bash).
 These scripts can be executed natively on an RISCV64/ARM64 host or an
 RISCV64/ARM64 build host run in a QEMU emulator, see below.
-An alternative is to run the scripts in a docker environment, see
-[`README_docker_petitboot_mkinitrd.md`](README_docker_petitboot_mkinitrd.md).
-Initramfses with `Petitboot` built using these scripts can be downloaded from
-[here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw) (along with setup notes).
+An alternative is to run the scripts in a docker environment, either manually
+see [`README_docker_petitboot_mkinitrd.md`](README_docker_petitboot_mkinitrd.md)
+or (more conveniently) using the wrapper script
+[`petitboot_build_wrapper.bash`](petitboot_build_wrapper.bash).
+Initramfses with `Petitboot` built using a CI/CD pipeline with the native build
+scripts are released here; more downloads can be found at
+[here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw) (where also some
+setup notes can be found).
 
 An initramfs for `u-root` can be built from the `Go` source using a recent
 version of (the toolchain) `Go` (see e.g.
@@ -112,9 +116,9 @@ which have `kexec()` enabled and can be used to run `Petitboot`.
 Downloads of tarballs of `vf2-3pole` kernels can be found
 [here](https://mega.nz/folder/jJdTCSQQ#he0JD-96HmJIQDow-QC-VQ).
 
-### ARM64 Linux kernel
+### ARM64/AARCH64 Linux kernel
 
-Kernels for ARM64 can be created with the script
+Kernels for ARM64/AARCH64 can be created with the script
 [`arm64_kbuild.bash`](arm64_kbuild.bash) on an x86_64 or ARM64 build host.
 The script produces gzipped tarballs with boot files (kernel image, initramfs
 etc.), the module tree, header files and dtbs, for the board manufacturers
@@ -126,7 +130,7 @@ Rockchip and Allwinner.
 Downloads of the `3pole` series of kernels can be found
 [here](https://mega.nz/folder/GJNjjSAY#Zru4DqCa6hyYnnkGuw02Rw).
 
-### Linux images for RISCV64, AARCH64
+### Linux images for RISCV64 and ARM64
 
 Linux, e.g. Ubuntu, Debian or Devuan, can generally be installed to SBCs using
 the standard installer to produce an EFI/Grub setup that can be booted with
@@ -138,8 +142,9 @@ booted with existing `u-boot` and run-as is, only relying on `u-boot`'s ability
 to do do `sysboot` via `extlinux.conf` (either directly or via chainloading of
 another stage of `u-boot`).
 
-Linux images with Debian, Devuan or Ubuntu for RISCV64/AARCH64 can be created
-with the scripts [`debuntu_dbstrap_aarch64.bash`](debuntu_dbstrap_aarch64.bash)
+Linux images with Debian, Devuan or Ubuntu for RISCV64 and ARM64/AARCH64 can
+be created with the scripts
+[`debuntu_dbstrap_aarch64.bash`](debuntu_dbstrap_aarch64.bash)
 and [`debuntu_dbstrap_riscv64.bash`](debuntu_dbstrap_riscv64.bash).
 Images built with these script can be downloaded from
 [here (aarch64)](https://mega.nz/folder/CBM0hCTD#GDw2iXQpfeoqgWJ45E2Seg) and
@@ -181,6 +186,12 @@ with display on HDMI screen (1366x768 resolution).
 ![Boot menu in u-root](/images/u-root-bootmenu.png "u-root boot")*The menu
 of bootable images displayed after u-root has scanned the attached devices
 (here three USB sticks attached via a USB hub).*
+
+## Acknowledgment
+
+In some later versions of the build scripts here I have used a local instance
+of a Qwen LLM to update/produce code. Qwen's contributions are indicated in the
+[`CHANGELOG.md`](CHANGELOG.md) and in the headers of the individual files.
 
 ## Disclaimer
 
