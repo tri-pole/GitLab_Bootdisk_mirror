@@ -52,7 +52,7 @@ build-petitboot-initramfs-aarch64:
         [ -f "$f" ] || continue
         curl --fail --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$f" \
           "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/petitboot-initrd/${ver}/$(basename "$f")" \
-          && echo "Uploaded to package registry: petitboot-initrd/${ver}/$(basename "$f")"
+          && echo "Uploaded (permanent URL for release links): ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/petitboot-initrd/${ver}/$(basename "$f")"
       done
   artifacts:
     when: on_success
@@ -148,7 +148,7 @@ build-petitboot-initramfs-riscv64:
         [ -f "$f" ] || continue
         curl --fail --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$f" \
           "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/petitboot-initrd/${ver}/$(basename "$f")" \
-          && echo "Uploaded to package registry: petitboot-initrd/${ver}/$(basename "$f")"
+          && echo "Uploaded (permanent URL for release links): ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/petitboot-initrd/${ver}/$(basename "$f")"
       done
   artifacts:
     when: on_success

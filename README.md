@@ -12,8 +12,8 @@ __TL;DR:__
 On an single board computer (SBC) or TV-box with working u-boot you can get
 a versatile menu driven bootloader by replacing the default Linux initramfs
 with an initramfs containing the `Petitboot` or `u-root` bootloader (provided
-your default Linux kernel has `kexec`). (Releases of Petitboot for AARCH64
-and RISCV64 are provided here and more download options are given below.)
+your default Linux kernel has `kexec`). (Releases of Petitboot for AARCH64 and
+RISCV64 are provided here at GitLab and more download options are given below.)
 
 __Bootloaders with menu driven UI:__
 This repo contains, mostly, information about some
