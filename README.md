@@ -12,8 +12,8 @@ __TL;DR:__
 On an single board computer (SBC) or TV-box with working u-boot you can get
 a versatile menu driven bootloader by replacing the default Linux initramfs
 with an initramfs containing the `Petitboot` or `u-root` bootloader (provided
-your default Linux kernel has `kexec`). (Releases of Petitboot for AARCH64 and
-RISCV64 are provided at the
+your default Linux kernel has `kexec`). (Downloads of Petitboot initramfs
+for AARCH64 and RISCV64 are provided at the
 [GitLab release page](https://gitlab.com/tripole-inc/bootdisk/-/releases) and
 more download options are given below.)
 
@@ -94,7 +94,7 @@ An alternative is to run the scripts in a docker environment, either manually
 see [`README_docker_petitboot_mkinitrd.md`](README_docker_petitboot_mkinitrd.md)
 or (more conveniently) using the wrapper script
 [`petitboot_build_wrapper.bash`](petitboot_build_wrapper.bash).
-Initramfses with `Petitboot` built using a CI/CD pipeline with the native build
+Initramfs with `Petitboot` built using a CI/CD pipeline with the native build
 scripts are released here; more downloads can be found at
 [here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw) (where also some
 setup notes can be found).
@@ -102,7 +102,7 @@ setup notes can be found).
 An initramfs for `u-root` can be built from the `Go` source using a recent
 version of (the toolchain) `Go` (see e.g.
 [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md)).
-Initramfses with `u-root` built like this can be found
+Initramfs with `u-root` built like this can be found
 [here](https://mega.nz/folder/SMt1VLSY#VTR2-eZv4jC7PH4hASp0tg).
 
 ### RISCV64 Linux kernel

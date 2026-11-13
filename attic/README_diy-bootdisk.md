@@ -65,7 +65,7 @@
 ## Prerequisites
 
 - Materials: An SD/USB which should be wiped clean (e.g. by using the zap
-  function of `gdisk`), one of the initramfses holding `Petitboot` or `u-root`,
+  function of `gdisk`), one of the initramfs holding `Petitboot` or `u-root`,
   a kernel appropriate for running the initramfs and the necessary boot scripts
   (see below).
   The requirements for the kernel on a bootdisk are straightforward; it must
@@ -401,7 +401,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   downloading and compiling the `u-root` code from
   [u-root's Github repo](https://github.com/u-root/u-root).
 
-  Initramfses containing `Petitboot` and `u-root` can be downloaded from the
+  Initramfs containing `Petitboot` and `u-root` can be downloaded from the
   locations listed in [`README_petit-bootdisk.md`](README_petit-bootdisk.md)
   and [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), and these can
   be used as a start when doing various forms of customizations.
