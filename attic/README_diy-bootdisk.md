@@ -41,8 +41,8 @@
   chainloader) can be compiled or downloaded from sources available at Github
   or other public git repos (see below), or downloaded from the locations
   indicated in
-  [`README_petit-bootdisk.md`](README_petit-bootdisk.md)
-  and [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md).
+  [`README_petit-bootdisk.md`](../README_petit-bootdisk.md)
+  and [`README_u-root-bootdisk.md`](../README_u-root-bootdisk.md).
   For `Petitboot` there is also the script
   [`petitboot_mkinitrd_aarch64.bash`](petitboot_mkinitrd_aarch64.bash) which
   can be used to build the initramfs.
@@ -318,7 +318,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   `vmlinuz` file.)
 
   Kernels suitable for booting Amlogic devices are for instance the
-  `3pole` line of kernels, see [README.md](README.md), where a few extra
+  `3pole` line of kernels, see [`README.md`](../README.md), where a few extra
   options have been enabled over the default kernel config such as `kexec` and
   support for btrfs and iso file systems, see the `config-` files for these
   kernels.
@@ -402,8 +402,8 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
   [u-root's Github repo](https://github.com/u-root/u-root).
 
   Initramfs containing `Petitboot` and `u-root` can be downloaded from the
-  locations listed in [`README_petit-bootdisk.md`](README_petit-bootdisk.md)
-  and [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), and these can
+  locations listed in [`README_petit-bootdisk.md`](../README_petit-bootdisk.md)
+  and [`README_u-root-bootdisk.md`](../README_u-root-bootdisk.md), and these can
   be used as a start when doing various forms of customizations.
 
   ## Adding `Petitboot` or `u-root` to an existing Linux system
@@ -513,7 +513,7 @@ bootargs=console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
    The FIT image can of course also be booted with the `bootm` command in
    `u-boot`. (An example of an implementation using this boot method can be
    found in the mini `petit-bootdisk` at the download location given in
-   [README_petit-bootdisk.md](README_petit-bootdisk.md).)
+   [`README_petit-bootdisk.md`](../README_petit-bootdisk.md).)
 
   ## Some notes relating to `u-boot`
 

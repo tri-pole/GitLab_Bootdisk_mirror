@@ -60,23 +60,24 @@ configurations,
 the `extlinux.conf` configurations used by
 [`u-boot`](https://en.wikipedia.org/wiki/Das_U-Boot).
 (The bootloader components of `u-root` are known by other names, one of them
-being `Linuxboot`; we call these components collectively `u-root`.)
+being `Linuxboot`; we use the collective name `u-root`.)
 
 __History:__
-The bootdisk concept discussed here was originally developed as an aid for
+The bootdisk concept discussed here was originally utilized as an aid for
 booting on ARM64 SBCs/TV-boxes where an older resident/vendor `u-boot` was
 installed that typically did not support booting using `extlinux.conf` and
 therefore needed various scripts/tricks (such as `u-boot` chainloading) for
 booting.
-In case a `u-boot` is used which is capable of using `extlinux.conf` it is
-very easy to set up a bootdisk since this essentially amounts to installing
-an appropriate kernel and dtb to work with the initramfs that holds either
-`Petitboot` or `u-root`.
+In case a modern `u-boot` is used which is capable of using `extlinux.conf`
+it is straightforward to set up a bootdisk since this essentially amounts to
+installing an appropriate kernel and dtb to work with the initramfs that
+holds either `Petitboot` or `u-root`.
 (This is typically all that is needed on a RISCV64 box.)
 
 __Other contents in the repo:__
-General info about the bootdisk concept in the script based setting for ARM64
-can be found in the files [`README_petit-bootdisk.md`](README_petit-bootdisk.md)
+General info about the bootdisk concept in the older (`u-boot`) boot script
+setting for ARM64 can be found in the files
+[`README_petit-bootdisk.md`](README_petit-bootdisk.md)
 and [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), respectively.
 In the [attic](attic) area there is some more older information, such as
 instructions in [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md) for
@@ -84,24 +85,28 @@ instructions in [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md) for
 
 ### Building Petitboot and u-root
 
-An initramfs for `Petitboot` can be built from the C source either manually (see
-e.g. [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md)) or using the
-scripts [`petitboot_mkinird_riscv64.bash`](petitboot_mkinitrd_riscv64.bash) and
-[`petitboot_mkinird_aarch64.bash`](petitboot_mkinitrd_aarch64.bash).
-These scripts can be executed natively on an RISCV64/ARM64 host or an
+An initramfs for `Petitboot` can be built from source, either manually using
+the C source at [Github](https://github.com/open-power/petitboot) (see also
+[`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md)) or using the build
+scripts [`petitboot_mkinird_riscv64.bash`](petitboot_mkinitrd_riscv64.bash)
+and [`petitboot_mkinird_aarch64.bash`](petitboot_mkinitrd_aarch64.bash).
+(Initramfs built with the scripts provide additional functionality over that
+which is present in the `Petitboot` code at Github.)
+The build scripts can be executed natively on an RISCV64/ARM64 host or an
 RISCV64/ARM64 build host run in a QEMU emulator, see below.
-An alternative is to run the scripts in a docker environment, either manually
-see [`README_docker_petitboot_mkinitrd.md`](README_docker_petitboot_mkinitrd.md)
-or (more conveniently) using the wrapper script
-[`petitboot_build_wrapper.bash`](petitboot_build_wrapper.bash).
+An alternative is to run the scripts in a docker environment, most conveniently
+using the the wrapper script
+[`petitboot_build_wrapper.bash`](petitboot_build_wrapper.bash), but manually is
+also straightforward, see
+[`README_docker_petitboot_mkinitrd.md`](README_docker_petitboot_mkinitrd.md).
 Initramfs with `Petitboot` built using a CI/CD pipeline with the native build
-scripts are released here; more downloads can be found at
+scripts are released here at Gitlab; more downloads can be found at
 [here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw) (where also some
 setup notes can be found).
 
 An initramfs for `u-root` can be built from the `Go` source using a recent
-version of (the toolchain) `Go` (see e.g.
-[`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md)).
+version of (the toolchain) `Go`, see
+[u-root at Github](https://github.com/u-root/u-root).
 Initramfs with `u-root` built like this can be found
 [here](https://mega.nz/folder/SMt1VLSY#VTR2-eZv4jC7PH4hASp0tg).
 
