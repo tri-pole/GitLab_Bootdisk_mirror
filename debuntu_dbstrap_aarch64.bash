@@ -10,9 +10,9 @@
 # using debootstrap, adding only a few items: a vfat bootfs partition (mounted
 # at /boot/bootfs on the image) with a copy of kernel, initramfs and dtb,
 # (u-boot) boot scripts and chainloader binaries for u-boot.ext, scripts on
-# rootfs under /etc/kernel/postinst.d and /etc/initramfs/post-update.d to
+# rootfs under /etc/kernel/post{inst,rm}.d and /etc/initramfs/post-update.d to
 # update the kernel/initramfs copies on the bootfs partition after kernel
-# update (and a hook to update grub.cfg), and some utility scripts in
+# update (and a hook to update grub.cfg), with the base scripts located in
 # /usr/local/bin.
 #
 # Target SoC/board: The generated images are mainly intended for Amlogic based
@@ -745,6 +745,13 @@ Pin-Priority: -1
 EOF
     )
 
+    grubefi_block_file=$(cat <<'EOF'
+Package: grub-efi-arm64
+Pin: release *
+Pin-Priority: -1
+EOF
+    )
+
     # This is the basic (default) set of packages installed on top of the rootfs.
     # (If you want to add packages, edit the array ubuntu_extra_packages above.)
     ubuntu_custom_inst=$(cat <<EOF
@@ -1195,7 +1202,7 @@ echo "Running kernel post{inst,rm} hook (simple version) for grub.cfg ..."
 # in grub.cfg (bootloaders based on kexec, such as Petitboot/u-root, typically
 # let the booted Linux image inherit the dtb used by the bootloader), so it
 # is passed to the mkgrubcfg_simple.bash script only if it exists.
-if [[ -f /boot/bootfs/${dtbfile_name} ]]; then
+if [[ -f /etc/default/dtb ]]; then
     rootfsUUID="\${rootfs_UUID_:-}" dtb_path="/boot/bootfs/${dtbfile_name}" \
         bash -c '/usr/local/bin/mkgrubcfg_simple.bash'
 else
@@ -1434,6 +1441,9 @@ setup_distro_specifics() {
             log_ok "Done."
             ;;
     esac
+    log_info "Preventing apt from installing package grub-efi-arm64 ..."
+    write_template "${rootfs_mnt}/etc/apt/preferences.d/no-grub-efi-arm64" "$grubefi_block_file"
+    log_ok "Done."
 }
 
 setup_apt_lists() {
@@ -1527,7 +1537,7 @@ do_chroot_jail_tasks() {
 # ----------------------------- image finalization ---------------------------
 
 setup_dtb_file() {
-    log_info "Copying the $dtbfile_name file to bootfs ..."
+    log_info "Copying the $dtbfile_name file to bootfs (and to /boot on rootfs) and setting up symlink /etc/default/dtb to default dtb ..."
     local kern_name kern_vers dtbfile_dir newest
     # (The glob is intentional; nullglob is set at the top of the script.)
     # shellcheck disable=SC2206
@@ -1547,6 +1557,10 @@ setup_dtb_file() {
     esac
     if [[ -f ${dtbfile_dir}/${dtbfile_name} ]]; then
         cp "${dtbfile_dir}/${dtbfile_name}" "${bootfs_mnt}"
+        # For grub (in case booting via extlinux.conf on bootfs is bypassed):
+        cp "${dtbfile_dir}/${dtbfile_name}" "${rootfs_mnt}/boot"
+	# The link is used by grub update scripts (e.g. kernel hook scripts).
+        ln -s "/boot/${dtbfile_name}" "${rootfs_mnt}/etc/default/dtb"
     else
         die "Could not find $dtbfile_name in $dtbfile_dir (the device tree file must be set up manually on the image)."
     fi
