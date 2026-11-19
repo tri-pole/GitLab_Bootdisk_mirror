@@ -10,10 +10,10 @@ remote mode (Petitboot UI over telnet).
 
 __TL;DR:__
 On an single board computer (SBC) or TV-box with working u-boot you can get
-a versatile menu driven bootloader by replacing the default Linux initramfs
-with an initramfs containing the `Petitboot` or `u-root` bootloader (provided
-your default Linux kernel has `kexec`). (Downloads of Petitboot initramfs
-for AARCH64 and RISCV64 are provided at the
+a versatile menu driven ("multi-boot") bootloader by simply replacing the
+default Linux initramfs with an initramfs containing the `Petitboot` or
+`u-root` bootloader (provided your default Linux kernel has `kexec`).
+(Downloads of Petitboot initramfs for AARCH64 and RISCV64 are provided at the
 [GitLab release page](https://gitlab.com/tripole-inc/bootdisk/-/releases) and
 more download options are given below.)
 
