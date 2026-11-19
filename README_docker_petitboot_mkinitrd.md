@@ -4,7 +4,8 @@ It is straightforward to set up a `docker` environment on a Linux x86_64 host
 and employ docker containers for `binfmt` and `ubuntu` to build the `Petitboot`
 initramfs using either `petitboot_mkinitrd_riscv64.bash` or
 `petitboot_mkinitrd_arm64.bash`.
-In the example below we build for RISCV64; the procedure is the same for ARM64.
+In the example below we build for RISCV64; the procedure is the same for ARM64
+(but the build requirements in `apt install` below differs slightly).
 
 ## Prerequisites
 
@@ -47,16 +48,18 @@ build dependencies in the container
 ```
 root@d0ffcf6555ea:~# apt update && apt upgrade -y
 root@d0ffcf6555ea:~# apt install -y \
-  autoconf bison build-essential ca-certificates cpio flex gawk gettext git \
-  gperf libasprintf-dev libblkid-dev libdevmapper-dev libdw-dev libelf-dev \
-  libgd-tools libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev \
-  libssl-dev libtool libudev-dev pkg-config sudo tree u-boot-tools wget zstd
+autoconf automake bison build-essential cpio flex gawk gettext git gperf gpg \
+libasprintf-dev libblkid-dev libdevmapper-dev libdw-dev libelf-dev \
+libgd-tools libgettextpo-dev libgpgme-dev liblzma-dev libncurses-dev \
+libssl-dev libtool libudev-dev pkg-config tree wget zstd
 ```
 
-Note: The exact set of packages that is needed depends on the Ubuntu version
+Note: The exact set of packages that is needed may depend on the Ubuntu version
 (and in practice will be determined only at the time the build script is run).
 For a more updated list, see comments inside the build script
 `petitboot_mkinitrd_riscv64.bash`.
+The build host must also have installed some commands that are copied (along with
+some conf files), namely `file`, `grep`, `unzstd`.
 
 ## Build the Petitboot initramfs
 
