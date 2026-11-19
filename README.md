@@ -73,36 +73,30 @@ it is straightforward to set up a bootdisk since this essentially amounts to
 installing an appropriate kernel and dtb to work with the initramfs that
 holds either `Petitboot` or `u-root`.
 (This is typically all that is needed on a RISCV64 box.)
-
-__Other contents in the repo:__
-General info about the bootdisk concept in the older (`u-boot`) boot script
-setting for ARM64 can be found in the files
-[`README_petit-bootdisk.md`](README_petit-bootdisk.md)
-and [`README_u-root-bootdisk.md`](README_u-root-bootdisk.md), respectively.
-In the [attic](attic) area there is some more older information, such as
-instructions in [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md) for
-(manually) recreating or adapting bootdisks.
+Some (mostly outdated) info about the bootdisk concept in the older (`u-boot`)
+boot script setting for ARM64 can be found in the [attic](attic) area.
 
 ### Building Petitboot and u-root
 
 An initramfs for `Petitboot` can be built from source, either manually using
-the C source at [Github](https://github.com/open-power/petitboot) (see also
-[`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md)) or using the build
+the C source at [Github](https://github.com/open-power/petitboot) or using the
 scripts [`petitboot_mkinird_riscv64.bash`](petitboot_mkinitrd_riscv64.bash)
 and [`petitboot_mkinird_aarch64.bash`](petitboot_mkinitrd_aarch64.bash).
-(Initramfs built with the scripts provide additional functionality over that
+(Initramfs built with these scripts provide additional functionality over that
 which is present in the `Petitboot` code at Github.)
 The build scripts can be executed natively on an RISCV64/ARM64 host or an
 RISCV64/ARM64 build host run in a QEMU emulator, see below.
-An alternative is to run the scripts in a docker environment, most conveniently
-using the the wrapper script
+An alternative is to run the scripts in a docker environment, e.g. using the
+the wrapper script
 [`petitboot_build_wrapper.bash`](petitboot_build_wrapper.bash), but manually is
 also straightforward, see
 [`README_docker_petitboot_mkinitrd.md`](README_docker_petitboot_mkinitrd.md).
 Initramfs with `Petitboot` built using a CI/CD pipeline with the native build
-scripts are released here at Gitlab; more downloads can be found at
-[here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw) (where also some
-setup notes can be found).
+scripts are released here at the
+[GitLab release page](https://gitlab.com/tripole-inc/bootdisk/-/releases) and
+more downloads can be found at
+[here](https://mega.nz/folder/WclhUTpJ#jobsjgxDvph2OfXZYwyxOw) (along with some
+setup notes).
 
 An initramfs for `u-root` can be built from the `Go` source using a recent
 version of (the toolchain) `Go`, see

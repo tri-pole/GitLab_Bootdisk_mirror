@@ -12,7 +12,7 @@ After selection of a boot menu entry, the new target boot configuration
 (kernel and initramfs) is loaded into memory and booting proceeds with the new
 configuration (utilizing a `kexec()` call).
 (The process is analogous to that of `u-root`, see
-[`README_u-root-bootdisk.md`](README_u-root-bootdisk.md).)
+[`README_u-root-bootdisk.md`](attic/README_u-root-bootdisk.md).)
 
 `Petitboot` is capable of reading and parsing several different boot
 [configuration file formats](https://open-power.github.io/petitboot/func/parsers.html),
@@ -59,7 +59,7 @@ non chainloaded bootdisk with an added `extlinux/extlinux.conf`
 [the `u-boot` reference](https://u-boot.readthedocs.io/en/latest/develop/distro.html#boot-configuration-files)).
 
 More info about the internals of `Petitboot` and how to build and customize it
-can be found in [`README_diy-bootdisk.md`](README_diy-bootdisk.md).
+can be found in [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md).
 
 Downloads
 ---------
@@ -169,7 +169,7 @@ Linux distros tested
 
 The `petit-bootdisk`(s) have been tested on a large number of Linux
 distributions, see e.g.
-[`README_working_distros.md`](README_working_distros.md).
+[`README_working_distros.md`](README_working_distros.md) (file removed).
 
 Authorship
 ----------
@@ -179,7 +179,7 @@ I have mostly assembled and compiled (and slightly tweaked) other people's
 source code, or written build scripts to do this, or copied freely available
 scripts (e.g. boot scripts), and made disk images of the result.
 Detailed descriptions of the sources of my material can be found in
-[`README_diy-bootdisk.md`](README_diy-bootdisk.md).
+[`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md).
 In some cases, such as boot script files, the material has been used and
 evolved, with small modifications, in several projects or by several people.
 To properly trace the origin of various ideas/concepts one then has to follow

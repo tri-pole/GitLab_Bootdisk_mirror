@@ -28,7 +28,7 @@ When an entry is selected, a function of `u-root` loads the new kernel and
 initramfs from the final boot target Linux image, and then executes a `kexec()`
 call into the target kernel-initramfs.
 The boot process is also described in
-[`README_diy-bootdisk.md](README_diy-bootdisk.md).
+[`README_diy-bootdisk.md](attic/README_diy-bootdisk.md).
 
 It should be noted that since `u-root` scans also for bootable syslinux
 configurations (e.g. `extlinux.conf`) `u-root-bootdisk` can boot also disk
@@ -78,7 +78,7 @@ is configured correctly, see e.g.
 [the `u-boot` reference](https://u-boot.readthedocs.io/en/latest/develop/distro.html#boot-configuration-files)).
 
 More info about the internals of `u-root` and how to build and customize it
-can be found in [`README_diy-bootdisk.md`](README_diy-bootdisk.md).
+can be found in [`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md).
 
 Downloads
 ---------
@@ -160,7 +160,7 @@ Linux distros tested
 
 The `u-root-bootdisk`(s) have been tested on a large number of Linux
 distributions, see e.g.
-[`README_working_distros.md`](README_working_distros.md).
+[`README_working_distros.md`](README_working_distros.md) (file removed).
 
 Authorship
 ----------
@@ -170,7 +170,7 @@ I have mostly assembled and compiled (and slightly tweaked) other people's
 source code, or written build scripts to do this, or copied freely available
 scripts (e.g. boot scripts), and made disk images of the result.
 Detailed descriptions of the sources of my material can be found in
-[`README_diy-bootdisk.md`](README_diy-bootdisk.md).
+[`README_diy-bootdisk.md`](attic/README_diy-bootdisk.md).
 In some cases, such as boot script files, the material has been used and
 evolved, with small modifications, in several projects or by several people.
 To properly trace the origin of various ideas/concepts one then has to follow
